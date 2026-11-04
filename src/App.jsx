@@ -1,408 +1,45 @@
-import { useState, useEffect, useRef, useContext } from 'react'
-import { COLORS, T, analyze, key } from './game.js'
-import { hostGame, joinGame, localGame } from './net.js'
-import { LangCtx, useT, fmt, tr, guessLang } from './i18n.js'
+import { useState, useEffect, useRef } from 'react'
+import { LoaderCircle } from 'lucide-react'
+import { hostGame, joinGame, localGame, TOK } from './net.js'
+import { LangCtx, fmt, guessLang } from './i18n.js'
+import { saveSess, loadSess, loadSnap, clearSess } from './session.js'
+import { Toasts, Modal } from './ui.jsx'
+import { Home, Lobby } from './screens.jsx'
+import Game from './Game.jsx'
 import Rules from './Rules.jsx'
-import {
-	getPrefs,
-	setPref,
-	canVibrate,
-	unlockAudio,
-	chime,
-	buzz,
-	notifyTurn,
-} from './notify.js'
+import { useT } from './i18n.js'
+import { unlockAudio } from './notify.js'
 
-const Tile = ({ id, sel, num, onClick }) => {
-	const t = T(id)
-	return (
-		<button
-			className={'tile' + (sel ? ' sel' : '')}
-			style={{ color: t.j ? '#7b1fa2' : COLORS[t.c] }}
-			onClick={onClick}
-		>
-			{t.j ? <>☺{num ? <small>{num}</small> : null}</> : t.n}
-		</button>
-	)
-}
-const LangBtn = ({ inline }) => {
-	const { lang, setLang } = useContext(LangCtx)
-	return (
-		<button
-			className={inline ? '' : 'lang'}
-			aria-label='Language / Idioma'
-			onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-		>
-			{lang === 'en' ? 'Español' : 'English'}
-		</button>
-	)
-}
-
-function Home({ name, setName, code, setCode, go, busy, openRules }) {
-	const t = useT()
-	return (
-		<div className='home'>
-			<LangBtn />
-			<h1>Rummikub</h1>
-			<p className='sub'>{t('sub')}</p>
-			<input
-				placeholder={t('name')}
-				maxLength={16}
-				value={name}
-				onChange={e => setName(e.target.value)}
-			/>
-			<button className='primary' disabled={busy} onClick={() => go('solo')}>
-				{t('solo')}
-			</button>
-			<button disabled={busy} onClick={() => go('host')}>
-				{t('create')}
-			</button>
-			<div className='or'>{t('or')}</div>
-			<input
-				placeholder={t('code')}
-				maxLength={5}
-				value={code}
-				onChange={e => setCode(e.target.value.toUpperCase())}
-			/>
-			<button disabled={busy || code.length < 4} onClick={() => go('join')}>
-				{busy ? t('connecting') : t('join')}
-			</button>
-			<button className='link' onClick={openRules}>
-				{t('readRules')}
-			</button>
-		</div>
-	)
-}
-
-function Lobby({ s, net, openRules }) {
+function LeaveDialog({ mode, phase, onYes, onNo }) {
 	const t = useT(),
-		host = s.me === 0,
-		link = location.origin + location.pathname + '#' + net.code
+		lobby = phase === 'lobby'
+	const msg =
+		mode === 'solo'
+			? 'lv.solo'
+			: mode === 'host'
+				? lobby
+					? 'lv.hostLobby'
+					: 'lv.hostPlay'
+				: lobby
+					? 'lv.guestLobby'
+					: 'lv.guestPlay'
 	return (
-		<div className='home'>
-			<LangBtn />
-			<h1>
-				{t('room')} <b className='code'>{net.code}</b>
-			</h1>
-			<button
-				onClick={() =>
-					navigator.clipboard && navigator.clipboard.writeText(link)
-				}
-			>
-				{t('copy')}
-			</button>
-			<ul className='plist'>
-				{s.players.map((p, i) => (
-					<li key={p.id}>
-						{p.name}
-						{i === 0 && ' ' + t('host')}
-						{p.bot && ' ' + t('bot')}
-						{p.on === false && ' ' + t('off')}
-					</li>
-				))}
-			</ul>
-			{host ? (
-				<>
-					<div className='row'>
-						<button
-							disabled={s.players.length >= 4}
-							onClick={() => net.send({ t: 'bot' })}
-						>
-							{t('addBot')}
-						</button>
-						{s.players.some(p => p.bot) && (
-							<button onClick={() => net.send({ t: 'unbot' })}>
-								{t('rmBot')}
-							</button>
-						)}
-					</div>
-					<label>
-						<input
-							type='checkbox'
-							checked={s.opts.timer}
-							onChange={e => net.send({ t: 'opts', timer: e.target.checked })}
-						/>{' '}
-						{t('timer')}
-					</label>
-					<button
-						className='primary'
-						disabled={s.players.length < 2}
-						onClick={() => net.send({ t: 'start' })}
-					>
-						{t('start', { n: s.players.length })}
-					</button>
-					<p className='sub'>{t('keep')}</p>
-				</>
-			) : (
-				<p>{t('waitHost')}</p>
-			)}
-			<button className='link' onClick={openRules}>
-				{t('readRules')}
-			</button>
-		</div>
-	)
-}
-
-function Game({ s, net, openRules }) {
-	const t = useT(),
-		me = s.me,
-		my = s.phase === 'play' && s.turn === me
-	const [d, setD] = useState({ b: s.board, r: s.rack }),
-		[sel, setSel] = useState([]),
-		[left, setLeft] = useState(60)
-	const dirty = useRef(false)
-	dirty.current = d.r.length !== s.rack.length
-	const [pf, setPf] = useState(getPrefs)
-	const flip = k => {
-		const v = !pf[k]
-		setPref(k, v)
-		setPf(getPrefs())
-		if (v) {
-			if (k === 'sound') {
-				unlockAudio()
-				chime()
-			} else buzz()
-		}
-	}
-	useEffect(() => {
-		if (my) notifyTurn()
-	}, [s.seq]) // chime + vibrate each time a new turn starts for me
-	useEffect(() => {
-		// also flag it in the tab title when the tab is in the background
-		const base = 'Rummikub Online',
-			upd = () => {
-				document.title =
-					my && document.hidden ? `● ${t('turnMine')} – ${base}` : base
-			}
-		upd()
-		document.addEventListener('visibilitychange', upd)
-		return () => {
-			document.removeEventListener('visibilitychange', upd)
-			document.title = base
-		}
-	}, [my, s.seq])
-	useEffect(() => {
-		setD({ b: s.board, r: s.rack })
-		setSel([])
-	}, [s.seq, s.phase])
-	useEffect(() => {
-		if (!s.opts.timer || s.phase !== 'play') return
-		const t0 = Date.now()
-		setLeft(60)
-		const iv = setInterval(() => {
-			const l = 60 - Math.floor((Date.now() - t0) / 1000)
-			setLeft(Math.max(l, 0))
-			if (l <= 0) {
-				clearInterval(iv)
-				if (my) net.send({ t: 'timeout', dirty: dirty.current })
-			}
-		}, 500)
-		return () => clearInterval(iv)
-	}, [s.seq, s.phase])
-
-	const norm = b => b.filter(x => x.length).map(x => analyze(x).order)
-	const strip = b => b.map(x => x.filter(i => !sel.includes(i)))
-	const toggle = id =>
-		my && setSel(v => (v.includes(id) ? v.filter(x => x !== id) : [...v, id]))
-	const fromRack = r => r.filter(i => !sel.includes(i))
-	const newSet = () => {
-		setD({ b: norm([...strip(d.b), sel]), r: fromRack(d.r) })
-		setSel([])
-	}
-	const addTo = k => {
-		const b = strip(d.b)
-		b[k] = [...b[k], ...sel]
-		setD({ b: norm(b), r: fromRack(d.r) })
-		setSel([])
-	}
-	const back = () => {
-		const bk = sel.filter(i => s.rack.includes(i) && !d.r.includes(i))
-		setD({
-			b: norm(d.b.map(x => x.filter(i => !bk.includes(i)))),
-			r: [...d.r, ...bk],
-		})
-		setSel([])
-	}
-	const reset = () => {
-		setD({ b: s.board, r: s.rack })
-		setSel([])
-	}
-	const sortR = byColor =>
-		setD({
-			...d,
-			r: [...d.r].sort((a, b) => {
-				const x = T(a),
-					y = T(b),
-					jx = x.j ? 1 : 0,
-					jy = y.j ? 1 : 0
-				return (
-					jx - jy || (byColor ? x.c - y.c || x.n - y.n : x.n - y.n || x.c - y.c)
-				)
-			}),
-		})
-
-	const info = d.b.map(analyze),
-		oldK = new Set(s.board.map(key))
-	const pts = d.b.reduce(
-		(a, x, j) => a + (oldK.has(key(x)) ? 0 : info[j].val),
-		0,
-	)
-	const allOk = info.every(x => x.ok),
-		cur = s.players[s.turn]
-	const showAdd = my && sel.length > 0
-
-	return (
-		<div className='game'>
-			<div className='top'>
-				{s.players.map((p, i) => (
-					<span
-						key={p.id}
-						className={
-							'chip' +
-							(i === s.turn && s.phase === 'play' ? ' act' : '') +
-							(p.on === false ? ' off' : '')
-						}
-					>
-						{t('chip', {
-							name: p.name,
-							you: i === me,
-							n: p.n,
-							m: p.melded,
-							pts: s.scores[p.id],
-							w: s.wins[p.id],
-						})}
-					</span>
-				))}
-				<span className='chip'>{t('pool', { n: s.pool })}</span>
-				{s.opts.timer && s.phase === 'play' && (
-					<span className={'chip' + (left <= 10 ? ' warn' : '')}>{left}s</span>
-				)}
-				<button onClick={openRules}>{t('rules')}</button>
-				<button
-					title={t('snd')}
-					aria-label={t('snd')}
-					aria-pressed={pf.sound}
-					onClick={() => flip('sound')}
-				>
-					{pf.sound ? '🔔' : '🔕'}
+		<Modal title={t('leaveT')} onClose={onNo}>
+			<h2>{t('leaveT')}</h2>
+			<p>{t(msg)}</p>
+			<div className='row'>
+				<button data-autofocus onClick={onNo}>
+					{t('stay')}
 				</button>
-				{canVibrate() && (
-					<button
-						title={t('vib')}
-						aria-label={t('vib')}
-						aria-pressed={pf.vibe}
-						onClick={() => flip('vibe')}
-					>
-						{pf.vibe ? '📳' : '📴'}
-					</button>
-				)}
-				<LangBtn inline />
+				<button className='primary danger' onClick={onYes}>
+					{mode === 'host' ? t('endAll') : t('confirmLeave')}
+				</button>
 			</div>
-			<div className='board'>
-				{d.b.map((_, k) => (
-					<div key={k} className={'set' + (info[k].ok ? '' : ' bad')}>
-						{info[k].order.map((id, j) => (
-							<Tile
-								key={id}
-								id={id}
-								sel={sel.includes(id)}
-								num={info[k].nums && info[k].nums[j]}
-								onClick={() => toggle(id)}
-							/>
-						))}
-						{showAdd && (
-							<button className='plus' onClick={() => addTo(k)}>
-								＋
-							</button>
-						)}
-					</div>
-				))}
-				{showAdd && (
-					<button className='plus' onClick={newSet}>
-						{t('newSet')}
-					</button>
-				)}
-				{!d.b.length && !showAdd && <p className='sub'>{t('empty')}</p>}
-			</div>
-			<div className='bar'>
-				<span className='status'>
-					{my
-						? s.players[me].melded
-							? t('turnMine')
-							: t('turnMeld', { pts })
-						: t('turnOf', { name: cur.name })}
-					. {tr(t, s.log)}
-				</span>
-				{my && (
-					<>
-						<button disabled={!sel.length} onClick={back}>
-							{t('toRack')}
-						</button>
-						<button onClick={reset}>{t('undo')}</button>
-						<button onClick={() => net.send({ t: 'draw' })}>
-							{s.pool ? t('draw') : t('pass')}
-						</button>
-						<button
-							className='primary'
-							disabled={!allOk || d.r.length === s.rack.length}
-							onClick={() => net.send({ t: 'end', board: d.b, rack: d.r })}
-						>
-							{t('end')}
-						</button>
-					</>
-				)}
-				{!my && me === 0 && s.phase === 'play' && cur.on === false && (
-					<button onClick={() => net.send({ t: 'skip' })}>{t('skip')}</button>
-				)}
-				<button onClick={() => sortR(false)}>{t('sort123')}</button>
-				<button onClick={() => sortR(true)}>{t('sortCol')}</button>
-			</div>
-			<div className='rack'>
-				{d.r.map(id => (
-					<Tile
-						key={id}
-						id={id}
-						sel={sel.includes(id)}
-						onClick={() => toggle(id)}
-					/>
-				))}
-			</div>
-			{s.phase === 'over' && (
-				<div className='modal'>
-					<div className='card'>
-						<h2>
-							{t(s.result.blocked ? 'winsPool' : 'wins', {
-								name: s.players[s.result.winner].name,
-							})}
-						</h2>
-						<ul>
-							{s.players.map(p => (
-								<li key={p.id}>
-									{p.name}: {s.result.delta[p.id] > 0 ? '+' : ''}
-									{s.result.delta[p.id]} ({t('total')} {s.scores[p.id]})
-								</li>
-							))}
-						</ul>
-						{me === 0 ? (
-							<button onClick={() => net.send({ t: 'start' })}>
-								{t('next')}
-							</button>
-						) : (
-							<p>{t('waitNext')}</p>
-						)}
-					</div>
-				</div>
-			)}
-		</div>
+		</Modal>
 	)
 }
 
 export default function App() {
-	const [net, setNet] = useState(null),
-		[s, setS] = useState(null),
-		[err, setErr] = useState(null),
-		[rules, setRules] = useState(false),
-		[busy, setBusy] = useState(false)
 	const [lang, setLangState] = useState(guessLang)
 	const setLang = l => {
 		setLangState(l)
@@ -410,6 +47,7 @@ export default function App() {
 			localStorage.rmkLang = l
 		} catch (e) {}
 	}
+	const t = (k, p) => fmt(lang, k, p)
 	useEffect(() => {
 		document.documentElement.lang = lang
 	}, [lang])
@@ -420,57 +58,270 @@ export default function App() {
 		ev.forEach(e => window.addEventListener(e, u, { passive: true }))
 		return () => ev.forEach(e => window.removeEventListener(e, u))
 	}, [])
-	const [name, setName] = useState(sessionStorage.rmkName || '')
-	const [code, setCode] = useState(
-		() => location.hash.slice(1).toUpperCase() || sessionStorage.rmkCode || '',
+
+	const hash0 = useRef(location.hash.slice(1).toUpperCase())
+	const [net, setNet] = useState(null),
+		[s, setS] = useState(null),
+		[busy, setBusy] = useState(null),
+		[conn, setConn] = useState(true)
+	const [toasts, setToasts] = useState([]),
+		[rules, setRules] = useState(false),
+		[leaving, setLeaving] = useState(false)
+	const [saved, setSaved] = useState(() => loadSess(true))
+	const [name, setName] = useState(() => {
+		try {
+			return sessionStorage.rmkName || localStorage.rmkName || ''
+		} catch (e) {
+			return ''
+		}
+	})
+	const [code, setCode] = useState(() =>
+		/^[A-Z0-9]{5}$/.test(hash0.current) ? hash0.current : '',
 	)
-	const toast = m => {
-		setErr(m)
-		setTimeout(() => setErr(null), 4000)
+	const [nameErr, setNameErr] = useState(false)
+	const sess = useRef(null),
+		netRef = useRef(null)
+
+	const toast = (m, type = 'err') => {
+		const id = Math.random()
+		setToasts(l => [...l.slice(-2), { id, m, type }])
+		setTimeout(
+			() => setToasts(l => l.filter(x => x.id !== id)),
+			type === 'err' ? 5000 : 3200,
+		)
 	}
-	const go = mode => {
-		if (!name.trim()) return toast({ k: 'needName' })
-		sessionStorage.rmkName = name
-		if (mode === 'join') sessionStorage.rmkCode = code
-		setBusy(true)
+	const forget = mode => {
+		clearSess(mode)
+		setSaved(null)
+	}
+
+	const start = (mode, o = {}) => {
+		const nm = (o.name || name).trim()
+		if (!nm) {
+			setNameErr(true)
+			toast({ k: 'needName' })
+			return
+		}
+		setNameErr(false)
+		const tok = o.tok || TOK,
+			cd = mode === 'join' ? o.code || code : ''
+		try {
+			sessionStorage.rmkName = nm
+			localStorage.rmkName = nm
+		} catch (e) {}
+		let snap
+		if (o.resume && mode !== 'join') {
+			snap = loadSnap(mode === 'host' ? 'rmkHost' : 'rmkSolo')
+			if (!snap || (mode === 'host' && snap.code !== o.code)) {
+				forget(mode)
+				return
+			}
+		}
+		sess.current = { mode, name: nm, code: cd, tok }
+		saveSess(sess.current)
+		setBusy(o.resume ? 'resume' : mode === 'host' ? 'create' : mode)
 		let n
 		const cb = {
 			onState: st => {
 				setS(st)
-				setBusy(false)
+				setBusy(null)
+				if (n && n.code && sess.current && sess.current.code !== n.code) {
+					sess.current = { ...sess.current, code: n.code }
+					saveSess(sess.current)
+				}
 			},
 			onErr: (m, fatal) => {
 				toast(m)
 				if (fatal) {
-					setBusy(false)
+					setBusy(null)
 					setNet(null)
 					setS(null)
+					setConn(true)
 					n && n.close()
+					if (m && (m.k === 'e.closed' || m.k === 'e.full')) forget(mode)
 				}
 			},
+			onConn: ok => setConn(ok),
 		}
 		n = (
 			mode === 'host'
 				? hostGame
 				: mode === 'solo'
 					? localGame
-					: (nm, c) => joinGame(code, nm, c)
-		)(name.trim(), cb)
+					: (nm2, c2, tk) => joinGame(cd, nm2, c2, tk)
+		)(nm, cb, tok, snap || undefined)
+		netRef.current = n
 		setNet(n)
 	}
-	const t = (k, p) => fmt(lang, k, p),
-		openRules = () => setRules(true)
+	const cancel = () => {
+		const r = busy === 'resume'
+		netRef.current && netRef.current.close()
+		setNet(null)
+		setS(null)
+		setBusy(null)
+		if (!r && sess.current) forget(sess.current.mode)
+	}
+	const resumeSaved = () =>
+		start(saved.mode, {
+			resume: true,
+			name: saved.name,
+			tok: saved.tok,
+			code: saved.code,
+		})
+
+	// Rejoin automatically after a refresh / reopened tab (unless the URL is an invite to a different room).
+	useEffect(() => {
+		if (saved && (!hash0.current || hash0.current === saved.code)) resumeSaved()
+	}, [])
+
+	const doLeave = () => {
+		const mode = sess.current ? sess.current.mode : 'solo'
+		if (mode === 'join') net.send({ t: 'leave' })
+		if (mode === 'host' && net.endRoom) net.endRoom()
+		else net.close()
+		forget(mode)
+		setNet(null)
+		setS(null)
+		setLeaving(false)
+		setConn(true)
+		setCode('')
+		history.replaceState(null, '', location.pathname + location.search)
+		hash0.current = ''
+		toast({ k: 'n.youLeft' }, 'info')
+	}
+
+	// Connection banner + "back online" toast
+	const wasOff = useRef(false)
+	useEffect(() => {
+		if (!conn) wasOff.current = true
+		else if (wasOff.current) {
+			wasOff.current = false
+			toast({ k: 'n.online' }, 'ok')
+		}
+	}, [conn])
+	// Presence toasts: someone joined / lost connection / came back / left
+	const prev = useRef(null)
+	useEffect(() => {
+		if (!s) {
+			prev.current = null
+			return
+		}
+		const cur = Object.fromEntries(s.players.map(p => [p.id, p])),
+			meId = s.players[s.me] && s.players[s.me].id
+		if (prev.current) {
+			for (const id in cur) {
+				const p = cur[id],
+					o = prev.current[id]
+				if (id === meId) continue
+				if (!o) {
+					if (!p.bot) toast({ k: 'n.joined', p: { name: p.name } }, 'info')
+				} else if (!o.bot && p.bot)
+					toast({ k: 'n.left', p: { name: p.name } }, 'info')
+				else if (!p.bot && o.on && !p.on)
+					toast({ k: 'n.off', p: { name: p.name } }, 'warn')
+				else if (!p.bot && !o.on && p.on)
+					toast({ k: 'n.back', p: { name: p.name } }, 'ok')
+			}
+			for (const id in prev.current)
+				if (!cur[id] && !prev.current[id].bot)
+					toast({ k: 'n.left', p: { name: prev.current[id].name } }, 'info')
+		}
+		prev.current = cur
+	}, [s])
+
+	const link = () =>
+		location.origin + location.pathname + '#' + (net && net.code)
+	const copy = async what => {
+		const txt = what === 'code' ? net.code : link()
+		let ok = false
+		try {
+			await navigator.clipboard.writeText(txt)
+			ok = true
+		} catch (e) {
+			try {
+				const ta = document.createElement('textarea')
+				ta.value = txt
+				ta.style.cssText = 'position:fixed;opacity:0'
+				document.body.appendChild(ta)
+				ta.select()
+				ok = document.execCommand('copy')
+				ta.remove()
+			} catch (e2) {}
+		}
+		toast(
+			{
+				k: ok ? (what === 'code' ? 'n.codeCopied' : 'n.copied') : 'n.copyFail',
+			},
+			ok ? 'ok' : 'err',
+		)
+		return ok
+	}
+	const share = () =>
+		navigator.share &&
+		navigator
+			.share({
+				title: 'Rummikub',
+				text: t('shareText', { code: net.code }),
+				url: link(),
+			})
+			.catch(() => {})
+	const openRules = () => setRules(true),
+		inRoom = !!(s && net)
+
 	return (
 		<LangCtx.Provider value={{ lang, setLang }}>
-			{!s || !net ? (
-				<Home {...{ name, setName, code, setCode, go, busy, openRules }} />
+			{!conn && inRoom && (
+				<div className='banner' role='status'>
+					<LoaderCircle className='spin' size={16} />
+					{t('reconnecting')}
+				</div>
+			)}
+			{!inRoom ? (
+				<Home
+					{...{
+						name,
+						setName,
+						nameErr,
+						code,
+						setCode,
+						start,
+						busy,
+						cancel,
+						saved,
+						openRules,
+					}}
+					invited={!!hash0.current && code === hash0.current}
+					onResume={resumeSaved}
+					onForget={() => forget(saved.mode)}
+				/>
 			) : s.phase === 'lobby' ? (
-				<Lobby s={s} net={net} openRules={openRules} />
+				<Lobby
+					s={s}
+					net={net}
+					copy={copy}
+					share={share}
+					leave={() => setLeaving(true)}
+					openRules={openRules}
+				/>
 			) : (
-				<Game s={s} net={net} openRules={openRules} />
+				<Game
+					s={s}
+					net={net}
+					toast={toast}
+					openRules={openRules}
+					onLeave={() => setLeaving(true)}
+				/>
 			)}
 			{rules && <Rules close={() => setRules(false)} />}
-			{err && <div className='toast'>{tr(t, err)}</div>}
+			{leaving && (
+				<LeaveDialog
+					mode={sess.current ? sess.current.mode : 'solo'}
+					phase={s ? s.phase : 'lobby'}
+					onYes={doLeave}
+					onNo={() => setLeaving(false)}
+				/>
+			)}
+			<Toasts list={toasts} t={t} />
 		</LangCtx.Provider>
 	)
 }

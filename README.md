@@ -29,3 +29,12 @@ English and Spanish (auto-detected from the browser, switch with the button on e
 
 ## Turn alerts
 A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibration) when it becomes your turn; the tab title also shows "● Your turn" while the tab is in the background. Toggle with the 🔔 / 📳 buttons in the top bar. iPhones in silent mode mute web audio.
+
+## Reconnecting, leaving and resuming
+- A dropped connection reconnects automatically (a banner shows while it does) and players get their seat back.
+- The current room is remembered in the browser: after a refresh or reopened tab the game resumes on its own; if it can't, a "Resume your game" card appears on the home screen.
+- A host who refreshes resumes the same room (same code) from a snapshot stored in that browser; guests rejoin automatically.
+- Menu > Leave room: guests mid-game hand their seat to a bot (they can reclaim it by rejoining); the host ends the game for everyone.
+
+## Turn timer
+A bar drains across the top of the table (green, amber at 20 s, red at 10 s). In the last 10 s the active player gets one soft chime, a gentle pulse on End turn, a large countdown and a short vibration; optional quiet ticks are in the menu. The host enforces the timer, so an offline player can't stall the game.

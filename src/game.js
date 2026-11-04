@@ -81,14 +81,15 @@ export function analyze(ids) {
 }
 
 export class Game {
-	constructor() {
-		this.s = {
+	constructor(s) {
+		this.s = s || {
 			phase: 'lobby',
 			players: [],
 			board: [],
 			pool: [],
 			turn: 0,
 			seq: 0,
+			t0: 0,
 			passes: 0,
 			log: '',
 			opts: { timer: true },
@@ -103,6 +104,10 @@ export class Game {
 			p = s.players.find(p => p.id === tok)
 		if (p) {
 			if (name) p.name = name
+			if (p.left) {
+				p.left = false
+				p.bot = false
+			}
 			return true
 		}
 		if (s.phase !== 'lobby' || s.players.length >= 4) return false
@@ -113,7 +118,7 @@ export class Game {
 	}
 	online(tok, b) {
 		const p = this.s.players.find(p => p.id === tok)
-		if (p) p.on = b
+		if (p && !p.bot) p.on = b
 	}
 	view(tok) {
 		const s = this.s,
@@ -139,6 +144,10 @@ export class Game {
 			result: s.result,
 			me,
 			rack: me >= 0 ? s.players[me].rack : [],
+			tl:
+				s.phase === 'play' && s.opts.timer
+					? Math.max(0, 60000 - (Date.now() - (s.t0 || 0)))
+					: null,
 		}
 	}
 	deal() {
@@ -153,11 +162,11 @@ export class Game {
 		s.turn = s.games % s.players.length
 		s.phase = 'play'
 		s.passes = 0
-		s.seq++
+		this.bump()
 		s.result = null
 		s.log = E('l.starts', { name: s.players[s.turn].name })
 	}
-	draw(i, k) {
+	draw(i, k, late) {
 		const s = this.s,
 			p = s.players[i]
 		let n = 0
@@ -166,9 +175,11 @@ export class Game {
 			n++
 		}
 		s.passes = n ? 0 : s.passes + 1
-		s.log = n
-			? E('l.drew', { name: p.name, n })
-			: E('l.passed', { name: p.name })
+		s.log = !n
+			? E('l.passed', { name: p.name })
+			: late
+				? E('l.timeout', { name: p.name, n, id: p.id })
+				: E('l.drew', { name: p.name, n })
 		this.next()
 	}
 	next() {
@@ -178,7 +189,7 @@ export class Game {
 			return this.finish(v.indexOf(Math.min(...v)))
 		}
 		s.turn = (s.turn + 1) % s.players.length
-		s.seq++
+		this.bump()
 	}
 	finish(w) {
 		const s = this.s,
@@ -197,10 +208,21 @@ export class Game {
 		s.wins[s.players[w].id]++
 		s.games++
 		s.phase = 'over'
-		s.seq++
+		this.bump()
 		s.result = { winner: w, delta: d, blocked: wv > 0 }
 		s.log = E('l.over')
 	}
+	bump() {
+		this.s.seq++
+		this.s.t0 = Date.now()
+	} // new turn: restart the clock
+	resume(hostTok) {
+		const s = this.s
+		s.t0 = Date.now()
+		s.players.forEach(p => {
+			if (!p.bot) p.on = p.id === hostTok
+		})
+	} // host came back: guests must rejoin
 	botDue() {
 		const s = this.s
 		return s.phase === 'play' && !!s.players[s.turn].bot
@@ -222,6 +244,21 @@ export class Game {
 		if (!p) return E('e.notIn')
 		if (m.t === 'opts') {
 			if (i === 0 && s.phase === 'lobby') s.opts.timer = !!m.timer
+			return
+		}
+		if (m.t === 'leave') {
+			// lobby: seat is freed; in a game a bot takes the seat (the player can reclaim it by rejoining)
+			if (s.phase === 'lobby') {
+				if (i > 0) {
+					s.players.splice(i, 1)
+					delete s.scores[tok]
+					delete s.wins[tok]
+				}
+			} else {
+				p.bot = true
+				p.left = true
+				p.on = true
+			}
 			return
 		}
 		if (m.t === 'bot') {
@@ -260,7 +297,7 @@ export class Game {
 		}
 		if (s.phase !== 'play' || i !== s.turn) return E('e.notTurn')
 		if (m.t === 'draw') return this.draw(i, 1)
-		if (m.t === 'timeout') return this.draw(i, m.dirty ? 3 : 1)
+		if (m.t === 'timeout') return this.draw(i, m.dirty ? 3 : 1, true)
 		if (m.t !== 'end') return
 		const { board, rack } = m
 		if (

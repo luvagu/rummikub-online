@@ -1,5 +1,5 @@
 // Online play through a free public MQTT relay (over WebSockets). No WebRTC, so no NAT/firewall
-// trouble. The host's browser is still the authoritative game server; guests talk to it via the relay.
+// trouble. The host's browser is the authoritative game server; guests talk to it via the relay.
 // Room code = 1 letter (which relay) + 4 random characters.
 import * as M from 'mqtt'
 import { Game } from './game.js'
@@ -19,7 +19,8 @@ const BROKERS = [
 const LET = 'ABCDEFGH',
 	AL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
 	ROOT = 'rmkb7/'
-const NOBROKER = { k: 'e.nobroker' }
+const NOBROKER = { k: 'e.nobroker' },
+	J = JSON.stringify
 
 const open = (url, will) =>
 	new Promise((res, rej) => {
@@ -45,33 +46,67 @@ const open = (url, will) =>
 			rej(e)
 		})
 	})
-const J = o => JSON.stringify(o)
-// Lets bots take their turns (after a short "thinking" delay) whenever it becomes their turn.
-const botRunner = (game, push) => {
-	let bt = 0
+
+// Host-side clock work: lets bots take their turns after a short "thinking" delay, and enforces the
+// turn timer even if the player's own browser is gone (client sends the precise timeout first; this is the fallback).
+const runner = (game, push) => {
+	let bt = 0,
+		tt = 0,
+		seq = -1
 	return () => {
+		const s = game.s
 		if (!bt && game.botDue())
 			bt = setTimeout(() => {
 				bt = 0
 				game.botPlay()
 				push()
 			}, 1100)
+		if (s.phase !== 'play' || !s.opts.timer) {
+			clearTimeout(tt)
+			seq = -1
+			return
+		}
+		if (s.seq !== seq) {
+			seq = s.seq
+			clearTimeout(tt)
+			tt = setTimeout(() => {
+				const g = game.s,
+					p = g.players[g.turn]
+				if (g.seq === seq && g.phase === 'play' && !p.bot) {
+					game.act(p.id, { t: 'timeout', dirty: false })
+					push()
+				}
+			}, 63000)
+		}
 	}
 }
 
-export function hostGame(name, { onState, onErr }, tok = TOK) {
-	const game = new Game(),
+export function hostGame(
+	name,
+	{ onState, onErr, onConn = () => {} },
+	tok = TOK,
+	resume,
+) {
+	const game = new Game(resume && resume.s),
 		api = { code: '' }
 	let c,
 		base,
 		dead = 0
+	if (resume) game.resume(tok)
 	const out = (t, o) =>
 		c && c.connected && c.publish(`${base}/to/${t}`, J(o), { qos: 1 })
-	const sched = botRunner(game, () => push())
+	const sched = runner(game, () => push())
+	const save = () => {
+		if (dead) return
+		try {
+			localStorage.rmkHost = J({ code: api.code, s: game.s })
+		} catch (e) {}
+	}
 	const push = () => {
 		game.s.players.forEach(p => {
 			if (!p.bot && p.id !== tok) out(p.id, { t: 'state', s: game.view(p.id) })
 		})
+		save()
 		onState(game.view(tok))
 		sched()
 	}
@@ -89,14 +124,34 @@ export function hostGame(name, { onState, onErr }, tok = TOK) {
 			setTimeout(() => c.end(true), 200)
 		}
 	}
+	// End the room for everyone (explicit "leave" by the host). A plain refresh/close does NOT do this, so the host can resume.
+	api.endRoom = () => {
+		dead = 1
+		try {
+			localStorage.removeItem('rmkHost')
+		} catch (e) {}
+		if (c) {
+			game.s.players.forEach(p => {
+				if (!p.bot && p.id !== tok)
+					out(p.id, { t: 'err', msg: { k: 'e.closed' }, fatal: true })
+			})
+			status(false)
+			setTimeout(() => c.end(true), 300)
+		}
+	}
 	;(async () => {
-		for (let i = 0; i < BROKERS.length && !c; i++) {
-			const code =
-				LET[i] +
-				Array.from(
-					{ length: 4 },
-					() => AL[(Math.random() * AL.length) | 0],
-				).join('')
+		const tries = resume
+			? [[LET.indexOf(resume.code[0]), resume.code]]
+			: BROKERS.map((_, i) => [
+					i,
+					LET[i] +
+						Array.from(
+							{ length: 4 },
+							() => AL[(Math.random() * AL.length) | 0],
+						).join(''),
+				])
+		for (const [i, code] of tries) {
+			if (c || !BROKERS[i]) continue
 			try {
 				c = await open(BROKERS[i], {
 					topic: `${ROOT}${code}/host`,
@@ -113,7 +168,11 @@ export function hostGame(name, { onState, onErr }, tok = TOK) {
 			c.end(true)
 			return
 		}
-		c.on('connect', () => status(true)) // after an automatic reconnect
+		c.on('connect', () => {
+			status(true)
+			onConn(true)
+		}) // after an automatic reconnect
+		c.on('close', () => onConn(false))
 		c.on('message', (_, buf) => {
 			let d
 			try {
@@ -149,7 +208,12 @@ export function hostGame(name, { onState, onErr }, tok = TOK) {
 	return api
 }
 
-export function joinGame(code, name, { onState, onErr }, tok = TOK) {
+export function joinGame(
+	code,
+	name,
+	{ onState, onErr, onConn = () => {} },
+	tok = TOK,
+) {
 	code = code.trim().toUpperCase()
 	const idx = LET.indexOf(code[0]),
 		base = ROOT + code,
@@ -195,7 +259,11 @@ export function joinGame(code, name, { onState, onErr }, tok = TOK) {
 				return
 			}
 			const hello = () => pub({ t: 'join', name })
-			c.on('connect', hello) // after an automatic reconnect
+			c.on('connect', () => {
+				onConn(true)
+				hello()
+			}) // after an automatic reconnect: take the seat back
+			c.on('close', () => onConn(false))
 			c.on('message', (topic, buf) => {
 				let d
 				try {
@@ -230,23 +298,28 @@ export function joinGame(code, name, { onState, onErr }, tok = TOK) {
 	return api
 }
 
-// Solo game against a bot: no network at all.
-export function localGame(name, { onState, onErr }) {
-	const game = new Game(),
-		sched = botRunner(game, () => push())
+// Solo game against a bot: no network at all. The game is snapshotted so a closed tab can resume it.
+export function localGame(name, { onState, onErr }, tok = TOK, resume) {
+	const game = new Game(resume && resume.s),
+		sched = runner(game, () => push())
 	const push = () => {
-		onState(game.view(TOK))
+		try {
+			localStorage.rmkSolo = J({ s: game.s })
+		} catch (e) {}
+		onState(game.view(tok))
 		sched()
 	}
-	game.s.opts.timer = false
-	game.join(TOK, name)
-	game.act(TOK, { t: 'bot' })
-	game.act(TOK, { t: 'start' })
+	if (!resume) {
+		game.s.opts.timer = false
+		game.join(tok, name)
+		game.act(tok, { t: 'bot' })
+		game.act(tok, { t: 'start' })
+	}
 	push()
 	return {
 		code: 'SOLO',
 		send: m => {
-			const e = game.act(TOK, m)
+			const e = game.act(tok, m)
 			if (e) onErr(e)
 			push()
 		},

@@ -1,5 +1,6 @@
 import { useContext } from 'react'
 import { LangCtx, useT } from './i18n.js'
+import { Modal } from './ui.jsx'
 const R = {
 	en: {
 		h: 'Rummikub rules',
@@ -34,15 +35,16 @@ const R = {
 			],
 			[
 				'Timer.',
-				'Optional, 1 minute per turn. If time runs out you draw one tile, or three if your move was unfinished.',
+				'Optional, 1 minute per turn. A soft chime and a draining bar warn you in the last 10 seconds. If time runs out you draw one tile, or three if your move was unfinished.',
 			],
 		],
 		c: 'Controls in this game',
 		ctl: [
 			'Tap tiles to select them (several at once). They can be in your rack or on the table.',
-			'Tap ＋ New set to start a set with them, or ＋ at the end of a set to add them to it.',
-			'↩ Rack returns selected tiles you brought from your rack. ⟲ Undo resets your turn.',
+			'Tap New set to start a set with them, or the + at the end of a set to add them to it.',
+			'To rack returns selected tiles you brought from your rack. Undo resets your turn.',
 			'Sets with a red outline are not valid yet. End turn unlocks when everything is valid.',
+			'The small shape on each tile (circle, triangle, square, diamond) shows its colour, for colour-blind players.',
 		],
 		pdf: 'Open the original rules PDF',
 	},
@@ -79,15 +81,16 @@ const R = {
 			],
 			[
 				'Temporizador.',
-				'Opcional, 1 minuto por turno. Si se acaba el tiempo robas una ficha, o tres si tu jugada estaba sin terminar.',
+				'Opcional, 1 minuto por turno. Un sonido suave y una barra que se vacía te avisan en los últimos 10 segundos. Si se acaba el tiempo robas una ficha, o tres si tu jugada estaba sin terminar.',
 			],
 		],
 		c: 'Controles en este juego',
 		ctl: [
 			'Toca fichas para seleccionarlas (varias a la vez). Pueden estar en tu atril o en la mesa.',
-			'Toca ＋ Nueva combinación para formar una con ellas, o ＋ al final de una combinación para añadirlas.',
-			'↩ Atril devuelve las fichas seleccionadas que sacaste de tu atril. ⟲ Deshacer reinicia tu turno.',
+			'Toca Nueva combinación para formar una con ellas, o el + al final de una combinación para añadirlas.',
+			'Al atril devuelve las fichas seleccionadas que sacaste de tu atril. Deshacer reinicia tu turno.',
 			'Las combinaciones con borde rojo aún no son válidas. Terminar turno se activa cuando todo es válido.',
+			'La pequeña forma en cada ficha (círculo, triángulo, cuadrado, rombo) indica su color, para jugadores daltónicos.',
 		],
 		pdf: 'Abrir el PDF original de las reglas (en inglés)',
 	},
@@ -97,27 +100,25 @@ export default function Rules({ close }) {
 		t = useT(),
 		r = R[lang] || R.en
 	return (
-		<div className='modal' onClick={close}>
-			<div className='card' onClick={e => e.stopPropagation()}>
-				<h2>{r.h}</h2>
-				{r.items.map(([h, b]) => (
-					<p key={h}>
-						<b>{h}</b> {b}
-					</p>
-				))}
-				<h3>{r.c}</h3>
-				<ul>
-					{r.ctl.map(x => (
-						<li key={x}>{x}</li>
-					))}
-				</ul>
-				<p>
-					<a href='./rules.pdf' target='_blank' rel='noreferrer'>
-						{r.pdf}
-					</a>
+		<Modal title={r.h} onClose={close}>
+			<h2>{r.h}</h2>
+			{r.items.map(([h, b]) => (
+				<p key={h}>
+					<b>{h}</b> {b}
 				</p>
-				<button onClick={close}>{t('close')}</button>
-			</div>
-		</div>
+			))}
+			<h3>{r.c}</h3>
+			<ul>
+				{r.ctl.map(x => (
+					<li key={x}>{x}</li>
+				))}
+			</ul>
+			<p>
+				<a href='./rules.pdf' target='_blank' rel='noreferrer'>
+					{r.pdf}
+				</a>
+			</p>
+			<button onClick={close}>{t('close')}</button>
+		</Modal>
 	)
 }
