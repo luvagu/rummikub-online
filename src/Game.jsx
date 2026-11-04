@@ -38,22 +38,46 @@ import {
 } from './notify.js'
 import { Tile, Avatar, Modal } from './ui.jsx'
 
+const CMP = {
+	num: (x, y) => x.n - y.n || x.c - y.c,
+	col: (x, y) => x.c - y.c || x.n - y.n,
+}
+const orderRack = (r, m) =>
+	m
+		? [...r].sort((a, b) => {
+				const x = T(a),
+					y = T(b)
+				return (x.j ? 1 : 0) - (y.j ? 1 : 0) || CMP[m](x, y)
+			})
+		: r // jokers last
+const loadSort = () => {
+	try {
+		return localStorage.rmkSort || null
+	} catch (e) {
+		return null
+	}
+}
+
 export default function Game({ s, net, toast, openRules, onLeave }) {
 	const t = useT(),
 		{ lang, setLang } = useContext(LangCtx),
 		me = s.me,
 		my = s.phase === 'play' && s.turn === me
-	const [d, setD] = useState({ b: s.board, r: s.rack }),
+	const [d, setD] = useState(() => ({
+			b: s.board,
+			r: orderRack(s.rack, loadSort()),
+		})),
 		[sel, setSel] = useState([]),
-		[menu, setMenu] = useState(false)
+		[menu, setMenu] = useState(false),
+		[sm, setSm] = useState(loadSort)
 	const [pf, setPf] = useState(getPrefs),
 		[now, setNow] = useState(Date.now())
 	const dirty = useRef(false)
 	dirty.current = d.r.length !== s.rack.length
 	useEffect(() => {
-		setD({ b: s.board, r: s.rack })
+		setD({ b: s.board, r: orderRack(s.rack, sm) })
 		setSel([])
-	}, [s.seq, s.phase])
+	}, [s.seq, s.phase]) // new turn / draw: keep the chosen sort
 
 	// ---- turn timer: host sends the time left; we count down locally from the moment each state arrives ----
 	const dl = useMemo(() => (s.tl == null ? null : Date.now() + s.tl), [s])
@@ -162,27 +186,22 @@ export default function Game({ s, net, toast, openRules, onLeave }) {
 		const bk = sel.filter(i => s.rack.includes(i) && !d.r.includes(i))
 		setD({
 			b: norm(d.b.map(x => x.filter(i => !bk.includes(i)))),
-			r: [...d.r, ...bk],
+			r: orderRack([...d.r, ...bk], sm),
 		})
 		setSel([])
 	}
 	const reset = () => {
-		setD({ b: s.board, r: s.rack })
+		setD({ b: s.board, r: orderRack(s.rack, sm) })
 		setSel([])
 	}
-	const sortR = byColor =>
-		setD({
-			...d,
-			r: [...d.r].sort((a, b) => {
-				const x = T(a),
-					y = T(b),
-					jx = x.j ? 1 : 0,
-					jy = y.j ? 1 : 0
-				return (
-					jx - jy || (byColor ? x.c - y.c || x.n - y.n : x.n - y.n || x.c - y.c)
-				)
-			}),
-		})
+	const setSort = m => {
+		const v = sm === m ? null : m
+		setSm(v) // tap the active option again to go back to manual order
+		try {
+			v ? (localStorage.rmkSort = v) : localStorage.removeItem('rmkSort')
+		} catch (e) {}
+		setD(x => ({ ...x, r: orderRack(x.r, v) }))
+	}
 
 	const info = d.b.map(analyze),
 		oldK = new Set(s.board.map(key))
@@ -396,14 +415,16 @@ export default function Game({ s, net, toast, openRules, onLeave }) {
 					<button
 						aria-label={t('sort123')}
 						title={t('sort123')}
-						onClick={() => sortR(false)}
+						aria-pressed={sm === 'num'}
+						onClick={() => setSort('num')}
 					>
 						<ArrowDown01 size={18} />
 					</button>
 					<button
 						aria-label={t('sortCol')}
 						title={t('sortCol')}
-						onClick={() => sortR(true)}
+						aria-pressed={sm === 'col'}
+						onClick={() => setSort('col')}
 					>
 						<Palette size={18} />
 					</button>

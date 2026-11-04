@@ -2,7 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import { hostGame, joinGame, localGame, TOK } from './net.js'
 import { LangCtx, fmt, guessLang } from './i18n.js'
-import { saveSess, loadSess, loadSnap, clearSess } from './session.js'
+import {
+	saveSess,
+	loadSess,
+	loadSnap,
+	clearSess,
+	loadNames,
+	rememberName,
+	forgetName,
+} from './session.js'
 import { Toasts, Modal } from './ui.jsx'
 import { Home, Lobby } from './screens.jsx'
 import Game from './Game.jsx'
@@ -78,7 +86,14 @@ export default function App() {
 	const [code, setCode] = useState(() =>
 		/^[A-Z0-9]{5}$/.test(hash0.current) ? hash0.current : '',
 	)
-	const [nameErr, setNameErr] = useState(false)
+	const [nameErr, setNameErr] = useState(false),
+		[names, setNames] = useState(loadNames)
+	// Arrived through an invite link (and not auto-resuming that same room): show the minimal join screen
+	const [invite, setInvite] = useState(
+		() =>
+			/^[A-Z0-9]{5}$/.test(hash0.current) &&
+			!(saved && saved.code === hash0.current),
+	)
 	const sess = useRef(null),
 		netRef = useRef(null)
 
@@ -103,6 +118,8 @@ export default function App() {
 			return
 		}
 		setNameErr(false)
+		rememberName(nm)
+		setNames(loadNames())
 		const tok = o.tok || TOK,
 			cd = mode === 'join' ? o.code || code : ''
 		try {
@@ -187,6 +204,7 @@ export default function App() {
 		setCode('')
 		history.replaceState(null, '', location.pathname + location.search)
 		hash0.current = ''
+		setInvite(false)
 		toast({ k: 'n.youLeft' }, 'info')
 	}
 
@@ -267,6 +285,12 @@ export default function App() {
 			.catch(() => {})
 	const openRules = () => setRules(true),
 		inRoom = !!(s && net)
+	const backFromInvite = () => {
+		setInvite(false)
+		setCode('')
+		hash0.current = ''
+		history.replaceState(null, '', location.pathname + location.search)
+	}
 
 	return (
 		<LangCtx.Provider value={{ lang, setLang }}>
@@ -282,6 +306,7 @@ export default function App() {
 						name,
 						setName,
 						nameErr,
+						names,
 						code,
 						setCode,
 						start,
@@ -289,8 +314,13 @@ export default function App() {
 						cancel,
 						saved,
 						openRules,
+						invite,
 					}}
-					invited={!!hash0.current && code === hash0.current}
+					onForgetName={n => {
+						forgetName(n)
+						setNames(loadNames())
+					}}
+					onBack={backFromInvite}
 					onResume={resumeSaved}
 					onForget={() => forget(saved.mode)}
 				/>

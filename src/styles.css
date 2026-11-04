@@ -965,3 +965,48 @@ button.pulse {
 		transition: none !important;
 	}
 }
+
+/* sort toggle (selected state), name chips, minimal invite screen */
+.seg button[aria-pressed='true'] {
+	background: linear-gradient(#ffc233, #ffb300);
+	color: #2a1d00;
+	border-color: #e69f00;
+}
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 2px;
+}
+.nchip {
+	display: inline-flex;
+	border-radius: 99px;
+	background: #ffffff1f;
+	border: 1px solid #ffffff2a;
+	overflow: hidden;
+}
+.nchip button {
+	border: 0;
+	border-radius: 0;
+	background: none;
+	padding: 5px 10px;
+	font-size: 13px;
+	font-weight: 500;
+}
+.nchip button:last-child {
+	padding: 5px 9px 5px 3px;
+	opacity: 0.7;
+}
+.joinrow button {
+	white-space: nowrap;
+	flex: none;
+}
+.codechip.small {
+	padding: 4px 22px;
+}
+.codechip.small .codetxt {
+	font-size: clamp(28px, 8vw, 36px);
+}
+.panel .link {
+	align-self: center;
+}

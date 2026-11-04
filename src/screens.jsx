@@ -16,15 +16,69 @@ import {
 	X,
 	Plus,
 	History,
+	ArrowLeft,
 } from 'lucide-react'
 import { COLORS } from './game.js'
 import { useT } from './i18n.js'
 import { Avatar, LangBtn, Modal } from './ui.jsx'
 
+const Logo = () => (
+	<div className='logo' aria-label='Rummikub'>
+		{'RUMMIKUB'.split('').map((c, i) => (
+			<span
+				key={i}
+				className='ltile'
+				style={{ color: COLORS[i % 4], '--i': i }}
+			>
+				{c}
+			</span>
+		))}
+	</div>
+)
+
+function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
+	const t = useT(),
+		recent = names.filter(n => n !== name.trim())
+	return (
+		<div className='field'>
+			<label htmlFor='rmk-name'>{t('name')}</label>
+			<input
+				id='rmk-name'
+				className={nameErr ? 'err' : ''}
+				value={name}
+				maxLength={16}
+				autoComplete='nickname'
+				aria-invalid={nameErr}
+				onChange={e => setName(e.target.value)}
+				onKeyDown={e => e.key === 'Enter' && onEnter && onEnter()}
+			/>
+			{nameErr && <small className='errtxt'>{t('needName')}</small>}
+			{recent.length > 0 && (
+				<div className='chips' role='group' aria-label={t('recent')}>
+					{recent.map(n => (
+						<span key={n} className='nchip'>
+							<button onClick={() => setName(n)}>{n}</button>
+							<button
+								aria-label={t('rmName', { name: n })}
+								title={t('rmName', { name: n })}
+								onClick={() => onForgetName(n)}
+							>
+								<X size={12} />
+							</button>
+						</span>
+					))}
+				</div>
+			)}
+		</div>
+	)
+}
+
 export function Home({
 	name,
 	setName,
 	nameErr,
+	names,
+	onForgetName,
 	code,
 	setCode,
 	start,
@@ -33,24 +87,55 @@ export function Home({
 	saved,
 	onResume,
 	onForget,
-	invited,
+	invite,
+	onBack,
 	openRules,
 }) {
-	const t = useT()
+	const t = useT(),
+		nf = { name, setName, nameErr, names, onForgetName }
+	const busyModal = busy && (
+		<Modal title={t('connecting')}>
+			<div className='center'>
+				<LoaderCircle className='spin' size={34} />
+				<p>{t('busy.' + busy)}</p>
+				<button data-autofocus onClick={cancel}>
+					{t('cancel')}
+				</button>
+			</div>
+		</Modal>
+	)
+	if (invite)
+		return (
+			<main className='home'>
+				<LangBtn />
+				<Logo />
+				<p className='sub'>{t('invited', { code })}</p>
+				<div className='codechip small'>
+					<span className='codetxt' aria-label={code}>
+						{code}
+					</span>
+				</div>
+				<div className='panel'>
+					<NameField {...nf} onEnter={() => start('join')} />
+					<button className='primary big' onClick={() => start('join')}>
+						{t('join')}
+					</button>
+					<button className='link' onClick={onBack}>
+						<ArrowLeft size={16} />
+						{t('backStart')}
+					</button>
+				</div>
+				<button className='link' onClick={openRules}>
+					<BookOpen size={16} />
+					{t('readRules')}
+				</button>
+				{busyModal}
+			</main>
+		)
 	return (
 		<main className='home'>
 			<LangBtn />
-			<div className='logo' aria-label='Rummikub'>
-				{'RUMMIKUB'.split('').map((c, i) => (
-					<span
-						key={i}
-						className='ltile'
-						style={{ color: COLORS[i % 4], '--i': i }}
-					>
-						{c}
-					</span>
-				))}
-			</div>
+			<Logo />
 			<p className='sub'>{t('sub')}</p>
 			{saved && (
 				<section className='resume'>
@@ -75,18 +160,7 @@ export function Home({
 				</section>
 			)}
 			<div className='panel'>
-				<label className='field'>
-					<span>{t('name')}</span>
-					<input
-						className={nameErr ? 'err' : ''}
-						value={name}
-						maxLength={16}
-						autoComplete='nickname'
-						aria-invalid={nameErr}
-						onChange={e => setName(e.target.value)}
-					/>
-					{nameErr && <small className='errtxt'>{t('needName')}</small>}
-				</label>
+				<NameField {...nf} />
 				<button className='opt primary' onClick={() => start('solo')}>
 					<Bot size={26} />
 					<span>
@@ -103,11 +177,11 @@ export function Home({
 					</span>
 					<ChevronRight />
 				</button>
-				<div className={'opt join' + (invited ? ' invited' : '')}>
+				<div className='opt join'>
 					<KeyRound size={26} />
 					<span>
 						<b>{t('joinT')}</b>
-						<small>{invited ? t('invited', { code }) : t('joinD')}</small>
+						<small>{t('joinD')}</small>
 					</span>
 					<div className='joinrow'>
 						<input
@@ -139,17 +213,7 @@ export function Home({
 				<BookOpen size={16} />
 				{t('readRules')}
 			</button>
-			{busy && (
-				<Modal title={t('connecting')}>
-					<div className='center'>
-						<LoaderCircle className='spin' size={34} />
-						<p>{t('busy.' + busy)}</p>
-						<button data-autofocus onClick={cancel}>
-							{t('cancel')}
-						</button>
-					</div>
-				</Modal>
-			)}
+			{busyModal}
 		</main>
 	)
 }
