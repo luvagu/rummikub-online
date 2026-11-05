@@ -140,7 +140,7 @@ export default function Game({s,net,toast,reacts,openRules,onLeave}){
 
   return <div className={'game'+(dnd?' dnd':'')}>
     {Object.entries(bub).map(([id,b])=>{const r=REACTIONS.find(x=>x.k===b.k);
-      return r&&<div key={b.id} className="rbub" aria-hidden="true" style={{left:Math.min(Math.max(b.x,66),window.innerWidth-66),top:b.y+4}}><span className={'rx rx-'+r.a}>{r.e}</span><small>{((s.players.find(p=>p.id===id)||{}).name||'')+': '+t('r.'+r.k)}</small></div>})}
+      return r&&<div key={b.id} className="rbub" aria-hidden="true" style={{left:Math.min(Math.max(b.x,100),window.innerWidth-100),top:b.y-6}}><span className={'rx rx-'+r.a}>{r.e}</span><small>{((s.players.find(p=>p.id===id)||{}).name||'')+': '+t('r.'+r.k)}</small></div>})}
     <div className="sr" aria-live="polite">{Object.entries(bub).map(([id,b])=>((s.players.find(p=>p.id===id)||{}).name||'')+': '+t('r.'+b.k)).join('. ')}</div>
     <header className="top">
       <div className="seats" ref={seatsRef}>{s.players.map((p,i)=><div key={p.id} data-pid={p.id} className={'seat'+(i===s.turn&&s.phase==='play'?' act':'')+(p.on===false?' off':'')}>

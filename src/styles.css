@@ -1742,3 +1742,75 @@ button,
 		height: 16px;
 	}
 }
+
+/* ---- pre-release audit fixes ---- */
+.rbub {
+	flex-direction: row;
+	gap: 6px;
+	padding: 3px 12px 3px 8px;
+	border-radius: 999px;
+	background: #000000c4;
+	box-shadow: 0 6px 16px #0006;
+	animation: rbub 2.6s ease-out both;
+}
+.rbub .rx {
+	font-size: 26px;
+	filter: none;
+}
+.rbub small {
+	padding: 0;
+	background: none;
+	animation: none;
+	font-size: 13px;
+}
+@keyframes rbub {
+	0% {
+		opacity: 0;
+		transform: translateY(-6px) scale(0.85);
+	}
+	8% {
+		opacity: 1;
+		transform: none;
+	}
+	80% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+.seat .av {
+	margin-right: 5px; /* the rack-count badge overhangs the avatar; keep it off the score text */
+}
+button.primary:disabled {
+	background: #ffffff26;
+	color: #ffffffb3;
+	border-color: #ffffff2e;
+	box-shadow: none;
+	opacity: 1; /* reads as "disabled", not as a muddy half-transparent gold */
+}
+@media (max-width: 520px) {
+	.seats {
+		-webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+		mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+	}
+	.meld {
+		display: none; /* the "0/30" text already says it; frees the row for the log */
+	}
+	.status .log {
+		white-space: normal;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		line-height: 1.25;
+	}
+}
+@media (max-width: 420px) {
+	.lvlbtn {
+		padding: 8px 9px;
+		gap: 4px;
+	}
+	.lvlbtn > svg:first-child {
+		display: none;
+	}
+}
