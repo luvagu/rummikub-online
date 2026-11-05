@@ -3,21 +3,37 @@ import { X, CircleCheck, TriangleAlert, Info, Languages } from 'lucide-react'
 import { COLORS, T } from './game.js'
 import { useT, tr, LangCtx } from './i18n.js'
 
-export const Tile = ({ id, sel, num, onClick }) => {
+export const Tile = ({ id, sel, num, fresh, placed, ghost, dnd, onClick }) => {
 	const t = useT(),
 		x = T(id)
+	// Firefox never starts a native drag from a <button>, so while drag & drop is on the tile is a role=button div
+	const Tag = dnd ? 'div' : 'button',
+		kb = dnd
+			? {
+					role: 'button',
+					tabIndex: 0,
+					onKeyDown: e => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault()
+							onClick && onClick(e)
+						}
+					},
+				}
+			: null
 	return (
-		<button
-			className={'tile' + (sel ? ' sel' : '') + (x.j ? ' joker' : '')}
+		<Tag
+			{...kb}
+			className={'tile' + (sel ? ' sel' : '') + (fresh ? ' fresh' : '') + (placed ? ' placed' : '') + (ghost ? ' ghost' : '') + (x.j ? ' joker' : '')}
 			data-c={x.c}
 			style={{ '--tc': x.j ? '#7b1fa2' : COLORS[x.c] }}
 			aria-pressed={!!sel}
 			aria-label={x.j ? t('joker') : `${x.n} ${t('c' + x.c)}`}
 			onClick={onClick}
+			{...dnd}
 		>
 			<span className='n'>{x.j ? '☺' : x.n}</span>
 			{x.j ? num ? <small>{num}</small> : null : <i className='mk' />}
-		</button>
+		</Tag>
 	)
 }
 

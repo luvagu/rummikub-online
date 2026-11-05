@@ -12,6 +12,7 @@ export const getPrefs = () => ({
 	sound: true,
 	vibe: true,
 	ticks: false,
+	reacts: true,
 	...read(),
 })
 export const setPref = (k, v) => {
@@ -55,6 +56,9 @@ export const buzz = (p = [200, 100, 200]) => {
 	try {
 		if (canVibrate()) navigator.vibrate(p)
 	} catch (e) {}
+}
+export function reactPop() {
+	if (getPrefs().sound) tone(780, 0, 0.12, 0.07, 'triangle')
 }
 export function notifyTurn() {
 	const p = getPrefs()

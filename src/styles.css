@@ -574,6 +574,7 @@ button.opt.primary small {
 	padding: 0 12px;
 	border-radius: 99px;
 	background: #c62828;
+	pointer-events: none;
 	font: 800 20px/1.5 var(--disp);
 	box-shadow: 0 4px 14px #0007;
 	opacity: 0.9;
@@ -708,7 +709,7 @@ button.pulse {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 5px;
-	max-height: 32vh;
+	max-height: 32dvh;
 	overflow: auto;
 	align-items: center;
 	padding: 10px 10px 14px;
@@ -734,7 +735,7 @@ button.pulse {
 	font-size: calc(var(--tw) * 0.6);
 	line-height: 1;
 	gap: 0;
-	animation: pop 0.22s both;
+	animation: pop 0.22s backwards; /* not `both`: a held end-state would override .sel / .ghost */
 }
 .tile:hover:not(:disabled) {
 	background: linear-gradient(#fffdf6, #f1e7c4);
@@ -774,6 +775,34 @@ button.pulse {
 		0 0 0 3px var(--amber),
 		0 9px 12px #0005;
 }
+.tile.fresh {
+	z-index: 2;
+	outline: 3px solid var(--amber);
+	outline-offset: 1px;
+	animation: drawn 1.9s ease-out both;
+}
+.tile.fresh::after {
+	content: '+';
+	position: absolute;
+	top: -9px;
+	left: 50%;
+	translate: -50% 0;
+	min-width: 16px;
+	height: 16px;
+	border-radius: 8px;
+	background: var(--amber);
+	color: #222;
+	font: 800 12px/16px var(--font);
+	text-align: center;
+	animation: fadeout 1.9s ease-in both;
+}
+
+.tile.placed {
+	z-index: 2;
+	outline: 3px solid #4fc3f7;
+	outline-offset: 1px;
+	animation: placed 2.4s ease-out both;
+}
 
 /* ---- dialogs, toasts, banner ---- */
 .modal {
@@ -794,7 +823,7 @@ button.pulse {
 	border-radius: 20px;
 	padding: 22px;
 	width: min(560px, 100%);
-	max-height: 88vh;
+	max-height: 88dvh;
 	overflow: auto;
 	line-height: 1.5;
 	box-shadow: 0 20px 50px #0009;
@@ -872,7 +901,7 @@ button.pulse {
 }
 .toasts {
 	position: fixed;
-	top: calc(10px + env(safe-area-inset-top));
+	top: calc(70px + env(safe-area-inset-top)); /* below the header: never hide the seats / menu button */
 	left: 50%;
 	transform: translateX(-50%);
 	display: flex;
@@ -905,17 +934,16 @@ button.pulse {
 }
 .banner {
 	position: fixed;
-	top: 0;
+	top: calc(62px + env(safe-area-inset-top)); /* under the header so the menu stays usable while offline */
 	left: 0;
 	right: 0;
-	z-index: 70;
+	z-index: 29;
 	background: #e65100;
 	display: flex;
 	gap: 8px;
 	justify-content: center;
 	align-items: center;
 	padding: 6px 10px calc(6px);
-	padding-top: calc(6px + env(safe-area-inset-top));
 	font-size: 14px;
 	font-weight: 600;
 }
@@ -981,6 +1009,272 @@ button.pulse {
 	50% {
 		filter: brightness(1.12);
 		box-shadow: 0 0 0 7px #ffb30055;
+	}
+}
+/* ---- drag & drop (only rendered when .game.dnd: fine pointer + wide screen) ---- */
+.dnd .tile {
+	cursor: grab;
+}
+.tile.ghost {
+	opacity: 0.35;
+}
+.set.dropping,
+.rack.dropping {
+	outline: 2px dashed var(--amber);
+	outline-offset: 2px;
+	background-color: #ffb30022;
+}
+.board.dropping {
+	box-shadow: inset 0 0 0 2px #ffb300aa;
+}
+
+/* ---- reactions ---- */
+.rackbar {
+	position: relative;
+}
+.rwrap {
+	margin-left: auto;
+}
+.rackbar .rwrap button {
+	padding: 5px 12px;
+}
+.rpick {
+	position: absolute;
+	right: 10px; /* anchored to the rack bar, not the button: never clipped on narrow phones */
+	bottom: calc(100% + 8px);
+	z-index: 25;
+	width: 276px;
+	max-width: calc(100vw - 20px);
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 4px;
+	padding: 6px;
+	background: #12361a;
+	border: 1px solid #ffffff30;
+	border-radius: 14px;
+	box-shadow: 0 -10px 30px #0008;
+	animation: pop 0.15s both;
+}
+.rpick button {
+	flex-direction: column;
+	gap: 2px;
+	padding: 8px 4px;
+	background: none;
+	border: 0;
+	border-radius: 10px;
+}
+.rpick button:hover:not(:disabled) {
+	background: #ffffff1f;
+}
+.rpick button span {
+	font-size: 26px;
+	line-height: 1.1;
+}
+.rpick button small {
+	font-size: 11px;
+	font-weight: 600;
+	opacity: 0.85;
+}
+.rbub {
+	position: fixed;
+	z-index: 35;
+	translate: -50% 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	pointer-events: none;
+	animation: rin 0.25s ease-out both;
+}
+.rbub .rx {
+	font-size: 44px;
+	line-height: 1;
+	filter: drop-shadow(0 4px 6px #0006);
+	animation-duration: 0.9s;
+	animation-iteration-count: 2;
+	animation-timing-function: ease-in-out;
+}
+.rbub small {
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: #000000b0;
+	color: #fff;
+	font: 700 12px var(--font);
+	white-space: nowrap;
+	animation: rout 2.6s both;
+}
+.rx-clap {
+	animation-name: rx-clap;
+}
+.rx-bounce {
+	animation-name: rx-bounce;
+}
+.rx-zoom {
+	animation-name: rx-zoom;
+}
+.rx-shake {
+	animation-name: rx-shake;
+}
+.rx-sway {
+	animation-name: rx-sway;
+}
+.rx-tilt {
+	animation-name: rx-tilt;
+}
+.rx-flip {
+	animation-name: rx-flip;
+}
+.rx-drop {
+	animation-name: rx-drop;
+}
+.rx-rumble {
+	animation-name: rx-rumble;
+}
+@keyframes rin {
+	from {
+		opacity: 0;
+		transform: translateY(-10px) scale(0.6);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+@keyframes rout {
+	0%,
+	80% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes rx-clap {
+	30% {
+		transform: scale(1.3) rotate(-12deg);
+	}
+	60% {
+		transform: scale(0.9) rotate(10deg);
+	}
+}
+@keyframes rx-bounce {
+	40% {
+		transform: translateY(-16px);
+	}
+	70% {
+		transform: translateY(2px);
+	}
+}
+@keyframes rx-zoom {
+	50% {
+		transform: scale(1.5);
+	}
+}
+@keyframes rx-shake {
+	20%,
+	60% {
+		transform: rotate(-14deg) translateY(-4px);
+	}
+	40%,
+	80% {
+		transform: rotate(14deg) translateY(-4px);
+	}
+}
+@keyframes rx-sway {
+	25% {
+		transform: translateX(-8px) rotate(-8deg);
+	}
+	75% {
+		transform: translateX(8px) rotate(8deg);
+	}
+}
+@keyframes rx-tilt {
+	50% {
+		transform: rotate(-20deg) scale(1.1);
+	}
+}
+@keyframes rx-flip {
+	50% {
+		transform: rotateY(180deg) scale(1.15);
+	}
+}
+@keyframes rx-drop {
+	40% {
+		transform: translateY(10px) scale(0.9);
+	}
+	70% {
+		transform: translateY(4px) scale(0.95);
+	}
+}
+@keyframes rx-rumble {
+	20% {
+		transform: translate(-4px, 2px) scale(1.1);
+	}
+	40% {
+		transform: translate(4px, -2px) scale(1.1);
+	}
+	60% {
+		transform: translate(-4px, -2px) scale(1.1);
+	}
+	80% {
+		transform: translate(4px, 2px) scale(1.1);
+	}
+}
+
+@keyframes drawn {
+	0% {
+		opacity: 0;
+		transform: translateY(-26px) scale(1.5);
+	}
+	22% {
+		opacity: 1;
+		transform: scale(1.12);
+	}
+	36%,
+	70% {
+		transform: scale(1);
+		filter: brightness(1.1);
+	}
+	53% {
+		transform: scale(1.1);
+		filter: brightness(1.25);
+	}
+	100% {
+		outline-color: transparent;
+		filter: none;
+	}
+}
+@keyframes placed {
+	0% {
+		transform: translateY(-18px) scale(1.3);
+		box-shadow: 0 0 0 0 #4fc3f7aa;
+	}
+	20% {
+		transform: scale(1.1);
+		box-shadow: 0 0 0 10px #4fc3f766;
+	}
+	40%,
+	100% {
+		transform: none;
+	}
+	60% {
+		box-shadow: 0 0 0 7px #4fc3f744;
+	}
+	100% {
+		outline-color: transparent;
+		box-shadow:
+			inset 0 1px 0 #fff,
+			0 3px 0 #b9a77a,
+			0 5px 8px #0003;
+	}
+}
+@keyframes fadeout {
+	0%,
+	70% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
 	}
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1102,11 +1396,11 @@ button.pulse {
 }
 .plus.badge {
 	position: absolute;
-	top: -15px;
+	top: -13px; /* straddles the set's top border instead of covering the tile below */
 	left: 50%;
 	transform: translateX(-50%);
-	width: 30px;
-	height: 30px;
+	width: 24px;
+	height: 24px;
 	padding: 0;
 	border-radius: 50%;
 	z-index: 2;
@@ -1116,7 +1410,11 @@ button.pulse {
 .plus.badge::after {
 	content: '';
 	position: absolute;
-	inset: -8px;
+	inset: -11px; /* keeps a ~46px tap area around the smaller circle */
+}
+.plus.badge svg {
+	width: 15px;
+	height: 15px;
 }
 .plus.badge:active:not(:disabled) {
 	transform: translateX(-50%) scale(0.94);
@@ -1257,4 +1555,190 @@ button.pulse {
 .lvlopts svg {
 	flex: none;
 	color: #1b5e20;
+}
+
+/* ---- audit fixes ---- */
+div.tile {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: grab;
+	user-select: none;
+	-webkit-user-select: none;
+}
+.tile:focus-visible {
+	outline: 3px solid #fff;
+	outline-offset: 3px;
+	box-shadow:
+		0 0 0 6px #000a,
+		0 3px 0 #b9a77a;
+}
+.card :focus-visible {
+	outline-color: #1b5e20;
+}
+.menu {
+	max-height: calc(100dvh - 84px);
+	overflow-y: auto;
+}
+button,
+.tile {
+	touch-action: manipulation;
+}
+.board.adding {
+	padding-bottom: 68px; /* room for the floating "New set" button */
+}
+@media (max-width: 520px) {
+	.set {
+		flex-wrap: wrap;
+		max-width: 100%;
+	}
+}
+@media (max-height: 480px) and (orientation: landscape) {
+	.rpick {
+		grid-template-columns: repeat(5, 1fr);
+		width: min(430px, calc(100vw - 20px));
+	}
+	.rpick button small {
+		display: none;
+	}
+	.toasts {
+		top: calc(56px + env(safe-area-inset-top));
+	}
+}
+
+/* ---- audit fixes: large screens, safe areas, touch ---- */
+@media (min-width: 1200px) {
+	:root {
+		--tw: 48px;
+	}
+}
+@media (min-width: 1800px) {
+	:root {
+		--tw: 58px;
+	}
+}
+@media (min-width: 900px) {
+	.status {
+		flex: 1 1 0; /* buttons share the row with the status instead of wrapping to a second line */
+	}
+}
+@media (max-height: 480px) and (orientation: landscape) {
+	.status {
+		flex: 1 1 0;
+	}
+	.board {
+		padding-top: 12px;
+		padding-bottom: 8px;
+	}
+	.rack {
+		max-height: 28dvh;
+	}
+}
+.top,
+.bar,
+.rackbar {
+	padding-left: max(10px, env(safe-area-inset-left));
+	padding-right: max(10px, env(safe-area-inset-right));
+}
+.board {
+	padding-left: max(12px, env(safe-area-inset-left));
+	padding-right: max(12px, env(safe-area-inset-right));
+	row-gap: 18px; /* the set's "+" badge overhangs the row above */
+}
+@media (pointer: coarse) {
+	button,
+	.icon {
+		min-height: 44px;
+	}
+	button.icon {
+		min-width: 44px;
+	}
+	.tile,
+	.plus.badge {
+		min-height: 0; /* fixed-size controls: the badge keeps its 30px circle (its ::after already gives a ~46px hit area) */
+		min-width: 0;
+	}
+}
+
+.status .log.why {
+	color: #ffd180;
+	opacity: 1;
+	font-weight: 600;
+}
+.set.bad::after {
+	content: '!'; /* not colour-only: invalid sets also carry a mark */
+	position: absolute;
+	top: -9px;
+	left: -7px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #ff5252;
+	color: #fff;
+	font: 800 12px/18px var(--font);
+	text-align: center;
+}
+
+/* compact primary actions on phones (kept last so it wins over the touch min-height rule) */
+@media (max-width: 520px) {
+	.plus.float {
+		min-height: 0;
+		padding: 7px 14px;
+		font-size: 14px;
+		gap: 6px;
+		bottom: 10px;
+	}
+	.plus.float svg {
+		width: 16px;
+		height: 16px;
+	}
+	.bar {
+		gap: 6px;
+		padding-top: 6px;
+		padding-bottom: 6px;
+	}
+	.bar button {
+		min-height: 38px;
+		padding: 6px 12px;
+		font-size: 14px;
+	}
+	.bar button.primary {
+		padding: 6px 14px;
+	}
+	.bar button svg {
+		width: 16px;
+		height: 16px;
+	}
+}
+
+/* smaller last-10-seconds countdown on phones (it floats over the board) */
+@media (max-width: 520px) {
+	.tnum {
+		top: 8px;
+		right: 8px;
+		min-width: 30px;
+		padding: 0 9px;
+		font-size: 15px;
+		line-height: 1.5;
+	}
+	.tnum.mine {
+		font-size: 22px;
+	}
+}
+
+/* compact rack toolbar (sort + react) on phones */
+@media (max-width: 520px) {
+	.rackbar {
+		padding-top: 6px;
+	}
+	.rackbar button,
+	.rackbar .seg button,
+	.rackbar .rwrap button {
+		min-height: 34px;
+		padding: 4px 10px;
+	}
+	.rackbar button svg {
+		width: 16px;
+		height: 16px;
+	}
 }
