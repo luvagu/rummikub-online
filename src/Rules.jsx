@@ -53,7 +53,7 @@ const R = {
 		items: [
 			[
 				'Objetivo.',
-				'Sé el primero en colocar todas las fichas de tu atril formando combinaciones.',
+				'Sé el primero en colocar todas las fichas de tu estante formando combinaciones.',
 			],
 			[
 				'Combinaciones.',
@@ -65,19 +65,19 @@ const R = {
 			],
 			[
 				'Primera jugada.',
-				'Debe sumar al menos 30 puntos usando solo fichas de tu propio atril. Un comodín vale lo que la ficha que sustituye. No puedes usar fichas que ya estén en la mesa hasta que hayas hecho tu primera jugada.',
+				'Debe sumar al menos 30 puntos usando solo fichas de tu propio estante. Un comodín vale lo que la ficha que sustituye. No puedes usar fichas que ya estén en la mesa hasta que hayas hecho tu primera jugada.',
 			],
 			[
 				'Tu turno.',
-				'Juega fichas de tu atril y/o reorganiza la mesa: añade a combinaciones, divide escaleras, toma la cuarta ficha de un grupo, une combinaciones. Al terminar, todas las combinaciones deben ser válidas y no puede quedar ninguna ficha suelta. Debes jugar al menos una ficha de tu atril o robar una del pozo (tu turno termina y no puedes jugar esa ficha hasta tu próximo turno).',
+				'Juega fichas de tu estante y/o reorganiza la mesa: añade a combinaciones, divide escaleras, toma la cuarta ficha de un grupo, une combinaciones. Al terminar, todas las combinaciones deben ser válidas y no puede quedar ninguna ficha suelta. Debes jugar al menos una ficha de tu estante o robar una del pozo (tu turno termina y no puedes jugar esa ficha hasta tu próximo turno).',
 			],
 			[
 				'Comodines.',
-				'Un comodín puede ser cualquier ficha. Tras tu primera jugada puedes recuperar un comodín de una combinación sustituyéndolo por la ficha que representaba, pero debes usarlo en una combinación nueva en ese mismo turno. Un comodín que se queda en tu atril cuesta 30 puntos.',
+				'Un comodín puede ser cualquier ficha. Tras tu primera jugada puedes recuperar un comodín de una combinación sustituyéndolo por la ficha que representaba, pero debes usarlo en una combinación nueva en ese mismo turno. Un comodín que se queda en tu estante cuesta 30 puntos.',
 			],
 			[
 				'Ganar una partida.',
-				'Vacía tu atril y grita «¡Rummikub!». Los demás restan el valor de sus fichas restantes y el ganador suma el total. Si se acaba el pozo y nadie puede jugar, gana quien tenga el atril de menor valor y los demás pierden la diferencia.',
+				'Vacía tu estante y grita «¡Rummikub!». Los demás restan el valor de sus fichas restantes y el ganador suma el total. Si se acaba el pozo y nadie puede jugar, gana quien tenga el estante de menor valor y los demás pierden la diferencia.',
 			],
 			[
 				'Temporizador.',
@@ -86,9 +86,9 @@ const R = {
 		],
 		c: 'Controles en este juego',
 		ctl: [
-			'Toca fichas para seleccionarlas (varias a la vez). Pueden estar en tu atril o en la mesa.',
+			'Toca fichas para seleccionarlas (varias a la vez). Pueden estar en tu estante o en la mesa.',
 			'Toca Nueva combinación para formar una con ellas, o el + al final de una combinación para añadirlas.',
-			'Al atril devuelve las fichas seleccionadas que sacaste de tu atril. Deshacer reinicia tu turno.',
+			'Al estante devuelve las fichas seleccionadas que sacaste de tu estante. Deshacer reinicia tu turno.',
 			'Las combinaciones con borde rojo aún no son válidas. Terminar turno se activa cuando todo es válido.',
 			'La pequeña forma en cada ficha (círculo, triángulo, cuadrado, rombo) indica su color, para jugadores daltónicos.',
 		],

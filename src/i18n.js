@@ -202,7 +202,7 @@ export const D = {
 		lvl3: 'Experto',
 		lvlD1: 'Juega con cautela, ignora los comodines y roba a menudo.',
 		lvlD2: 'Juega sus mejores combinaciones y añade fichas a la mesa.',
-		lvlD3: 'Reorganiza toda la mesa para vaciar su atril. ¡Difícil!',
+		lvlD3: 'Reorganiza toda la mesa para vaciar su estante. ¡Difícil!',
 		addBot: 'Añadir bot',
 		rmBot: 'Quitar bot',
 		timer: 'Temporizador de 1 minuto por turno',
