@@ -1134,3 +1134,20 @@ button.pulse {
 .plus.float:active:not(:disabled) {
 	transform: translateX(-50%) scale(0.97);
 }
+
+/* bot difficulty picker */
+.lvlpick .lvlseg {
+	margin-left: 0;
+}
+.lvlpick .lvlseg button {
+	flex: 1;
+	padding: 8px 6px;
+}
+.lvld {
+	font-weight: 400;
+	opacity: 0.8;
+}
+.lvltag {
+	opacity: 0.75;
+	font-weight: 500;
+}

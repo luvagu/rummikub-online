@@ -321,6 +321,11 @@ export function localGame(name, { onState, onErr }, tok = TOK, resume) {
 	if (!resume) {
 		game.s.opts.timer = false
 		game.join(tok, name)
+		let lvl = 2
+		try {
+			lvl = +localStorage.rmkLvl || 2
+		} catch (e) {}
+		game.act(tok, { t: 'opts', lvl })
 		game.act(tok, { t: 'bot' })
 		game.act(tok, { t: 'start' })
 	}

@@ -73,6 +73,36 @@ function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
 	)
 }
 
+export const getLvl = () => {
+	try {
+		const n = +localStorage.rmkLvl
+		return [1, 2, 3].includes(n) ? n : 2
+	} catch (e) {
+		return 2
+	}
+}
+
+function LevelPicker({ value, onChange, label }) {
+	const t = useT()
+	return (
+		<div className='field lvlpick' role='group' aria-label={label}>
+			<span>{label}</span>
+			<div className='seg lvlseg'>
+				{[1, 2, 3].map(n => (
+					<button
+						key={n}
+						aria-pressed={value === n}
+						onClick={() => onChange(n)}
+					>
+						{t('lvl' + n)}
+					</button>
+				))}
+			</div>
+			<small className='lvld'>{t('lvlD' + value)}</small>
+		</div>
+	)
+}
+
 export function Home({
 	name,
 	setName,
@@ -92,7 +122,14 @@ export function Home({
 	openRules,
 }) {
 	const t = useT(),
-		nf = { name, setName, nameErr, names, onForgetName }
+		nf = { name, setName, nameErr, names, onForgetName },
+		[lvl, setLvl] = useState(getLvl)
+	const pickLvl = n => {
+		setLvl(n)
+		try {
+			localStorage.rmkLvl = n
+		} catch (e) {}
+	}
 	const busyModal = busy && (
 		<Modal title={t('connecting')}>
 			<div className='center'>
@@ -161,6 +198,7 @@ export function Home({
 			)}
 			<div className='panel'>
 				<NameField {...nf} />
+				<LevelPicker value={lvl} onChange={pickLvl} label={t('botLvl')} />
 				<button className='opt primary' onClick={() => start('solo')}>
 					<Bot size={26} />
 					<span>
@@ -271,6 +309,9 @@ export function Lobby({ s, net, copy, share, leave, openRules }) {
 							</b>
 							{i === 0 && <Crown size={16} aria-label={t('host')} />}
 							{p.bot && <Bot size={16} aria-label={t('bot')} />}
+							{p.bot && !p.left && (
+								<small className='lvltag'>{t('lvl' + (p.lvl || 2))}</small>
+							)}
 							{p.on === false && <WifiOff size={16} aria-label={t('off')} />}
 							{host && p.bot && i === lastBot && (
 								<button
@@ -300,6 +341,13 @@ export function Lobby({ s, net, copy, share, leave, openRules }) {
 			</ul>
 			{host ? (
 				<>
+					{s.players.length < 4 && (
+						<LevelPicker
+							value={s.opts.lvl || 2}
+							onChange={n => net.send({ t: 'opts', lvl: n })}
+							label={t('botLvlNext')}
+						/>
+					)}
 					<label className='switch'>
 						<input
 							type='checkbox'

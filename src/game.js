@@ -92,7 +92,7 @@ export class Game {
 			t0: 0,
 			passes: 0,
 			log: '',
-			opts: { timer: true },
+			opts: { timer: true, lvl: 2 },
 			scores: {},
 			wins: {},
 			games: 0,
@@ -132,6 +132,7 @@ export class Game {
 				melded: p.melded,
 				on: p.on,
 				bot: p.bot,
+				lvl: p.lvl,
 			})),
 			board: s.board,
 			pool: s.pool.length,
@@ -232,7 +233,9 @@ export class Game {
 			i = s.turn,
 			p = s.players[i]
 		if (!this.botDue()) return
-		const mv = botMove(p.rack, s.board, p.melded)
+		const lvl = p.lvl || 2
+		// beginners often just draw, even when they could play
+		const mv = lvl === 1 && Math.random() < 0.3 ? null : botMove(p.rack, s.board, p.melded, lvl)
 		if (!mv || this.act(p.id, { t: 'end', board: mv.board, rack: mv.rack }))
 			this.draw(i, 1)
 	}
@@ -243,7 +246,10 @@ export class Game {
 			p = s.players[i]
 		if (!p) return E('e.notIn')
 		if (m.t === 'opts') {
-			if (i === 0 && s.phase === 'lobby') s.opts.timer = !!m.timer
+			if (i === 0 && s.phase === 'lobby') {
+				if ('timer' in m) s.opts.timer = !!m.timer
+				if ([1, 2, 3].includes(m.lvl)) s.opts.lvl = m.lvl
+			}
 			return
 		}
 		if (m.t === 'leave') {
@@ -269,6 +275,7 @@ export class Game {
 					id,
 					name: 'Bot ' + n,
 					bot: true,
+					lvl: s.opts.lvl || 2,
 					rack: [],
 					melded: false,
 					on: true,
@@ -337,20 +344,42 @@ export class Game {
 	}
 }
 
-// Bot: finds the largest set of new sets (groups/runs, jokers allowed) from its rack, then
-// tacks leftover tiles onto existing sets. Returns {board,rack} or null (=> draw).
-export function botMove(rack, board, melded) {
+// Bot AI, three levels:
+//  1 beginner: ignores jokers, plays only 1 set (2 if needed to meld), never adds to the board, often draws instead.
+//  2 medium:   plays the largest combination of new sets from its rack, then tacks leftovers onto existing sets.
+//  3 expert:   as medium, but once melded it also rearranges the whole table (splits/merges/steals from sets)
+//              to get rid of as many tiles as possible.
+// Returns {board,rack} or null (=> draw).
+export function botMove(rack, board, melded, lvl = 2) {
+	const basic = solve(rack, board, melded, lvl)
+	if (lvl < 3 || !melded) return basic
+	const full = solve(rack, board, melded, lvl, true)
+	if (!full) return basic
+	return !basic || full.rack.length < basic.rack.length ? full : basic
+}
+
+function solve(rack, board, melded, lvl, full) {
 	const cnt = Array.from({ length: 4 }, () => Array(14).fill(0)),
+		req = Array.from({ length: 4 }, () => Array(14).fill(0)),
 		ids = {},
 		js = []
-	rack.forEach(id => {
+	let jReq = 0
+	const add = (id, isBoard) => {
 		const t = T(id)
-		if (t.j) js.push(id)
-		else {
+		if (t.j) {
+			js.push(id)
+			if (isBoard) jReq++
+		} else {
 			cnt[t.c][t.n]++
+			if (isBoard) req[t.c][t.n]++
 			;(ids[t.c + '-' + t.n] = ids[t.c + '-' + t.n] || []).push(id)
 		}
-	})
+	}
+	// board tiles first so they are the ones consumed when sets are built
+	if (full) board.flat().forEach(id => add(id, true))
+	rack.forEach(id => add(id, false))
+	const nJ = lvl === 1 ? 0 : js.length, // beginners can't use jokers in sets
+		rackJ = nJ - jReq
 	const slots = []
 	for (let c = 0; c < 4; c++) for (let n = 1; n <= 13; n++) slots.push([c, n])
 	const sub = (a, k) =>
@@ -383,27 +412,57 @@ export function botMove(rack, board, melded) {
 		return out
 	}
 	let best = null,
-		nodes = 0
+		nodes = 0,
+		stop = 0
+	const deadline = Date.now() + 300
 	const dfs = (k, J, sets, tiles, pts) => {
-		if (++nodes > 40000) return
+		if (stop) return
+		if (++nodes > (full ? 400000 : 40000)) return
+		if (full && nodes % 500 === 0 && Date.now() > deadline) return void (stop = 1)
 		while (k < 52 && !cnt[slots[k][0]][slots[k][1]]) k++
 		if (k === 52) {
+			// every board tile (incl. board jokers) must still be on the table
+			if (full && J > rackJ) return
 			if ((melded || pts >= 30) && (!best || tiles * 1000 + pts > best.score))
 				best = { score: tiles * 1000 + pts, sets: [...sets] }
 			return
 		}
 		const [c, n] = slots[k]
+		const r = req[c][n]
 		for (const cd of cands(c, n, J)) {
-			cd.sl.forEach(([a, b]) => cnt[a][b]--)
+			const saved = cd.sl.map(([a, b]) => req[a][b])
+			cd.sl.forEach(([a, b]) => {
+				cnt[a][b]--
+				req[a][b] = Math.max(0, req[a][b] - 1)
+			})
 			dfs(k, J - cd.j, [...sets, cd], tiles + cd.sl.length + cd.j, pts + cd.val)
-			cd.sl.forEach(([a, b]) => cnt[a][b]++)
+			cd.sl.forEach(([a, b], x) => {
+				cnt[a][b]++
+				req[a][b] = saved[x]
+			})
 		}
-		cnt[c][n]--
-		dfs(k, J, sets, tiles, pts)
-		cnt[c][n]++
+		// leave this tile unused (only rack tiles may stay unused)
+		if (cnt[c][n] > r) {
+			cnt[c][n]--
+			dfs(k, J, sets, tiles, pts)
+			cnt[c][n]++
+		}
 	}
-	dfs(0, js.length, [], 0, 0)
+	dfs(0, nJ, [], 0, 0)
 	if (!best) return null
+	if (lvl === 1) {
+		// beginner: only the biggest set (plus one more if the first doesn't reach 30 to meld)
+		const sorted = [...best.sets].sort((a, b) => b.val - a.val),
+			pick = []
+		let pts = 0
+		for (const cd of sorted) {
+			pick.push(cd)
+			pts += cd.val
+			if (melded || pts >= 30) break
+		}
+		if (!melded && pts < 30) return null
+		best = { sets: pick }
+	}
 	const pool = {}
 	for (const k in ids) pool[k] = [...ids[k]]
 	const jp = [...js]
@@ -414,9 +473,9 @@ export function botMove(rack, board, melded) {
 			.map(() => jp.shift()),
 	])
 	const left = [...Object.values(pool).flat(), ...jp]
-	const b = [...board.map(x => [...x]), ...fresh],
-		ext = melded ? b : fresh
-	for (let ch = true; ch; ) {
+	const b = full ? fresh : [...board.map(x => [...x]), ...fresh],
+		ext = melded && lvl > 1 ? b : fresh
+	for (let ch = lvl > 1; ch; ) {
 		ch = false
 		for (const id of [...left])
 			for (const set of ext)
