@@ -1135,19 +1135,126 @@ button.pulse {
 	transform: translateX(-50%) scale(0.97);
 }
 
-/* bot difficulty picker */
-.lvlpick .lvlseg {
-	margin-left: 0;
+/* bot difficulty dropdown */
+.lvlrow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	font-weight: 600;
 }
-.lvlpick .lvlseg button {
+.lvlbtn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+}
+.lvlmenu.inseat {
 	flex: 1;
-	padding: 8px 6px;
+	min-width: 0;
 }
-.lvld {
+.lvlmenu.inseat .lvlbtn {
+	max-width: 100%;
+}
+.lvlbtn span {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.lvlpop {
+	left: 0;
+	right: auto;
+	min-width: 250px;
+}
+.lvlpop button {
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+.lvlpop button[aria-selected='true'] {
+	background: #ffffff1f;
+}
+.lvlpop b,
+.lvlpop small {
+	display: block;
+}
+.lvlpop small {
 	font-weight: 400;
 	opacity: 0.8;
 }
 .lvltag {
 	opacity: 0.75;
 	font-weight: 500;
+}
+
+/* keep the open difficulty popup above the seat rows below it (rows are stacking contexts via opacity) */
+.lseat {
+	position: relative;
+}
+.lseat:has(.lvlpop) {
+	z-index: 40;
+	opacity: 1;
+}
+.lvlpop {
+	background: #12361a;
+}
+
+/* solo difficulty chooser (modal, light card) */
+.card .lvltitle {
+	margin: 0 44px 16px 2px;
+	font-size: 20px;
+}
+.lvlopts {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 100%;
+}
+.card .lvlopts button {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	width: 100%;
+	text-align: left;
+	padding: 16px 18px;
+	border-radius: 14px;
+	background: #fff;
+	color: #1d2b1e;
+	border: 2px solid #d5e0d3;
+	box-shadow: 0 1px 0 #0000000d;
+}
+.card .lvlopts button:hover:not(:disabled) {
+	background: #eaf4e6;
+	border-color: #1b5e20;
+}
+.card .lvlopts button:active:not(:disabled) {
+	background: #dcecd6;
+}
+.card .lvlopts button.sel {
+	background: #fff7de;
+	border-color: #e69f00;
+}
+.card .lvlopts button.sel:hover:not(:disabled) {
+	background: #ffefbd;
+}
+.lvlopts button > span {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.lvlopts b {
+	font-size: 17px;
+	line-height: 1.2;
+}
+.lvlopts small {
+	font-size: 14px;
+	line-height: 1.4;
+	font-weight: 400;
+	color: #4a5b4b;
+	opacity: 1;
+}
+.lvlopts svg {
+	flex: none;
+	color: #1b5e20;
 }

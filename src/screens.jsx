@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
 	Bot,
 	Users,
 	KeyRound,
 	ChevronRight,
+	ChevronDown,
 	BookOpen,
 	Crown,
 	LogOut,
@@ -82,23 +83,56 @@ export const getLvl = () => {
 	}
 }
 
-function LevelPicker({ value, onChange, label }) {
-	const t = useT()
+function LevelMenu({ value, onChange, label, className = '' }) {
+	const t = useT(),
+		[open, setOpen] = useState(false),
+		ref = useRef(null)
+	useEffect(() => {
+		if (!open) return
+		const down = e => ref.current && !ref.current.contains(e.target) && setOpen(false),
+			key = e => e.key === 'Escape' && setOpen(false)
+		document.addEventListener('pointerdown', down)
+		document.addEventListener('keydown', key)
+		return () => {
+			document.removeEventListener('pointerdown', down)
+			document.removeEventListener('keydown', key)
+		}
+	}, [open])
 	return (
-		<div className='field lvlpick' role='group' aria-label={label}>
-			<span>{label}</span>
-			<div className='seg lvlseg'>
-				{[1, 2, 3].map(n => (
-					<button
-						key={n}
-						aria-pressed={value === n}
-						onClick={() => onChange(n)}
-					>
-						{t('lvl' + n)}
-					</button>
-				))}
-			</div>
-			<small className='lvld'>{t('lvlD' + value)}</small>
+		<div className={'menuwrap lvlmenu ' + className} ref={ref}>
+			<button
+				className='lvlbtn'
+				aria-haspopup='listbox'
+				aria-expanded={open}
+				aria-label={label}
+				title={label}
+				onClick={() => setOpen(v => !v)}
+			>
+				<Bot size={16} />
+				<span>{t('lvl' + value)}</span>
+				<ChevronDown size={16} />
+			</button>
+			{open && (
+				<div className='menu lvlpop' role='listbox' aria-label={label}>
+					{[1, 2, 3].map(n => (
+						<button
+							key={n}
+							role='option'
+							aria-selected={value === n}
+							onClick={() => {
+								onChange(n)
+								setOpen(false)
+							}}
+						>
+							<span>
+								<b>{t('lvl' + n)}</b>
+								<small>{t('lvlD' + n)}</small>
+							</span>
+							{value === n && <Check size={16} />}
+						</button>
+					))}
+				</div>
+			)}
 		</div>
 	)
 }
@@ -123,13 +157,37 @@ export function Home({
 }) {
 	const t = useT(),
 		nf = { name, setName, nameErr, names, onForgetName },
-		[lvl, setLvl] = useState(getLvl)
-	const pickLvl = n => {
-		setLvl(n)
+		[pick, setPick] = useState(false)
+	const playSolo = n => {
 		try {
 			localStorage.rmkLvl = n
 		} catch (e) {}
+		setPick(false)
+		start('solo')
 	}
+	// solo needs a name first: let start() show the "name required" error instead of opening the picker
+	const soloClick = () => (name.trim() ? setPick(true) : start('solo'))
+	const lvlModal = pick && (
+		<Modal title={t('botLvl')} onClose={() => setPick(false)}>
+			<h2 className='lvltitle'>{t('botLvl')}</h2>
+			<div className='lvlopts'>
+				{[1, 2, 3].map(n => (
+					<button
+						key={n}
+						className={n === getLvl() ? 'sel' : ''}
+						data-autofocus={n === getLvl() ? true : undefined}
+						onClick={() => playSolo(n)}
+					>
+						<span>
+							<b>{t('lvl' + n)}</b>
+							<small>{t('lvlD' + n)}</small>
+						</span>
+						<ChevronRight size={18} />
+					</button>
+				))}
+			</div>
+		</Modal>
+	)
 	const busyModal = busy && (
 		<Modal title={t('connecting')}>
 			<div className='center'>
@@ -198,8 +256,7 @@ export function Home({
 			)}
 			<div className='panel'>
 				<NameField {...nf} />
-				<LevelPicker value={lvl} onChange={pickLvl} label={t('botLvl')} />
-				<button className='opt primary' onClick={() => start('solo')}>
+				<button className='opt primary' onClick={soloClick}>
 					<Bot size={26} />
 					<span>
 						<b>{t('solo')}</b>
@@ -252,6 +309,7 @@ export function Home({
 				{t('readRules')}
 			</button>
 			{busyModal}
+			{lvlModal}
 		</main>
 	)
 }
@@ -327,7 +385,16 @@ export function Lobby({ s, net, copy, share, leave, openRules }) {
 					) : (
 						<li key={'e' + i} className='lseat empty'>
 							<span className='av ghost' />
-							<span>{t('waiting')}</span>
+							{host && i === s.players.length ? (
+								<LevelMenu
+									className='inseat'
+									value={s.opts.lvl || 2}
+									onChange={n => net.send({ t: 'opts', lvl: n })}
+									label={t('botLvlNext')}
+								/>
+							) : (
+								<span>{t('waiting')}</span>
+							)}
 							{host && i === s.players.length && (
 								<button onClick={() => net.send({ t: 'bot' })}>
 									<Plus size={16} />
@@ -341,13 +408,6 @@ export function Lobby({ s, net, copy, share, leave, openRules }) {
 			</ul>
 			{host ? (
 				<>
-					{s.players.length < 4 && (
-						<LevelPicker
-							value={s.opts.lvl || 2}
-							onChange={n => net.send({ t: 'opts', lvl: n })}
-							label={t('botLvlNext')}
-						/>
-					)}
 					<label className='switch'>
 						<input
 							type='checkbox'
