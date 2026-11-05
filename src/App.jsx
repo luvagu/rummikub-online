@@ -72,6 +72,11 @@ export default function App() {
 		[s, setS] = useState(null),
 		[busy, setBusy] = useState(null),
 		[conn, setConn] = useState(true)
+	const rbus = useRef(new Set()) // reaction events -> whoever is subscribed (the Game screen)
+	const reacts = useRef(f => {
+		rbus.current.add(f)
+		return () => rbus.current.delete(f)
+	}).current
 	const [toasts, setToasts] = useState([]),
 		[rules, setRules] = useState(false),
 		[leaving, setLeaving] = useState(false)
@@ -148,6 +153,7 @@ export default function App() {
 					saveSess(sess.current)
 				}
 			},
+			onReact: r => rbus.current.forEach(f => f(r)),
 			onErr: (m, fatal) => {
 				toast(m)
 				if (fatal) {
@@ -342,6 +348,7 @@ export default function App() {
 					s={s}
 					net={net}
 					toast={toast}
+					reacts={reacts}
 					openRules={openRules}
 					onLeave={() => setLeaving(true)}
 				/>

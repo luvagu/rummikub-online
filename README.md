@@ -55,6 +55,12 @@ A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibr
 - A host who refreshes resumes the same room (same code) from a snapshot stored in that browser; guests rejoin automatically.
 - Menu > Leave room: guests mid-game hand their seat to a bot (they can reclaim it by rejoining); the host ends the game for everyone.
 
+## Reactions, drawn tiles and drag & drop
+
+- **Reactions:** the smiley button next to the rack sort buttons sends one of nine fixed emoji + short messages (translated per player). They pop up over the sender's seat and are never part of the game state (not saved, not replayed on reconnect). The host validates the key and rate-limits each player. Bots react sporadically (beginners chat more, experts rarely) based on what just happened. Menu > Reactions mutes incoming ones. The set lives in `src/reactions.js`.
+- **Drawn tiles:** a tile you just drew (including the 3-tile timeout penalty) glows with a "+" tag and scrolls into view in a busy rack.
+- **Drag & drop:** on wide screens with a mouse/trackpad (`hover: hover`, `pointer: fine`, min-width 900px) tiles can be dragged onto a set, an empty board area (new set) or the rack. On phones/tablets drag is off and tap-to-select is used (it always works too).
+
 ## Turn timer
 
 A bar drains across the top of the table (green, amber at 20 s, red at 10 s). In the last 10 s the active player gets one soft chime, a gentle pulse on End turn, a large countdown and a short vibration; optional quiet ticks are in the menu. The host enforces the timer, so an offline player can't stall the game.

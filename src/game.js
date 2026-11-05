@@ -1,5 +1,5 @@
 // Rummikub rules engine. Runs only on the host; guests send moves and receive views.
-export const COLORS = ['#1b1b1b', '#d32f2f', '#1565c0', '#ef8f00']
+export const COLORS = ['#1b1b1b', '#d32f2f', '#1565c0', '#d97800']
 export const DECK = []
 {
 	let id = 0
@@ -233,11 +233,22 @@ export class Game {
 			i = s.turn,
 			p = s.players[i]
 		if (!this.botDue()) return
-		const lvl = p.lvl || 2
+		const lvl = p.lvl || 2,
+			before = p.rack.length
 		// beginners often just draw, even when they could play
 		const mv = lvl === 1 && Math.random() < 0.3 ? null : botMove(p.rack, s.board, p.melded, lvl)
 		if (!mv || this.act(p.id, { t: 'end', board: mv.board, rack: mv.rack }))
 			this.draw(i, 1)
+		// summary for the host to decide on a (sporadic) reaction
+		const left = p.rack.length
+		return {
+			id: p.id,
+			lvl,
+			played: Math.max(0, before - left),
+			drew: left > before,
+			left,
+			oppMin: Math.min(99, ...s.players.filter(x => x !== p).map(x => x.rack.length)),
+		}
 	}
 	// returns an error string, or undefined on success
 	act(tok, m) {

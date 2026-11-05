@@ -3,6 +3,7 @@
 // Room code = 1 letter (which relay) + 4 random characters.
 import * as M from 'mqtt'
 import { Game } from './game.js'
+import { RKEYS, RCOOL, botReact } from './reactions.js'
 const connect = M.connect || M.default.connect,
 	env = import.meta.env || {}
 export const TOK =
@@ -63,19 +64,44 @@ const watch = (c, onConn, closed) => {
 	document.addEventListener('visibilitychange', sync)
 }
 
+// Reactions are ephemeral events (never part of the game state, so they are not saved or replayed on reconnect).
+// The host validates (known sender, key in the fixed set, per-sender rate limit) and hands the event to `deliver`.
+const reactor = (game, deliver) => {
+	const last = {}
+	return (from, k) => {
+		if (!RKEYS.has(k) || !game.s.players.some(p => p.id === from)) return
+		const now = Date.now()
+		if (now - (last[from] || 0) < RCOOL) return
+		last[from] = now
+		deliver({
+			t: 'react',
+			from,
+			k,
+			id: now.toString(36) + Math.random().toString(36).slice(2, 6),
+		})
+	}
+}
+
 // Host-side clock work: lets bots take their turns after a short "thinking" delay, and enforces the
 // turn timer even if the player's own browser is gone (client sends the precise timeout first; this is the fallback).
-const runner = (game, push) => {
+const runner = (game, push, react) => {
 	let bt = 0,
 		tt = 0,
 		seq = -1
+	const quiet = {} // per-bot cooldown so bots never spam
 	return () => {
 		const s = game.s
 		if (!bt && game.botDue())
 			bt = setTimeout(() => {
 				bt = 0
-				game.botPlay()
+				const r = game.botPlay()
 				push()
+				const k = r && botReact(r),
+					now = Date.now()
+				if (k && (r.left === 0 || now - (quiet[r.id] || 0) > 20000)) {
+					quiet[r.id] = now
+					setTimeout(() => react(r.id, k), 350 + Math.random() * 600)
+				}
 			}, 1100)
 		if (s.phase !== 'play' || !s.opts.timer) {
 			clearTimeout(tt)
@@ -99,7 +125,7 @@ const runner = (game, push) => {
 
 export function hostGame(
 	name,
-	{ onState, onErr, onConn = () => {} },
+	{ onState, onErr, onReact = () => {}, onConn = () => {} },
 	tok = TOK,
 	resume,
 ) {
@@ -111,7 +137,13 @@ export function hostGame(
 	if (resume) game.resume(tok)
 	const out = (t, o) =>
 		c && c.connected && c.publish(`${base}/to/${t}`, J(o), { qos: 1 })
-	const sched = runner(game, () => push())
+	const react = reactor(game, r => {
+		game.s.players.forEach(p => {
+			if (!p.bot && p.id !== tok) out(p.id, r)
+		})
+		onReact(r)
+	})
+	const sched = runner(game, () => push(), react)
 	const save = () => {
 		if (dead) return
 		try {
@@ -129,6 +161,7 @@ export function hostGame(
 	const status = up =>
 		c.publish(`${base}/host`, J({ up }), { qos: 1, retain: true })
 	api.send = m => {
+		if (m.t === 'react') return react(tok, m.k)
 		const e = game.act(tok, m)
 		if (e) onErr(e)
 		push()
@@ -209,6 +242,7 @@ export function hostGame(
 				push()
 				return
 			}
+			if (m.t === 'react') return react(t, m.k)
 			const e = game.act(t, m)
 			if (e) out(t, { t: 'err', msg: e })
 			push()
@@ -224,7 +258,7 @@ export function hostGame(
 export function joinGame(
 	code,
 	name,
-	{ onState, onErr, onConn = () => {} },
+	{ onState, onErr, onReact = () => {}, onConn = () => {} },
 	tok = TOK,
 ) {
 	code = code.trim().toUpperCase()
@@ -236,6 +270,7 @@ export function joinGame(
 		dead = 0,
 		t,
 		seen = 0
+	const rseen = [] // QoS 1 can redeliver: drop reaction ids we already showed
 	const pub = m =>
 		c && c.connected && c.publish(`${base}/in`, J({ tok, m }), { qos: 1 })
 	const fail = m => {
@@ -292,6 +327,12 @@ export function joinGame(
 					got = 1
 					clearTimeout(t)
 					onState(d.s)
+				} else if (d.t === 'react') {
+					if (got && RKEYS.has(d.k) && !rseen.includes(d.id)) {
+						rseen.push(d.id)
+						if (rseen.length > 30) rseen.shift()
+						onReact(d)
+					}
 				} else if (d.t === 'err') {
 					d.fatal ? fail(d.msg) : onErr(d.msg)
 				}
@@ -309,9 +350,15 @@ export function joinGame(
 }
 
 // Solo game against a bot: no network at all. The game is snapshotted so a closed tab can resume it.
-export function localGame(name, { onState, onErr }, tok = TOK, resume) {
+export function localGame(
+	name,
+	{ onState, onErr, onReact = () => {} },
+	tok = TOK,
+	resume,
+) {
 	const game = new Game(resume && resume.s),
-		sched = runner(game, () => push())
+		react = reactor(game, onReact),
+		sched = runner(game, () => push(), react)
 	const push = () => {
 		try {
 			localStorage.rmkSolo = J({ s: game.s })
@@ -334,6 +381,7 @@ export function localGame(name, { onState, onErr }, tok = TOK, resume) {
 	return {
 		code: 'SOLO',
 		send: m => {
+			if (m.t === 'react') return react(tok, m.k)
 			const e = game.act(tok, m)
 			if (e) onErr(e)
 			push()
