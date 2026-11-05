@@ -134,6 +134,7 @@ export default function App() {
 				return
 			}
 		}
+		setConn(true) // fresh session: never inherit an old "offline" state
 		sess.current = { mode, name: nm, code: cd, tok }
 		saveSess(sess.current)
 		setBusy(o.resume ? 'resume' : mode === 'host' ? 'create' : mode)
@@ -155,10 +156,11 @@ export default function App() {
 					setS(null)
 					setConn(true)
 					n && n.close()
+					netRef.current = null
 					if (m && (m.k === 'e.closed' || m.k === 'e.full')) forget(mode)
 				}
 			},
-			onConn: ok => setConn(ok),
+			onConn: ok => netRef.current === n && setConn(ok), // ignore a closed/old connection
 		}
 		n = (
 			mode === 'host'
@@ -173,6 +175,7 @@ export default function App() {
 	const cancel = () => {
 		const r = busy === 'resume'
 		netRef.current && netRef.current.close()
+		netRef.current = null
 		setNet(null)
 		setS(null)
 		setBusy(null)
@@ -196,6 +199,7 @@ export default function App() {
 		if (mode === 'join') net.send({ t: 'leave' })
 		if (mode === 'host' && net.endRoom) net.endRoom()
 		else net.close()
+		netRef.current = null
 		forget(mode)
 		setNet(null)
 		setS(null)

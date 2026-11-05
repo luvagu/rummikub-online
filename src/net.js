@@ -49,9 +49,10 @@ const open = (url, will) =>
 
 // Keep the UI's connection flag in sync with the client's real state. Event edges alone can be missed or
 // reordered (tab suspended, network switch), which left the "reconnecting" banner stuck, so also poll.
-const watch = (c, onConn) => {
+const watch = (c, onConn, closed) => {
 	let last
 	const sync = () => {
+		if (closed()) return // we closed it on purpose (leave): never report that as a lost connection
 		const v = !!c.connected
 		if (v !== last) onConn((last = v))
 	}
@@ -184,7 +185,7 @@ export function hostGame(
 			return
 		}
 		c.on('connect', () => status(true)) // after an automatic reconnect
-		watch(c, onConn)
+		watch(c, onConn, () => dead)
 		c.on('message', (_, buf) => {
 			let d
 			try {
@@ -272,7 +273,7 @@ export function joinGame(
 			}
 			const hello = () => pub({ t: 'join', name })
 			c.on('connect', hello) // after an automatic reconnect: take the seat back
-			watch(c, onConn)
+			watch(c, onConn, () => dead)
 			c.on('message', (topic, buf) => {
 				let d
 				try {
