@@ -4,6 +4,7 @@
 import * as M from 'mqtt'
 import { Game } from './game.js'
 import { RKEYS, RCOOL, botReact } from './reactions.js'
+import { setupTutorial } from './tutorial.js'
 const connect = M.connect || M.default.connect,
 	env = import.meta.env || {}
 export const TOK =
@@ -367,13 +368,14 @@ export function localGame(
 		sched()
 	}
 	if (!resume) {
-		game.s.opts.timer = false
 		game.join(tok, name)
-		let lvl = 2
+		let lvl = 2,
+			timer = false
 		try {
 			lvl = +localStorage.rmkLvl || 2
+			timer = localStorage.rmkTimer === '1'
 		} catch (e) {}
-		game.act(tok, { t: 'opts', lvl })
+		game.act(tok, { t: 'opts', lvl, timer })
 		game.act(tok, { t: 'bot' })
 		game.act(tok, { t: 'start' })
 	}
@@ -387,5 +389,39 @@ export function localGame(
 			push()
 		},
 		close: () => {},
+	}
+}
+
+// Guided tutorial: an offline game from a fixed, scripted position. Nothing is saved; the "coach" opponent
+// just draws a tile on its turn so the lesson stays predictable.
+export function tutorialGame(name, { onState, onErr }, tok = TOK, botName = 'Coach', lesson = 'basics') {
+	const game = new Game()
+	let bt = 0
+	const push = () => {
+		onState(game.view(tok))
+		const s = game.s
+		if (!bt && s.phase === 'play' && s.turn === 1)
+			bt = setTimeout(() => {
+				bt = 0
+				if (game.s.phase === 'play' && game.s.turn === 1) {
+					game.draw(1, 1)
+					push()
+				}
+			}, 1300)
+	}
+	game.s.opts.timer = false
+	game.join(tok, name)
+	game.act(tok, { t: 'bot' })
+	setupTutorial(game, botName, lesson)
+	push()
+	return {
+		code: 'TUTORIAL',
+		send: m => {
+			if (m.t === 'react') return
+			const e = game.act(tok, m)
+			if (e) onErr(e)
+			push()
+		},
+		close: () => clearTimeout(bt),
 	}
 }

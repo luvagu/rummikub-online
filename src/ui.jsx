@@ -1,9 +1,9 @@
-import { useEffect, useRef, useContext } from 'react'
-import { X, CircleCheck, TriangleAlert, Info, Languages } from 'lucide-react'
+import { useState, useEffect, useRef, useContext } from 'react'
+import { X, CircleCheck, TriangleAlert, Info, Languages, Copy, Check, Link2, Share2 } from 'lucide-react'
 import { COLORS, T } from './game.js'
 import { useT, tr, LangCtx } from './i18n.js'
 
-export const Tile = ({ id, sel, num, fresh, placed, ghost, dnd, onClick }) => {
+export const Tile = ({ id, sel, num, fresh, placed, ghost, enter, dnd, onClick }) => {
 	const t = useT(),
 		x = T(id)
 	// Firefox never starts a native drag from a <button>, so while drag & drop is on the tile is a role=button div
@@ -23,8 +23,9 @@ export const Tile = ({ id, sel, num, fresh, placed, ghost, dnd, onClick }) => {
 	return (
 		<Tag
 			{...kb}
-			className={'tile' + (sel ? ' sel' : '') + (fresh ? ' fresh' : '') + (placed ? ' placed' : '') + (ghost ? ' ghost' : '') + (x.j ? ' joker' : '')}
+			className={'tile' + (sel ? ' sel' : '') + (fresh ? ' fresh' : '') + (placed ? ' placed' : '') + (ghost ? ' ghost' : '') + (enter ? ' enter' : '') + (x.j ? ' joker' : '')}
 			data-c={x.c}
+				data-id={id}
 			style={{ '--tc': x.j ? '#7b1fa2' : COLORS[x.c] }}
 			aria-pressed={!!sel}
 			aria-label={x.j ? t('joker') : `${x.n} ${t('c' + x.c)}`}
@@ -60,7 +61,7 @@ export const LangBtn = () => {
 }
 
 // Accessible dialog: Escape closes, focus moves in and is trapped, and returns to the opener on close.
-export function Modal({ title, onClose, children }) {
+export function Modal({ title, onClose, children, felt }) {
 	const ref = useRef()
 	useEffect(() => {
 		const prev = document.activeElement,
@@ -70,7 +71,7 @@ export function Modal({ title, onClose, children }) {
 				'button:not(:disabled),a[href],input,[tabindex="0"]',
 			),
 		]
-		;(el.querySelector('[data-autofocus]') || foc()[0] || el).focus()
+		;(el.querySelector('[data-autofocus]') || foc()[0] || el).focus({ preventScroll: true })
 		const k = e => {
 			if (e.key === 'Escape' && onClose) {
 				e.stopPropagation()
@@ -102,7 +103,7 @@ export function Modal({ title, onClose, children }) {
 			onMouseDown={e => e.target === e.currentTarget && onClose && onClose()}
 		>
 			<div
-				className='card'
+				className={'card' + (felt ? ' felt' : '')}
 				role='dialog'
 				aria-modal='true'
 				aria-label={title}
@@ -139,5 +140,42 @@ export const Toasts = ({ list, t }) => {
 				)
 			})}
 		</div>
+	)
+}
+
+// Room code + copy / share buttons. Used in the lobby and in the round-over dialog (inviting someone between rounds).
+export function Invite({ net, copy, share }) {
+	const t = useT(),
+		[done, setDone] = useState('')
+	const doCopy = async w => {
+		if (await copy(w)) {
+			setDone(w)
+			setTimeout(() => setDone(''), 1800)
+		}
+	}
+	return (
+		<>
+			<div className='codechip'>
+				<span className='codetxt' aria-label={net.code}>
+					{net.code}
+				</span>
+				<button className='icon' aria-label={t('copyCode')} title={t('copyCode')} onClick={() => doCopy('code')}>
+					{done === 'code' ? <Check size={20} /> : <Copy size={20} />}
+				</button>
+			</div>
+			<div className='row'>
+				<button className='primary' onClick={() => doCopy('link')}>
+					{done === 'link' ? <Check size={18} /> : <Link2 size={18} />}
+					{done === 'link' ? t('copied') : t('copy')}
+				</button>
+				{navigator.share && (
+					<button onClick={share}>
+						<Share2 size={18} />
+						{t('share')}
+					</button>
+				)}
+			</div>
+			<p className='sub'>{t('inviteHint')}</p>
+		</>
 	)
 }

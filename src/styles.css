@@ -735,7 +735,9 @@ button.pulse {
 	font-size: calc(var(--tw) * 0.6);
 	line-height: 1;
 	gap: 0;
-	animation: pop 0.22s backwards; /* not `both`: a held end-state would override .sel / .ghost */
+}
+.tile.enter {
+	animation: pop 0.22s backwards; /* only on a deal / new round; remounts (new set, draw) must not replay it */
 }
 .tile:hover:not(:disabled) {
 	background: linear-gradient(#fffdf6, #f1e7c4);
@@ -1813,4 +1815,255 @@ button.primary:disabled {
 	.lvlbtn > svg:first-child {
 		display: none;
 	}
+}
+
+
+/* ---- tutorial coach ---- */
+.coach {
+	position: fixed;
+	z-index: 40;
+	top: calc(env(safe-area-inset-top, 0px) + 58px);
+	left: 50%;
+	translate: -50% 0;
+	width: min(calc(100vw - 24px), 420px);
+	box-sizing: border-box;
+	padding: 12px 14px;
+	border-radius: 14px;
+	background: #fffdf6;
+	color: #222;
+	border: 2px solid var(--amber);
+	box-shadow: 0 10px 28px #0006;
+	display: grid;
+	gap: 8px;
+}
+.coach p {
+	margin: 0;
+	font-size: 0.92rem;
+	line-height: 1.35;
+}
+.coachhead {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.coachhead b {
+	flex: 1;
+}
+.coachn {
+	font-size: 0.75rem;
+	opacity: 0.6;
+}
+.coach .row {
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+.tut-hl {
+	outline: 3px solid #4fc3f7 !important;
+	outline-offset: 2px;
+	animation: tutpulse 1s ease-in-out infinite !important;
+	z-index: 3;
+}
+@keyframes tutpulse {
+	50% {
+		outline-color: transparent;
+	}
+}
+
+.card .lvltitle + .switch {
+	margin-bottom: 14px;
+}
+
+/* switch on the light dialog card: the default translucent-white track is invisible there */
+.card .switch .tr {
+	background: #8a948a;
+	box-shadow: inset 0 0 0 1px #5b665c;
+}
+.card .switch input:checked + .tr {
+	background: var(--felt);
+	box-shadow: none;
+}
+.card .switch input:focus-visible + .tr {
+	outline-color: var(--felt);
+	outline-offset: 2px;
+}
+
+
+/* ---- light dialog cards: contrast + hover/active/focus states ----
+   (the global button:hover rule is a translucent white made for the dark table; it beat `.card button` and
+   turned every dialog button white-on-white when hovered) */
+.card button:hover:not(:disabled) {
+	background: #2e7d32;
+}
+.card button:active:not(:disabled) {
+	background: #14471a;
+}
+.card button.primary:hover:not(:disabled) {
+	background: linear-gradient(#ffcb52, #ffbb1a);
+}
+.card button.primary:active:not(:disabled) {
+	background: linear-gradient(#f0a800, #e69f00);
+}
+.card button.primary.danger:hover:not(:disabled) {
+	background: linear-gradient(#f4786c, #ec4a46);
+}
+.card button.link:hover:not(:disabled),
+.card button.link:active:not(:disabled) {
+	background: none;
+	color: #0d3a12;
+}
+.card button:focus-visible {
+	outline: 3px solid #1b5e20;
+	outline-offset: 2px;
+}
+.card button.primary:focus-visible {
+	outline-color: #2a1d00;
+}
+.card .codechip {
+	background: #1b5e20;
+	border-color: #14471a;
+}
+.card .codechip button.icon {
+	background: #2e7d32;
+	border-color: #4a9a4e;
+}
+.card .codechip button.icon:hover:not(:disabled) {
+	background: #3d8b40;
+}
+.card .codechip button:focus-visible {
+	outline-color: var(--amber);
+}
+
+
+/* ---- room screens on the felt (lobby + the between-rounds dialog) ----
+   Dark tint + a clear light edge instead of faint white: the old 8-20% whites almost vanished on the green. */
+.lobby,
+.card.felt {
+	--panel: #00000047;
+	--edge: #ffffff73;
+	--btn: #0000005c;
+	--btn-hover: #00000080;
+	--btn-edge: #ffffffb3;
+}
+.card.felt {
+	background: radial-gradient(circle at 50% 0%, #3b7f3f, #1f5f24 78%);
+	color: #fff;
+	border: 1px solid #ffffff33;
+}
+.card.felt h2,
+.card.felt h3 {
+	color: #fff;
+}
+:is(.lobby, .card.felt) .lseat {
+	background: var(--panel);
+	border-color: var(--edge);
+}
+:is(.lobby, .card.felt) .lseat.empty {
+	background: #00000024;
+	border-color: #ffffff99;
+	opacity: 1;
+}
+:is(.lobby, .card.felt) .av.ghost {
+	background: #00000030;
+	border-color: #ffffff99;
+}
+:is(.lobby, .card.felt) button:not(.primary):not(.link) {
+	background: var(--btn);
+	border-color: var(--btn-edge);
+	color: #fff;
+}
+:is(.lobby, .card.felt) button:not(.primary):not(.link):hover:not(:disabled) {
+	background: var(--btn-hover);
+}
+:is(.lobby, .card.felt) button:not(.primary):not(.link):active:not(:disabled) {
+	background: #000000a6;
+}
+:is(.lobby, .card.felt) button:focus-visible {
+	outline: 3px solid var(--amber);
+	outline-offset: 2px;
+}
+:is(.lobby, .card.felt) .menu button {
+	background: none;
+	border-color: transparent;
+}
+:is(.lobby, .card.felt) .menu button:hover:not(:disabled) {
+	background: #ffffff26;
+}
+:is(.lobby, .card.felt) .lvlpop button[aria-selected='true'] {
+	background: #ffffff38;
+}
+:is(.lobby, .card.felt) .codechip {
+	background: #00000066;
+	border-color: #ffffffb3;
+}
+:is(.lobby, .card.felt) .codechip button.icon {
+	background: #ffffff2e;
+	border-color: #ffffffb3;
+}
+:is(.lobby, .card.felt) .codechip button.icon:hover:not(:disabled) {
+	background: #ffffff47;
+}
+.lobby .switch .tr {
+	background: #0000005c;
+	box-shadow: inset 0 0 0 1px #ffffffb3;
+}
+.lobby .switch input:checked + .tr {
+	background: var(--amber);
+	box-shadow: none;
+}
+:is(.lobby, .card.felt) .sub,
+.lobby .switch small,
+:is(.lobby, .card.felt) .lvltag,
+:is(.lobby, .card.felt) .lseat em {
+	opacity: 0.92;
+}
+/* a disabled primary stays legible but clearly inactive (no 45% fade) */
+:is(.lobby, .card.felt) button.primary:disabled {
+	opacity: 1;
+	background: #0000004d;
+	color: #ffffffcc;
+	border: 1px dashed #ffffff99;
+	box-shadow: none;
+	cursor: not-allowed;
+}
+.card.felt button.link,
+.card.felt button.link:hover:not(:disabled),
+.card.felt button.link:active:not(:disabled) {
+	background: none;
+	color: #fff;
+	border: 0;
+}
+.card.felt .res li {
+	background: #00000040;
+}
+.card.felt .res .pos {
+	color: #9be7a0;
+}
+.card.felt .res .neg {
+	color: #ffb3ab;
+}
+.card.felt .res small {
+	opacity: 0.9;
+}
+.card.felt .xbtn {
+	background: #00000059 !important;
+	color: #fff !important;
+	border: 1px solid #ffffff59 !important;
+}
+
+/* inside the scrolling dialog the difficulty popup opens upward, so the card doesn't clip it */
+.card.felt .lvlpop {
+	top: auto;
+	bottom: calc(100% + 6px);
+}
+
+/* dropdown rows stay flat: the generic felt button style above has equal-or-higher specificity, so repeat it here */
+:is(.lobby, .card.felt) .menu button:not(.primary):not(.link) {
+	background: none;
+	border-color: transparent;
+}
+:is(.lobby, .card.felt) .menu button:not(.primary):not(.link):hover:not(:disabled) {
+	background: #ffffff26;
+}
+:is(.lobby, .card.felt) .menu button[aria-selected='true']:not(.primary):not(.link) {
+	background: #ffffff38;
 }

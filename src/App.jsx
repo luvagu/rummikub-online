@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { LoaderCircle } from 'lucide-react'
-import { hostGame, joinGame, localGame, TOK } from './net.js'
+import { hostGame, joinGame, localGame, tutorialGame, TOK } from './net.js'
 import { LangCtx, fmt, guessLang } from './i18n.js'
 import {
 	saveSess,
@@ -15,6 +15,7 @@ import { Toasts, Modal } from './ui.jsx'
 import { Home, Lobby } from './screens.jsx'
 import Game from './Game.jsx'
 import Rules from './Rules.jsx'
+import Tutorial from './Tutorial.jsx'
 import { useT } from './i18n.js'
 import { unlockAudio } from './notify.js'
 
@@ -22,7 +23,9 @@ function LeaveDialog({ mode, phase, onYes, onNo }) {
 	const t = useT(),
 		lobby = phase === 'lobby'
 	const msg =
-		mode === 'solo'
+		mode === 'tutorial'
+			? 'lv.tutorial'
+			: mode === 'solo'
 			? 'lv.solo'
 			: mode === 'host'
 				? lobby
@@ -71,7 +74,10 @@ export default function App() {
 	const [net, setNet] = useState(null),
 		[s, setS] = useState(null),
 		[busy, setBusy] = useState(null),
-		[conn, setConn] = useState(true)
+		[conn, setConn] = useState(true),
+		[draft, setDraft] = useState({ sel: [], b: [], r: [] }) // tutorial: the player's unsent edits, reported by Game
+	const [gk, setGk] = useState(0) // bumped on every new session so Game / Tutorial remount with fresh local state
+	const tutReport = useCallback((sel, d) => setDraft({ sel, b: d.b, r: d.r }), [])
 	const rbus = useRef(new Set()) // reaction events -> whoever is subscribed (the Game screen)
 	const reacts = useRef(f => {
 		rbus.current.add(f)
@@ -140,15 +146,16 @@ export default function App() {
 			}
 		}
 		setConn(true) // fresh session: never inherit an old "offline" state
-		sess.current = { mode, name: nm, code: cd, tok }
-		saveSess(sess.current)
-		setBusy(o.resume ? 'resume' : mode === 'host' ? 'create' : mode)
+		setGk(k => k + 1)
+		sess.current = { mode, name: nm, code: cd, tok, lesson: o.lesson }
+		if (mode !== 'tutorial') saveSess(sess.current) // the tutorial is never resumed
+		setBusy(o.resume ? 'resume' : mode === 'host' ? 'create' : mode === 'tutorial' ? 'solo' : mode)
 		let n
 		const cb = {
 			onState: st => {
 				setS(st)
 				setBusy(null)
-				if (n && n.code && sess.current && sess.current.code !== n.code) {
+				if (n && n.code && sess.current && sess.current.mode !== 'tutorial' && sess.current.code !== n.code) {
 					sess.current = { ...sess.current, code: n.code }
 					saveSess(sess.current)
 				}
@@ -173,7 +180,9 @@ export default function App() {
 				? hostGame
 				: mode === 'solo'
 					? localGame
-					: (nm2, c2, tk) => joinGame(cd, nm2, c2, tk)
+					: mode === 'tutorial'
+						? (nm2, c2, tk) => tutorialGame(nm2, c2, tk, t('tutBot'), o.lesson)
+						: (nm2, c2, tk) => joinGame(cd, nm2, c2, tk)
 		)(nm, cb, tok, snap || undefined)
 		netRef.current = n
 		setNet(n)
@@ -345,12 +354,35 @@ export default function App() {
 				/>
 			) : (
 				<Game
+					key={'game' + gk}
 					s={s}
 					net={net}
 					toast={toast}
 					reacts={reacts}
+					copy={copy}
+					share={share}
+					tut={sess.current && sess.current.mode === 'tutorial' ? tutReport : undefined}
 					openRules={openRules}
 					onLeave={() => setLeaving(true)}
+				/>
+			)}
+			{inRoom && s && s.phase === 'play' && sess.current && sess.current.mode === 'tutorial' && (
+				<Tutorial
+					key={'tutorial' + gk} // must differ from Game's key: they are siblings, and equal keys make React mount Game over and over
+					s={s}
+					draft={draft}
+					lesson={sess.current.lesson}
+					onNext={l => {
+						doLeave()
+						start('tutorial', { lesson: l })
+					}}
+					onExit={() => setLeaving(true)}
+					onRules={openRules}
+					onPlay={() => {
+						doLeave()
+						start('solo')
+					}}
+					onFinish={doLeave}
 				/>
 			)}
 			{rules && <Rules close={() => setRules(false)} />}

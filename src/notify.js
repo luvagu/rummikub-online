@@ -57,8 +57,23 @@ export const buzz = (p = [200, 100, 200]) => {
 		if (canVibrate()) navigator.vibrate(p)
 	} catch (e) {}
 }
-export function reactPop() {
-	if (getPrefs().sound) tone(780, 0, 0.12, 0.07, 'triangle')
+// One short synthesized cue per reaction key (see REACTIONS in reactions.js). Steps are [freq, at, dur, gain, type].
+const RSND = {
+	gg: [[660, 0, 0.09, 0.08, 'triangle'], [880, 0.1, 0.14, 0.08, 'triangle']], // rising double blip
+	nice: [[523, 0, 0.1, 0.07], [659, 0.08, 0.1, 0.07], [784, 0.16, 0.18, 0.07]], // bright arpeggio
+	wow: [[400, 0, 0.1, 0.07, 'triangle'], [520, 0.07, 0.1, 0.07, 'triangle'], [680, 0.14, 0.1, 0.07, 'triangle'], [900, 0.21, 0.2, 0.07, 'triangle']], // upward sweep
+	haha: [[740, 0, 0.06, 0.07, 'square'], [740, 0.09, 0.06, 0.07, 'square'], [740, 0.18, 0.06, 0.07, 'square']], // staccato triplet
+	oops: [[440, 0, 0.1, 0.08, 'triangle'], [415, 0.1, 0.1, 0.08, 'triangle'], [370, 0.2, 0.2, 0.08, 'triangle']], // wobbly down-step
+	hmm: [[330, 0, 0.18, 0.08, 'sine'], [294, 0.2, 0.26, 0.08, 'sine']], // low two-tone
+	hurry: [[1000, 0, 0.04, 0.06], [1000, 0.15, 0.04, 0.06], [1000, 0.3, 0.04, 0.06], [1000, 0.45, 0.04, 0.06]], // ticking
+	sad: [[520, 0, 0.14, 0.08, 'sine'], [440, 0.14, 0.14, 0.08, 'sine'], [350, 0.28, 0.14, 0.08, 'sine'], [260, 0.42, 0.28, 0.08, 'sine']], // descending slide
+	rage: [[110, 0, 0.3, 0.1, 'sawtooth'], [104, 0.04, 0.26, 0.06, 'sawtooth']], // low buzz
+}
+export function reactPop(k) {
+	if (!getPrefs().sound) return
+	const c = RSND[k]
+	if (c) c.forEach(([f, at, d, g, ty]) => tone(f, at, d, g, ty))
+	else tone(780, 0, 0.12, 0.07, 'triangle')
 }
 export function notifyTurn() {
 	const p = getPrefs()
