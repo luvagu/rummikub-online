@@ -110,7 +110,7 @@ export class Game {
 			}
 			return true
 		}
-		if (s.phase !== 'lobby' || s.players.length >= 4) return false
+		if ((s.phase !== 'lobby' && s.phase !== 'over') || s.players.length >= 4) return false // new players may also join between rounds (while there are free seats)
 		s.players.push({ id: tok, name, rack: [], melded: false, on: true })
 		s.scores[tok] = 0
 		s.wins[tok] = 0
@@ -257,9 +257,9 @@ export class Game {
 			p = s.players[i]
 		if (!p) return E('e.notIn')
 		if (m.t === 'opts') {
-			if (i === 0 && s.phase === 'lobby') {
-				if ('timer' in m) s.opts.timer = !!m.timer
-				if ([1, 2, 3].includes(m.lvl)) s.opts.lvl = m.lvl
+			if (i === 0 && (s.phase === 'lobby' || s.phase === 'over')) {
+				if ('timer' in m && s.phase === 'lobby') s.opts.timer = !!m.timer
+				if ([1, 2, 3].includes(m.lvl)) s.opts.lvl = m.lvl // level of the next bot added
 			}
 			return
 		}
@@ -279,9 +279,10 @@ export class Game {
 			return
 		}
 		if (m.t === 'bot') {
-			if (i === 0 && s.phase === 'lobby' && s.players.length < 4) {
-				const n = s.players.filter(x => x.bot).length + 1,
-					id = 'bot' + n
+			if (i === 0 && (s.phase === 'lobby' || s.phase === 'over') && s.players.length < 4) {
+				let n = 1 // first unused number: ids stay unique after a middle bot was removed
+				while (s.players.some(x => x.id === 'bot' + n)) n++
+				const id = 'bot' + n
 				s.players.push({
 					id,
 					name: 'Bot ' + n,
@@ -297,9 +298,26 @@ export class Game {
 			return
 		}
 		if (m.t === 'unbot') {
-			if (i === 0 && s.phase === 'lobby') {
-				const k = s.players.map(x => !!x.bot).lastIndexOf(true)
-				if (k > 0) s.players.splice(k, 1)
+			// lobby or between rounds; `id` removes that bot, otherwise the last one
+			if (i === 0 && (s.phase === 'lobby' || s.phase === 'over')) {
+				const k = m.id
+					? s.players.findIndex(x => x.id === m.id && x.bot)
+					: s.players.map(x => !!x.bot).lastIndexOf(true)
+				if (k > 0) {
+					const [r] = s.players.splice(k, 1)
+					delete s.scores[r.id]
+					delete s.wins[r.id]
+				}
+			}
+			return
+		}
+		if (m.t === 'forfeit') {
+			// host ends the round early: nobody wins, no points / wins / game count change
+			if (i === 0 && s.phase === 'play') {
+				s.phase = 'over'
+				this.bump()
+				s.result = { cancelled: true, delta: {} }
+				s.log = E('l.cancelled')
 			}
 			return
 		}

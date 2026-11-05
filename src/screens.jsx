@@ -1,27 +1,21 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import {
 	Bot,
 	Users,
 	KeyRound,
 	ChevronRight,
-	ChevronDown,
 	BookOpen,
-	Crown,
 	LogOut,
-	Link2,
-	Share2,
-	Copy,
-	Check,
 	LoaderCircle,
-	WifiOff,
 	X,
-	Plus,
 	History,
 	ArrowLeft,
 } from 'lucide-react'
 import { COLORS } from './game.js'
+import { LESSON_ORDER } from './tutorial.js'
 import { useT } from './i18n.js'
-import { Avatar, LangBtn, Modal } from './ui.jsx'
+import { LangBtn, Modal, Invite } from './ui.jsx'
+import { Seats } from './Seats.jsx'
 
 const Logo = () => (
 	<div className='logo' aria-label='Rummikub'>
@@ -74,6 +68,13 @@ function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
 	)
 }
 
+export const getTimed = () => {
+	try {
+		return localStorage.rmkTimer === '1'
+	} catch (e) {
+		return false
+	}
+}
 export const getLvl = () => {
 	try {
 		const n = +localStorage.rmkLvl
@@ -81,60 +82,6 @@ export const getLvl = () => {
 	} catch (e) {
 		return 2
 	}
-}
-
-function LevelMenu({ value, onChange, label, className = '' }) {
-	const t = useT(),
-		[open, setOpen] = useState(false),
-		ref = useRef(null)
-	useEffect(() => {
-		if (!open) return
-		const down = e => ref.current && !ref.current.contains(e.target) && setOpen(false),
-			key = e => e.key === 'Escape' && setOpen(false)
-		document.addEventListener('pointerdown', down)
-		document.addEventListener('keydown', key)
-		return () => {
-			document.removeEventListener('pointerdown', down)
-			document.removeEventListener('keydown', key)
-		}
-	}, [open])
-	return (
-		<div className={'menuwrap lvlmenu ' + className} ref={ref}>
-			<button
-				className='lvlbtn'
-				aria-haspopup='listbox'
-				aria-expanded={open}
-				aria-label={label}
-				title={label}
-				onClick={() => setOpen(v => !v)}
-			>
-				<Bot size={16} />
-				<span>{t('lvl' + value)}</span>
-				<ChevronDown size={16} />
-			</button>
-			{open && (
-				<div className='menu lvlpop' role='listbox' aria-label={label}>
-					{[1, 2, 3].map(n => (
-						<button
-							key={n}
-							role='option'
-							aria-selected={value === n}
-							onClick={() => {
-								onChange(n)
-								setOpen(false)
-							}}
-						>
-							<span>
-								<b>{t('lvl' + n)}</b>
-								<small>{t('lvlD' + n)}</small>
-							</span>
-							{value === n && <Check size={16} />}
-						</button>
-					))}
-				</div>
-			)}
-		</div>
-	)
 }
 
 export function Home({
@@ -157,7 +104,10 @@ export function Home({
 }) {
 	const t = useT(),
 		nf = { name, setName, nameErr, names, onForgetName },
-		[pick, setPick] = useState(false)
+		[pick, setPick] = useState(false),
+		[timed, setTimed] = useState(getTimed),
+		[mode, setMode] = useState(false),
+		[lessons, setLessons] = useState(false) // solo: choose between a bot game and the tutorial
 	const playSolo = n => {
 		try {
 			localStorage.rmkLvl = n
@@ -166,10 +116,84 @@ export function Home({
 		start('solo')
 	}
 	// solo needs a name first: let start() show the "name required" error instead of opening the picker
-	const soloClick = () => (name.trim() ? setPick(true) : start('solo'))
+	const soloClick = () => (name.trim() ? setMode(true) : start('solo'))
+	const modeModal = mode && (
+		<Modal title={t('soloT')} onClose={() => setMode(false)}>
+			<h2 className='lvltitle'>{t('soloT')}</h2>
+			<div className='lvlopts'>
+				<button
+					data-autofocus
+					onClick={() => {
+						setMode(false)
+						setPick(true)
+					}}
+				>
+					<span>
+						<b>{t('soloBot')}</b>
+						<small>{t('soloBotD')}</small>
+					</span>
+					<ChevronRight size={18} />
+				</button>
+				<button
+					onClick={() => {
+						setMode(false)
+						setLessons(true)
+					}}
+				>
+					<span>
+						<b>{t('soloTut')}</b>
+						<small>{t('soloTutD')}</small>
+					</span>
+					<ChevronRight size={18} />
+				</button>
+			</div>
+		</Modal>
+	)
+	const lessonsModal = lessons && (
+		<Modal title={t('lessonsT')} onClose={() => setLessons(false)}>
+			<h2 className='lvltitle'>{t('lessonsT')}</h2>
+			<div className='lvlopts'>
+				{LESSON_ORDER.map((l, n) => (
+					<button
+						key={l}
+						data-autofocus={n === 0 ? true : undefined}
+						onClick={() => {
+							setLessons(false)
+							start('tutorial', { lesson: l })
+						}}
+					>
+						<span>
+							<b>
+								{n + 1}. {t('les.' + l)}
+							</b>
+							<small>{t('les.' + l + 'D')}</small>
+						</span>
+						<ChevronRight size={18} />
+					</button>
+				))}
+			</div>
+		</Modal>
+	)
 	const lvlModal = pick && (
 		<Modal title={t('botLvl')} onClose={() => setPick(false)}>
 			<h2 className='lvltitle'>{t('botLvl')}</h2>
+			<label className='switch'>
+				<input
+					type='checkbox'
+					checked={timed}
+					onChange={e => {
+						setTimed(e.target.checked)
+						try {
+							localStorage.rmkTimer = e.target.checked ? '1' : '0'
+						} catch (err) {}
+					}}
+				/>
+				<span className='tr' />
+				<span>
+					<b>{t('timer')}</b>
+					<small>{t('timerD')}</small>
+				</span>
+			</label>
 			<div className='lvlopts'>
 				{[1, 2, 3].map(n => (
 					<button
@@ -310,102 +334,21 @@ export function Home({
 			</button>
 			{busyModal}
 			{lvlModal}
+			{modeModal}
+			{lessonsModal}
 		</main>
 	)
 }
 
 export function Lobby({ s, net, copy, share, leave, openRules }) {
 	const t = useT(),
-		host = s.me === 0,
-		[done, setDone] = useState('')
-	const doCopy = async w => {
-		if (await copy(w)) {
-			setDone(w)
-			setTimeout(() => setDone(''), 1800)
-		}
-	}
-	const lastBot = s.players.map(p => !!p.bot).lastIndexOf(true)
+		host = s.me === 0
 	return (
 		<main className='home lobby'>
 			<LangBtn />
 			<p className='sub'>{t('room')}</p>
-			<div className='codechip'>
-				<span className='codetxt' aria-label={net.code}>
-					{net.code}
-				</span>
-				<button
-					className='icon'
-					aria-label={t('copyCode')}
-					title={t('copyCode')}
-					onClick={() => doCopy('code')}
-				>
-					{done === 'code' ? <Check size={20} /> : <Copy size={20} />}
-				</button>
-			</div>
-			<div className='row'>
-				<button className='primary' onClick={() => doCopy('link')}>
-					{done === 'link' ? <Check size={18} /> : <Link2 size={18} />}
-					{done === 'link' ? t('copied') : t('copy')}
-				</button>
-				{navigator.share && (
-					<button onClick={share}>
-						<Share2 size={18} />
-						{t('share')}
-					</button>
-				)}
-			</div>
-			<p className='sub'>{t('inviteHint')}</p>
-			<ul className='lseats'>
-				{[0, 1, 2, 3].map(i => {
-					const p = s.players[i]
-					return p ? (
-						<li key={p.id} className={'lseat' + (p.on === false ? ' off' : '')}>
-							<Avatar name={p.name} i={i} />
-							<b>
-								{p.name}
-								{i === s.me && <em> {t('you')}</em>}
-							</b>
-							{i === 0 && <Crown size={16} aria-label={t('host')} />}
-							{p.bot && <Bot size={16} aria-label={t('bot')} />}
-							{p.bot && !p.left && (
-								<small className='lvltag'>{t('lvl' + (p.lvl || 2))}</small>
-							)}
-							{p.on === false && <WifiOff size={16} aria-label={t('off')} />}
-							{host && p.bot && i === lastBot && (
-								<button
-									className='icon'
-									aria-label={t('rmBot')}
-									title={t('rmBot')}
-									onClick={() => net.send({ t: 'unbot' })}
-								>
-									<X size={16} />
-								</button>
-							)}
-						</li>
-					) : (
-						<li key={'e' + i} className='lseat empty'>
-							<span className='av ghost' />
-							{host && i === s.players.length ? (
-								<LevelMenu
-									className='inseat'
-									value={s.opts.lvl || 2}
-									onChange={n => net.send({ t: 'opts', lvl: n })}
-									label={t('botLvlNext')}
-								/>
-							) : (
-								<span>{t('waiting')}</span>
-							)}
-							{host && i === s.players.length && (
-								<button onClick={() => net.send({ t: 'bot' })}>
-									<Plus size={16} />
-									<Bot size={16} />
-									{t('addBot')}
-								</button>
-							)}
-						</li>
-					)
-				})}
-			</ul>
+			<Invite net={net} copy={copy} share={share} />
+			<Seats s={s} net={net} host={host} />
 			{host ? (
 				<>
 					<label className='switch'>
