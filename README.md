@@ -1,6 +1,6 @@
 # Rummikub Online
 
-Classic Rummikub (2–4 players) in React. Multiplayer is peer-to-peer (PeerJS/WebRTC): the host's browser runs the game, friends join with a 5-letter room code or invite link. No server to pay for or maintain.
+Classic Rummikub (2–4 players) in React. Multiplayer goes through free public MQTT relays (see below): the host's browser runs the game, friends join with a 5-character room code or invite link. No server to pay for or maintain.
 
 ## Run locally
 
@@ -20,7 +20,18 @@ Classic Rummikub (2–4 players) in React. Multiplayer is peer-to-peer (PeerJS/W
 
 ## Bots
 
-Add up to 3 bots in the lobby, or press "Play solo vs bot" on the home screen (works fully offline, no network needed).
+Add up to 3 bots in the lobby, or press "Play solo vs bot" on the home screen (works fully offline, no network needed). Bots come in three difficulty levels:
+
+| Level | How it plays |
+| --- | --- |
+| Beginner | Ignores jokers, plays only one set per turn (two if needed to meld), never adds to sets already on the table, and often draws instead of playing. |
+| Intermediate | Plays the best combination of new sets from its rack, then tacks leftover tiles onto existing sets. |
+| Expert | Like Intermediate, but once it has melded it also rearranges the whole table (splits, merges and borrows tiles from sets) to empty its rack as fast as possible. The search is capped at roughly 300 ms per move. |
+
+- **Solo:** tapping "Play solo vs bot" opens a dialog to pick the level; your last choice is remembered.
+- **Lobby:** the host picks the level in the dropdown next to "Add bot"; it applies to the next bot added, and each bot keeps its own level (shown next to its name).
+- A bot that takes over the seat of a player who left mid-game plays at Intermediate level.
+- The bot AI lives in `botMove()` in `src/game.js`.
 
 ## How online play works
 
@@ -39,7 +50,7 @@ A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibr
 
 ## Reconnecting, leaving and resuming
 
-- A dropped connection reconnects automatically (a banner shows while it does) and players get their seat back.
+- A dropped connection reconnects automatically (a banner shows while it does and clears itself once the connection is back) and players get their seat back.
 - The current room is remembered in the browser: after a refresh or reopened tab the game resumes on its own; if it can't, a "Resume your game" card appears on the home screen.
 - A host who refreshes resumes the same room (same code) from a snapshot stored in that browser; guests rejoin automatically.
 - Menu > Leave room: guests mid-game hand their seat to a bot (they can reclaim it by rejoining); the host ends the game for everyone.
