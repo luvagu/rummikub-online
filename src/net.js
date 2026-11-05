@@ -47,6 +47,21 @@ const open = (url, will) =>
 		})
 	})
 
+// Keep the UI's connection flag in sync with the client's real state. Event edges alone can be missed or
+// reordered (tab suspended, network switch), which left the "reconnecting" banner stuck, so also poll.
+const watch = (c, onConn) => {
+	let last
+	const sync = () => {
+		const v = !!c.connected
+		if (v !== last) onConn((last = v))
+	}
+	;['connect', 'close', 'offline', 'end', 'message'].forEach(e => c.on(e, sync))
+	const iv = setInterval(sync, 2000)
+	c.once('end', () => clearInterval(iv))
+	addEventListener('online', sync)
+	document.addEventListener('visibilitychange', sync)
+}
+
 // Host-side clock work: lets bots take their turns after a short "thinking" delay, and enforces the
 // turn timer even if the player's own browser is gone (client sends the precise timeout first; this is the fallback).
 const runner = (game, push) => {
@@ -168,11 +183,8 @@ export function hostGame(
 			c.end(true)
 			return
 		}
-		c.on('connect', () => {
-			status(true)
-			onConn(true)
-		}) // after an automatic reconnect
-		c.on('close', () => onConn(false))
+		c.on('connect', () => status(true)) // after an automatic reconnect
+		watch(c, onConn)
 		c.on('message', (_, buf) => {
 			let d
 			try {
@@ -259,11 +271,8 @@ export function joinGame(
 				return
 			}
 			const hello = () => pub({ t: 'join', name })
-			c.on('connect', () => {
-				onConn(true)
-				hello()
-			}) // after an automatic reconnect: take the seat back
-			c.on('close', () => onConn(false))
+			c.on('connect', hello) // after an automatic reconnect: take the seat back
+			watch(c, onConn)
 			c.on('message', (topic, buf) => {
 				let d
 				try {
