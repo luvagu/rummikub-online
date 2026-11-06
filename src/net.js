@@ -394,7 +394,13 @@ export function localGame(
 
 // Guided tutorial: an offline game from a fixed, scripted position. Nothing is saved; the "coach" opponent
 // just draws a tile on its turn so the lesson stays predictable.
-export function tutorialGame(name, { onState, onErr }, tok = TOK, botName = 'Coach', lesson = 'basics') {
+export function tutorialGame(
+	name,
+	{ onState, onErr },
+	tok = TOK,
+	botName = 'Coach',
+	lesson = 'basics',
+) {
 	const game = new Game()
 	let bt = 0
 	const push = () => {

@@ -22,11 +22,11 @@ Classic Rummikub (2–4 players) in React. Multiplayer goes through free public 
 
 Add up to 3 bots in the lobby or between rounds, or press "Play solo" on the home screen and choose "Play against the bot" (works fully offline, no network needed). Bots come in three difficulty levels:
 
-| Level | How it plays |
-| --- | --- |
-| Beginner | Ignores jokers, plays only one set per turn (two if needed to meld), never adds to sets already on the table, and often draws instead of playing. |
-| Intermediate | Plays the best combination of new sets from its rack, then tacks leftover tiles onto existing sets. |
-| Expert | Like Intermediate, but once it has melded it also rearranges the whole table (splits, merges and borrows tiles from sets) to empty its rack as fast as possible. The search is capped at roughly 300 ms per move. |
+| Level        | How it plays                                                                                                                                                                                                      |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Beginner     | Ignores jokers, plays only one set per turn (two if needed to meld), never adds to sets already on the table, and often draws instead of playing.                                                                 |
+| Intermediate | Plays the best combination of new sets from its rack, then tacks leftover tiles onto existing sets.                                                                                                               |
+| Expert       | Like Intermediate, but once it has melded it also rearranges the whole table (splits, merges and borrows tiles from sets) to empty its rack as fast as possible. The search is capped at roughly 300 ms per move. |
 
 - **Solo:** "Play solo" asks whether to play against the bot or take the tutorial. The bot dialog picks the level and has a switch for the 1-minute turn timer; both choices are remembered.
 - **Lobby and between rounds:** the host picks the level in the dropdown next to "Add bot"; it applies to the next bot added, and each bot keeps its own level (shown next to its name). Any bot can be removed with its X.

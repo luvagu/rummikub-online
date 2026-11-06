@@ -1,9 +1,29 @@
 import { useState, useEffect, useRef, useContext } from 'react'
-import { X, CircleCheck, TriangleAlert, Info, Languages, Copy, Check, Link2, Share2 } from 'lucide-react'
+import {
+	X,
+	CircleCheck,
+	TriangleAlert,
+	Info,
+	Languages,
+	Copy,
+	Check,
+	Link2,
+	Share2,
+} from 'lucide-react'
 import { COLORS, T } from './game.js'
 import { useT, tr, LangCtx } from './i18n.js'
 
-export const Tile = ({ id, sel, num, fresh, placed, ghost, enter, dnd, onClick }) => {
+export const Tile = ({
+	id,
+	sel,
+	num,
+	fresh,
+	placed,
+	ghost,
+	enter,
+	dnd,
+	onClick,
+}) => {
 	const t = useT(),
 		x = T(id)
 	// Firefox never starts a native drag from a <button>, so while drag & drop is on the tile is a role=button div
@@ -23,9 +43,17 @@ export const Tile = ({ id, sel, num, fresh, placed, ghost, enter, dnd, onClick }
 	return (
 		<Tag
 			{...kb}
-			className={'tile' + (sel ? ' sel' : '') + (fresh ? ' fresh' : '') + (placed ? ' placed' : '') + (ghost ? ' ghost' : '') + (enter ? ' enter' : '') + (x.j ? ' joker' : '')}
+			className={
+				'tile' +
+				(sel ? ' sel' : '') +
+				(fresh ? ' fresh' : '') +
+				(placed ? ' placed' : '') +
+				(ghost ? ' ghost' : '') +
+				(enter ? ' enter' : '') +
+				(x.j ? ' joker' : '')
+			}
 			data-c={x.c}
-				data-id={id}
+			data-id={id}
 			style={{ '--tc': x.j ? '#7b1fa2' : COLORS[x.c] }}
 			aria-pressed={!!sel}
 			aria-label={x.j ? t('joker') : `${x.n} ${t('c' + x.c)}`}
@@ -71,7 +99,9 @@ export function Modal({ title, onClose, children, felt }) {
 				'button:not(:disabled),a[href],input,[tabindex="0"]',
 			),
 		]
-		;(el.querySelector('[data-autofocus]') || foc()[0] || el).focus({ preventScroll: true })
+		;(el.querySelector('[data-autofocus]') || foc()[0] || el).focus({
+			preventScroll: true,
+		})
 		const k = e => {
 			if (e.key === 'Escape' && onClose) {
 				e.stopPropagation()
@@ -159,7 +189,12 @@ export function Invite({ net, copy, share }) {
 				<span className='codetxt' aria-label={net.code}>
 					{net.code}
 				</span>
-				<button className='icon' aria-label={t('copyCode')} title={t('copyCode')} onClick={() => doCopy('code')}>
+				<button
+					className='icon'
+					aria-label={t('copyCode')}
+					title={t('copyCode')}
+					onClick={() => doCopy('code')}
+				>
 					{done === 'code' ? <Check size={20} /> : <Copy size={20} />}
 				</button>
 			</div>

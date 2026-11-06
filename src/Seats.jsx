@@ -9,7 +9,8 @@ export function LevelMenu({ value, onChange, label, className = '' }) {
 		ref = useRef(null)
 	useEffect(() => {
 		if (!open) return
-		const down = e => ref.current && !ref.current.contains(e.target) && setOpen(false),
+		const down = e =>
+				ref.current && !ref.current.contains(e.target) && setOpen(false),
 			key = e => e.key === 'Escape' && setOpen(false)
 		document.addEventListener('pointerdown', down)
 		document.addEventListener('keydown', key)
@@ -74,7 +75,9 @@ export function Seats({ s, net, host }) {
 						</b>
 						{i === 0 && <Crown size={16} aria-label={t('host')} />}
 						{p.bot && <Bot size={16} aria-label={t('bot')} />}
-						{p.bot && !p.left && <small className='lvltag'>{t('lvl' + (p.lvl || 2))}</small>}
+						{p.bot && !p.left && (
+							<small className='lvltag'>{t('lvl' + (p.lvl || 2))}</small>
+						)}
 						{p.on === false && <WifiOff size={16} aria-label={t('off')} />}
 						{host && p.bot && (
 							<button

@@ -26,14 +26,14 @@ function LeaveDialog({ mode, phase, onYes, onNo }) {
 		mode === 'tutorial'
 			? 'lv.tutorial'
 			: mode === 'solo'
-			? 'lv.solo'
-			: mode === 'host'
-				? lobby
-					? 'lv.hostLobby'
-					: 'lv.hostPlay'
-				: lobby
-					? 'lv.guestLobby'
-					: 'lv.guestPlay'
+				? 'lv.solo'
+				: mode === 'host'
+					? lobby
+						? 'lv.hostLobby'
+						: 'lv.hostPlay'
+					: lobby
+						? 'lv.guestLobby'
+						: 'lv.guestPlay'
 	return (
 		<Modal title={t('leaveT')} onClose={onNo}>
 			<h2>{t('leaveT')}</h2>
@@ -77,7 +77,10 @@ export default function App() {
 		[conn, setConn] = useState(true),
 		[draft, setDraft] = useState({ sel: [], b: [], r: [] }) // tutorial: the player's unsent edits, reported by Game
 	const [gk, setGk] = useState(0) // bumped on every new session so Game / Tutorial remount with fresh local state
-	const tutReport = useCallback((sel, d) => setDraft({ sel, b: d.b, r: d.r }), [])
+	const tutReport = useCallback(
+		(sel, d) => setDraft({ sel, b: d.b, r: d.r }),
+		[],
+	)
 	const rbus = useRef(new Set()) // reaction events -> whoever is subscribed (the Game screen)
 	const reacts = useRef(f => {
 		rbus.current.add(f)
@@ -149,13 +152,27 @@ export default function App() {
 		setGk(k => k + 1)
 		sess.current = { mode, name: nm, code: cd, tok, lesson: o.lesson }
 		if (mode !== 'tutorial') saveSess(sess.current) // the tutorial is never resumed
-		setBusy(o.resume ? 'resume' : mode === 'host' ? 'create' : mode === 'tutorial' ? 'solo' : mode)
+		setBusy(
+			o.resume
+				? 'resume'
+				: mode === 'host'
+					? 'create'
+					: mode === 'tutorial'
+						? 'solo'
+						: mode,
+		)
 		let n
 		const cb = {
 			onState: st => {
 				setS(st)
 				setBusy(null)
-				if (n && n.code && sess.current && sess.current.mode !== 'tutorial' && sess.current.code !== n.code) {
+				if (
+					n &&
+					n.code &&
+					sess.current &&
+					sess.current.mode !== 'tutorial' &&
+					sess.current.code !== n.code
+				) {
 					sess.current = { ...sess.current, code: n.code }
 					saveSess(sess.current)
 				}
@@ -361,30 +378,38 @@ export default function App() {
 					reacts={reacts}
 					copy={copy}
 					share={share}
-					tut={sess.current && sess.current.mode === 'tutorial' ? tutReport : undefined}
+					tut={
+						sess.current && sess.current.mode === 'tutorial'
+							? tutReport
+							: undefined
+					}
 					openRules={openRules}
 					onLeave={() => setLeaving(true)}
 				/>
 			)}
-			{inRoom && s && s.phase === 'play' && sess.current && sess.current.mode === 'tutorial' && (
-				<Tutorial
-					key={'tutorial' + gk} // must differ from Game's key: they are siblings, and equal keys make React mount Game over and over
-					s={s}
-					draft={draft}
-					lesson={sess.current.lesson}
-					onNext={l => {
-						doLeave()
-						start('tutorial', { lesson: l })
-					}}
-					onExit={() => setLeaving(true)}
-					onRules={openRules}
-					onPlay={() => {
-						doLeave()
-						start('solo')
-					}}
-					onFinish={doLeave}
-				/>
-			)}
+			{inRoom &&
+				s &&
+				s.phase === 'play' &&
+				sess.current &&
+				sess.current.mode === 'tutorial' && (
+					<Tutorial
+						key={'tutorial' + gk} // must differ from Game's key: they are siblings, and equal keys make React mount Game over and over
+						s={s}
+						draft={draft}
+						lesson={sess.current.lesson}
+						onNext={l => {
+							doLeave()
+							start('tutorial', { lesson: l })
+						}}
+						onExit={() => setLeaving(true)}
+						onRules={openRules}
+						onPlay={() => {
+							doLeave()
+							start('solo')
+						}}
+						onFinish={doLeave}
+					/>
+				)}
 			{rules && <Rules close={() => setRules(false)} />}
 			{leaving && (
 				<LeaveDialog

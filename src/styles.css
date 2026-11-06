@@ -903,7 +903,9 @@ button.pulse {
 }
 .toasts {
 	position: fixed;
-	top: calc(70px + env(safe-area-inset-top)); /* below the header: never hide the seats / menu button */
+	top: calc(
+		70px + env(safe-area-inset-top)
+	); /* below the header: never hide the seats / menu button */
 	left: 50%;
 	transform: translateX(-50%);
 	display: flex;
@@ -936,7 +938,9 @@ button.pulse {
 }
 .banner {
 	position: fixed;
-	top: calc(62px + env(safe-area-inset-top)); /* under the header so the menu stays usable while offline */
+	top: calc(
+		62px + env(safe-area-inset-top)
+	); /* under the header so the menu stays usable while offline */
 	left: 0;
 	right: 0;
 	z-index: 29;
@@ -1793,7 +1797,11 @@ button.primary:disabled {
 }
 @media (max-width: 520px) {
 	.seats {
-		-webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+		-webkit-mask-image: linear-gradient(
+			90deg,
+			#000 calc(100% - 22px),
+			transparent
+		);
 		mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
 	}
 	.meld {
@@ -1816,7 +1824,6 @@ button.primary:disabled {
 		display: none;
 	}
 }
-
 
 /* ---- tutorial coach ---- */
 .coach {
@@ -1887,7 +1894,6 @@ button.primary:disabled {
 	outline-offset: 2px;
 }
 
-
 /* ---- light dialog cards: contrast + hover/active/focus states ----
    (the global button:hover rule is a translucent white made for the dark table; it beat `.card button` and
    turned every dialog button white-on-white when hovered) */
@@ -1932,7 +1938,6 @@ button.primary:disabled {
 .card .codechip button:focus-visible {
 	outline-color: var(--amber);
 }
-
 
 /* ---- room screens on the felt (lobby + the between-rounds dialog) ----
    Dark tint + a clear light edge instead of faint white: the old 8-20% whites almost vanished on the green. */
@@ -2061,9 +2066,13 @@ button.primary:disabled {
 	background: none;
 	border-color: transparent;
 }
-:is(.lobby, .card.felt) .menu button:not(.primary):not(.link):hover:not(:disabled) {
+:is(.lobby, .card.felt)
+	.menu
+	button:not(.primary):not(.link):hover:not(:disabled) {
 	background: #ffffff26;
 }
-:is(.lobby, .card.felt) .menu button[aria-selected='true']:not(.primary):not(.link) {
+:is(.lobby, .card.felt)
+	.menu
+	button[aria-selected='true']:not(.primary):not(.link) {
 	background: #ffffff38;
 }

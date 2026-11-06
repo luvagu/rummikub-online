@@ -58,7 +58,8 @@ export const D = {
 		addBot: 'Add bot',
 		rmBot: 'Remove bot',
 		timer: '1-minute turn timer',
-		timerD: '60 seconds per turn. If time runs out you draw a tile (3 if you had moved tiles).',
+		timerD:
+			'60 seconds per turn. If time runs out you draw a tile (3 if you had moved tiles).',
 		start: p => `Start game (${p.n}/4)`,
 		need2: 'Add a friend or a bot to start (2 players minimum)',
 		keep: 'Keep this tab open: your browser runs the game.',
@@ -128,7 +129,8 @@ export const D = {
 		'tut.wait.t': 'Coach is playing',
 		'tut.wait.b': 'Wait a moment, your turn is next.',
 		'tut.welcome.t': 'Welcome to Rummikub!',
-		'tut.welcome.b': 'Get rid of all the tiles in your rack by forming sets on the table: runs (3+ consecutive numbers of one colour) or groups (3-4 of the same number in different colours). Let’s play a few moves.',
+		'tut.welcome.b':
+			'Get rid of all the tiles in your rack by forming sets on the table: runs (3+ consecutive numbers of one colour) or groups (3-4 of the same number in different colours). Let’s play a few moves.',
 		lessonsT: 'Choose a lesson',
 		'les.basics': 'The basics',
 		'les.basicsD': 'Select, build sets, first meld, jokers, draw.',
@@ -142,75 +144,105 @@ export const D = {
 		'les.tipsD': 'Extend sets, keep your jokers, watch the table.',
 		'tut.nextLesson': 'Next lesson',
 		'tut.rIntro.t': 'Rearranging the table',
-		'tut.rIntro.b': 'Once you have melded, you may take tiles from any set on the table, as long as every set is valid when you end your turn. Here the blue run 4-5-6-7 has a spare 7.',
+		'tut.rIntro.b':
+			'Once you have melded, you may take tiles from any set on the table, as long as every set is valid when you end your turn. Here the blue run 4-5-6-7 has a spare 7.',
 		'tut.rSelect.t': 'Pick the tiles',
-		'tut.rSelect.b': 'Select the blue 7 on the table, plus the black 7 and the red 7 in your rack.',
+		'tut.rSelect.b':
+			'Select the blue 7 on the table, plus the black 7 and the red 7 in your rack.',
 		'tut.rNew.t': 'Build a group',
-		'tut.rNew.b': 'Tap “New set”. The three 7s become a group, and the run 4-5-6 is still valid.',
+		'tut.rNew.b':
+			'Tap “New set”. The three 7s become a group, and the run 4-5-6 is still valid.',
 		'tut.rEnd.t': 'End your turn',
-		'tut.rEnd.b': 'Tap “End turn”. You played two tiles from your rack by borrowing one from the table.',
+		'tut.rEnd.b':
+			'Tap “End turn”. You played two tiles from your rack by borrowing one from the table.',
 		'tut.rDone.t': 'Nicely done',
-		'tut.rDone.b': 'Look for a long run (4+ tiles) or a group of 4: the extra tile can usually start a new set with tiles from your rack.',
+		'tut.rDone.b':
+			'Look for a long run (4+ tiles) or a group of 4: the extra tile can usually start a new set with tiles from your rack.',
 		'tut.jIntro.t': 'Joker swap',
-		'tut.jIntro.b': 'The joker in the red run 6-?-8 stands for the red 7. If you hold the real red 7, you can swap it in and take the joker, then use the joker in a set of your own.',
+		'tut.jIntro.b':
+			'The joker in the red run 6-?-8 stands for the red 7. If you hold the real red 7, you can swap it in and take the joker, then use the joker in a set of your own.',
 		'tut.jTake.t': 'Take the joker',
 		'tut.jTake.b': 'Select the joker on the table.',
 		'tut.jNew.t': 'Set it aside',
-		'tut.jNew.b': 'Tap “New set”. The joker waits alone for a moment (the red set is only a temporary state).',
+		'tut.jNew.b':
+			'Tap “New set”. The joker waits alone for a moment (the red set is only a temporary state).',
 		'tut.jSwap.t': 'Put the 7 in its place',
-		'tut.jSwap.b': 'Select the red 7 from your rack and tap the + on the red run to complete 6-7-8.',
+		'tut.jSwap.b':
+			'Select the red 7 from your rack and tap the + on the red run to complete 6-7-8.',
 		'tut.jAdd.t': 'Use the joker',
-		'tut.jAdd.b': 'Select the black 9 and the blue 9, then tap the + on the joker’s set to make a group of 9s.',
+		'tut.jAdd.b':
+			'Select the black 9 and the blue 9, then tap the + on the joker’s set to make a group of 9s.',
 		'tut.jEnd.t': 'End your turn',
-		'tut.jEnd.b': 'Tap “End turn”. You got the joker out of the run and played three tiles.',
+		'tut.jEnd.b':
+			'Tap “End turn”. You got the joker out of the run and played three tiles.',
 		'tut.jDone.t': 'Joker swapped',
-		'tut.jDone.b': 'A joker must always be used in a valid set before you end your turn, so only take one when you can place it right away.',
+		'tut.jDone.b':
+			'A joker must always be used in a valid set before you end your turn, so only take one when you can place it right away.',
 		'tut.iIntro.t': 'When a set is not valid',
-		'tut.iIntro.b': 'Mistakes are safe: you can try anything, and nothing counts until you press End turn. Let’s make a bad set on purpose.',
+		'tut.iIntro.b':
+			'Mistakes are safe: you can try anything, and nothing counts until you press End turn. Let’s make a bad set on purpose.',
 		'tut.iSelect.t': 'Pick unrelated tiles',
 		'tut.iSelect.b': 'Select the red 3, the blue 9 and the black 12.',
 		'tut.iNew.t': 'Make the set',
 		'tut.iNew.b': 'Tap “New set”.',
 		'tut.iSee.t': 'It’s marked in red',
-		'tut.iSee.b': 'The set is outlined in red and the reason shows next to the buttons below. End turn stays disabled until every set on the table is valid.',
+		'tut.iSee.b':
+			'The set is outlined in red and the reason shows next to the buttons below. End turn stays disabled until every set on the table is valid.',
 		'tut.iUndo.t': 'Undo',
-		'tut.iUndo.b': 'Tap Undo to put everything back the way it was at the start of your turn.',
+		'tut.iUndo.b':
+			'Tap Undo to put everything back the way it was at the start of your turn.',
 		'tut.iDone.t': 'All clear',
-		'tut.iDone.b': 'Whenever you get stuck, Undo is your friend. Tip: sets need 3+ tiles, and runs can’t wrap around (13 to 1).',
+		'tut.iDone.b':
+			'Whenever you get stuck, Undo is your friend. Tip: sets need 3+ tiles, and runs can’t wrap around (13 to 1).',
 		'tut.tHold.t': 'Keep your jokers',
-		'tut.tHold.b': 'A joker is worth 30 points against you if you are caught holding it at the end. But it is also the most flexible tile, so save it for when it lets you play several tiles at once.',
+		'tut.tHold.b':
+			'A joker is worth 30 points against you if you are caught holding it at the end. But it is also the most flexible tile, so save it for when it lets you play several tiles at once.',
 		'tut.tPoints.t': 'Points count',
-		'tut.tPoints.b': 'When a round ends, every tile left in the other racks counts against its owner. Dumping your high tiles early is safer than holding on to them.',
+		'tut.tPoints.b':
+			'When a round ends, every tile left in the other racks counts against its owner. Dumping your high tiles early is safer than holding on to them.',
 		'tut.tSelect.t': 'Extend before you build',
-		'tut.tSelect.b': 'Adding to a set on the table costs nothing and keeps the rest of your rack flexible. Select your black 4.',
+		'tut.tSelect.b':
+			'Adding to a set on the table costs nothing and keeps the rest of your rack flexible. Select your black 4.',
 		'tut.tAdd.t': 'Add it to the run',
 		'tut.tAdd.b': 'Tap the + on the black run 1-2-3 to make 1-2-3-4.',
 		'tut.tEnd.t': 'End your turn',
-		'tut.tEnd.b': 'Tap “End turn”. You played a tile and still hold your joker.',
+		'tut.tEnd.b':
+			'Tap “End turn”. You played a tile and still hold your joker.',
 		'tut.tWatch.t': 'Watch the table',
-		'tut.tWatch.b': 'Keep an eye on the pile counter and what the others are holding back. When the pile runs out and nobody can play, the round ends and the lowest rack wins.',
+		'tut.tWatch.b':
+			'Keep an eye on the pile counter and what the others are holding back. When the pile runs out and nobody can play, the round ends and the lowest rack wins.',
 		'tut.tDone.t': 'You’re set',
-		'tut.tDone.b': 'Those are the main strategies. Practice makes perfect: try a game against the bot!',
+		'tut.tDone.b':
+			'Those are the main strategies. Practice makes perfect: try a game against the bot!',
 		'tut.timer.t': 'Timed turns',
-		'tut.timer.b': 'In online and bot games the host can turn on a 60-second turn timer. A bar under the header counts down (amber at 20s, red with a countdown and warning sound at 10s). If time runs out you automatically draw a tile (3 if you had moved tiles around). There is no timer in this tutorial.',
+		'tut.timer.b':
+			'In online and bot games the host can turn on a 60-second turn timer. A bar under the header counts down (amber at 20s, red with a countdown and warning sound at 10s). If time runs out you automatically draw a tile (3 if you had moved tiles around). There is no timer in this tutorial.',
 		'tut.select.t': 'Select tiles',
-		'tut.select.b': 'Tap the red 10, 11 and 12 in your rack to select them. Tap again to unselect.',
+		'tut.select.b':
+			'Tap the red 10, 11 and 12 in your rack to select them. Tap again to unselect.',
 		'tut.newset.t': 'Make a new set',
-		'tut.newset.b': 'Tap “New set” to place the selected tiles on the table as a run.',
+		'tut.newset.b':
+			'Tap “New set” to place the selected tiles on the table as a run.',
 		'tut.end.t': 'First meld: 30 points',
-		'tut.end.b': 'Your first play must add up to at least 30 points using only your own tiles. 10 + 11 + 12 = 33, so you’re good. Tap “End turn”.',
+		'tut.end.b':
+			'Your first play must add up to at least 30 points using only your own tiles. 10 + 11 + 12 = 33, so you’re good. Tap “End turn”.',
 		'tut.add.t': 'Add to a set',
-		'tut.add.b': 'You can extend sets on the table. Select the red 13, then tap the + on the run of reds.',
+		'tut.add.b':
+			'You can extend sets on the table. Select the red 13, then tap the + on the run of reds.',
 		'tut.joker.t': 'Jokers are wild',
-		'tut.joker.b': 'A joker stands in for any tile. Select the black 5, the red 5 and the joker to make a group of 5s.',
+		'tut.joker.b':
+			'A joker stands in for any tile. Select the black 5, the red 5 and the joker to make a group of 5s.',
 		'tut.group.t': 'Form the group',
 		'tut.group.b': 'Tap “New set” to place them on the table.',
 		'tut.end2.t': 'End your turn',
-		'tut.end2.b': 'Tap “End turn” to confirm all your moves. Invalid sets are marked in red, and Undo puts everything back.',
+		'tut.end2.b':
+			'Tap “End turn” to confirm all your moves. Invalid sets are marked in red, and Undo puts everything back.',
 		'tut.draw.t': 'Nothing to play? Draw',
-		'tut.draw.b': 'When you can’t (or don’t want to) play, tap Draw to take a tile and pass your turn.',
+		'tut.draw.b':
+			'When you can’t (or don’t want to) play, tap Draw to take a tile and pass your turn.',
 		'tut.done.t': 'You’re ready!',
-		'tut.done.b': 'You also know you can rearrange tiles already on the table, as long as every set is valid when you end your turn. Time for a real game!',
+		'tut.done.b':
+			'You also know you can rearrange tiles already on the table, as long as every set is valid when you end your turn. Time for a real game!',
 		'n.copied': 'Invite link copied',
 		codeCopied: 'Room code copied',
 		'n.codeCopied': 'Room code copied',
@@ -242,7 +274,8 @@ export const D = {
 		'e.meld': p => `First meld needs 30+ points (you have ${p.n})`,
 		'e.full': 'Game is full or already in progress',
 		endRound: 'End round',
-		endRoundQ: 'End this round now? Nobody wins and no points change. You can then add players or bots before starting again.',
+		endRoundQ:
+			'End this round now? Nobody wins and no points change. You can then add players or bots before starting again.',
 		endRoundYes: 'End round',
 		roundEnded: 'Round ended',
 		roundEndedD: 'The host ended the round. No points changed.',
@@ -322,7 +355,8 @@ export const D = {
 		addBot: 'Añadir bot',
 		rmBot: 'Quitar bot',
 		timer: 'Temporizador de 1 minuto por turno',
-		timerD: '60 segundos por turno. Si se acaba el tiempo, robas una ficha (3 si habías movido fichas).',
+		timerD:
+			'60 segundos por turno. Si se acaba el tiempo, robas una ficha (3 si habías movido fichas).',
 		start: p => `Empezar partida (${p.n}/4)`,
 		need2: 'Añade un amigo o un bot para empezar (mínimo 2 jugadores)',
 		keep: 'Mantén esta pestaña abierta: tu navegador ejecuta la partida.',
@@ -394,12 +428,15 @@ export const D = {
 		'tut.wait.t': 'Juega el entrenador',
 		'tut.wait.b': 'Espera un momento, enseguida es tu turno.',
 		'tut.welcome.t': '¡Bienvenido a Rummikub!',
-		'tut.welcome.b': 'Debes quedarte sin fichas en tu atril formando combinaciones en la mesa: escaleras (3 o más números consecutivos del mismo color) o grupos (3-4 del mismo número en colores distintos). Hagamos unas jugadas.',
+		'tut.welcome.b':
+			'Debes quedarte sin fichas en tu atril formando combinaciones en la mesa: escaleras (3 o más números consecutivos del mismo color) o grupos (3-4 del mismo número en colores distintos). Hagamos unas jugadas.',
 		lessonsT: 'Elige una lección',
 		'les.basics': 'Lo básico',
-		'les.basicsD': 'Seleccionar, formar juegos, primera jugada, comodines, robar.',
+		'les.basicsD':
+			'Seleccionar, formar juegos, primera jugada, comodines, robar.',
 		'les.rearrange': 'Reorganizar la mesa',
-		'les.rearrangeD': 'Toma fichas de juegos de la mesa para formar otros nuevos.',
+		'les.rearrangeD':
+			'Toma fichas de juegos de la mesa para formar otros nuevos.',
 		'les.joker': 'Cambiar un comodín',
 		'les.jokerD': 'Sustituye un comodín de la mesa y vuelve a usarlo.',
 		'les.invalid': 'Juegos inválidos',
@@ -408,75 +445,105 @@ export const D = {
 		'les.tipsD': 'Amplía juegos, guarda tus comodines, vigila la mesa.',
 		'tut.nextLesson': 'Siguiente lección',
 		'tut.rIntro.t': 'Reorganizar la mesa',
-		'tut.rIntro.b': 'Después de tu primera jugada puedes tomar fichas de cualquier juego de la mesa, siempre que todos los juegos sean válidos al terminar tu turno. Aquí la escalera azul 4-5-6-7 tiene un 7 de sobra.',
+		'tut.rIntro.b':
+			'Después de tu primera jugada puedes tomar fichas de cualquier juego de la mesa, siempre que todos los juegos sean válidos al terminar tu turno. Aquí la escalera azul 4-5-6-7 tiene un 7 de sobra.',
 		'tut.rSelect.t': 'Elige las fichas',
-		'tut.rSelect.b': 'Selecciona el 7 azul de la mesa, más el 7 negro y el 7 rojo de tu atril.',
+		'tut.rSelect.b':
+			'Selecciona el 7 azul de la mesa, más el 7 negro y el 7 rojo de tu atril.',
 		'tut.rNew.t': 'Forma un grupo',
-		'tut.rNew.b': 'Toca «Añadir juego». Los tres 7 forman un grupo y la escalera 4-5-6 sigue siendo válida.',
+		'tut.rNew.b':
+			'Toca «Añadir juego». Los tres 7 forman un grupo y la escalera 4-5-6 sigue siendo válida.',
 		'tut.rEnd.t': 'Termina tu turno',
-		'tut.rEnd.b': 'Toca «Terminar turno». Jugaste dos fichas de tu atril tomando una prestada de la mesa.',
+		'tut.rEnd.b':
+			'Toca «Terminar turno». Jugaste dos fichas de tu atril tomando una prestada de la mesa.',
 		'tut.rDone.t': 'Muy bien',
-		'tut.rDone.b': 'Busca escaleras largas (4 o más fichas) o grupos de 4: la ficha extra suele servir para empezar un juego nuevo con fichas de tu atril.',
+		'tut.rDone.b':
+			'Busca escaleras largas (4 o más fichas) o grupos de 4: la ficha extra suele servir para empezar un juego nuevo con fichas de tu atril.',
 		'tut.jIntro.t': 'Cambiar un comodín',
-		'tut.jIntro.b': 'El comodín de la escalera roja 6-?-8 vale por el 7 rojo. Si tienes el 7 rojo de verdad, puedes ponerlo en su lugar y quedarte el comodín para usarlo en otro juego.',
+		'tut.jIntro.b':
+			'El comodín de la escalera roja 6-?-8 vale por el 7 rojo. Si tienes el 7 rojo de verdad, puedes ponerlo en su lugar y quedarte el comodín para usarlo en otro juego.',
 		'tut.jTake.t': 'Toma el comodín',
 		'tut.jTake.b': 'Selecciona el comodín de la mesa.',
 		'tut.jNew.t': 'Ponlo aparte',
-		'tut.jNew.b': 'Toca «Añadir juego». El comodín queda solo un momento (el juego rojo es solo un estado temporal).',
+		'tut.jNew.b':
+			'Toca «Añadir juego». El comodín queda solo un momento (el juego rojo es solo un estado temporal).',
 		'tut.jSwap.t': 'Pon el 7 en su lugar',
-		'tut.jSwap.b': 'Selecciona el 7 rojo de tu atril y toca el + de la escalera roja para completar 6-7-8.',
+		'tut.jSwap.b':
+			'Selecciona el 7 rojo de tu atril y toca el + de la escalera roja para completar 6-7-8.',
 		'tut.jAdd.t': 'Usa el comodín',
-		'tut.jAdd.b': 'Selecciona el 9 negro y el 9 azul y toca el + del juego del comodín para formar un grupo de 9.',
+		'tut.jAdd.b':
+			'Selecciona el 9 negro y el 9 azul y toca el + del juego del comodín para formar un grupo de 9.',
 		'tut.jEnd.t': 'Termina tu turno',
-		'tut.jEnd.b': 'Toca «Terminar turno». Sacaste el comodín de la escalera y jugaste tres fichas.',
+		'tut.jEnd.b':
+			'Toca «Terminar turno». Sacaste el comodín de la escalera y jugaste tres fichas.',
 		'tut.jDone.t': 'Comodín cambiado',
-		'tut.jDone.b': 'Un comodín siempre debe quedar en un juego válido antes de terminar tu turno, así que solo tómalo cuando puedas colocarlo enseguida.',
+		'tut.jDone.b':
+			'Un comodín siempre debe quedar en un juego válido antes de terminar tu turno, así que solo tómalo cuando puedas colocarlo enseguida.',
 		'tut.iIntro.t': 'Cuando un juego no es válido',
-		'tut.iIntro.b': 'Equivocarse no cuesta nada: puedes probar lo que quieras y nada cuenta hasta que pulses Terminar turno. Hagamos un juego inválido a propósito.',
+		'tut.iIntro.b':
+			'Equivocarse no cuesta nada: puedes probar lo que quieras y nada cuenta hasta que pulses Terminar turno. Hagamos un juego inválido a propósito.',
 		'tut.iSelect.t': 'Elige fichas sin relación',
 		'tut.iSelect.b': 'Selecciona el 3 rojo, el 9 azul y el 12 negro.',
 		'tut.iNew.t': 'Crea el juego',
 		'tut.iNew.b': 'Toca «Añadir juego».',
 		'tut.iSee.t': 'Se marca en rojo',
-		'tut.iSee.b': 'El juego se resalta en rojo y el motivo aparece junto a los botones de abajo. Terminar turno sigue desactivado hasta que todos los juegos de la mesa sean válidos.',
+		'tut.iSee.b':
+			'El juego se resalta en rojo y el motivo aparece junto a los botones de abajo. Terminar turno sigue desactivado hasta que todos los juegos de la mesa sean válidos.',
 		'tut.iUndo.t': 'Anular',
-		'tut.iUndo.b': 'Toca Anular para dejarlo todo como estaba al empezar tu turno.',
+		'tut.iUndo.b':
+			'Toca Anular para dejarlo todo como estaba al empezar tu turno.',
 		'tut.iDone.t': 'Todo en orden',
-		'tut.iDone.b': 'Si te atascas, Anular es tu aliado. Consejo: los juegos necesitan 3 o más fichas y las escaleras no dan la vuelta (del 13 al 1).',
+		'tut.iDone.b':
+			'Si te atascas, Anular es tu aliado. Consejo: los juegos necesitan 3 o más fichas y las escaleras no dan la vuelta (del 13 al 1).',
 		'tut.tHold.t': 'Guarda tus comodines',
-		'tut.tHold.b': 'Un comodín cuenta 30 puntos en tu contra si te queda en el atril al final. Pero también es la ficha más flexible, así que guárdalo para cuando te permita jugar varias fichas de golpe.',
+		'tut.tHold.b':
+			'Un comodín cuenta 30 puntos en tu contra si te queda en el atril al final. Pero también es la ficha más flexible, así que guárdalo para cuando te permita jugar varias fichas de golpe.',
 		'tut.tPoints.t': 'Los puntos cuentan',
-		'tut.tPoints.b': 'Cuando termina una ronda, las fichas que quedan en los demás atriles cuentan en contra de sus dueños. Es más seguro soltar pronto tus fichas altas que quedarte con ellas.',
+		'tut.tPoints.b':
+			'Cuando termina una ronda, las fichas que quedan en los demás atriles cuentan en contra de sus dueños. Es más seguro soltar pronto tus fichas altas que quedarte con ellas.',
 		'tut.tSelect.t': 'Amplía antes de crear',
-		'tut.tSelect.b': 'Añadir a un juego de la mesa no cuesta nada y deja el resto de tu atril flexible. Selecciona tu 4 negro.',
+		'tut.tSelect.b':
+			'Añadir a un juego de la mesa no cuesta nada y deja el resto de tu atril flexible. Selecciona tu 4 negro.',
 		'tut.tAdd.t': 'Añádelo a la escalera',
 		'tut.tAdd.b': 'Toca el + de la escalera negra 1-2-3 para formar 1-2-3-4.',
 		'tut.tEnd.t': 'Termina tu turno',
-		'tut.tEnd.b': 'Toca «Terminar turno». Jugaste una ficha y todavía tienes tu comodín.',
+		'tut.tEnd.b':
+			'Toca «Terminar turno». Jugaste una ficha y todavía tienes tu comodín.',
 		'tut.tWatch.t': 'Vigila la mesa',
-		'tut.tWatch.b': 'Fíjate en el contador del pozo y en lo que los demás se guardan. Cuando se acaba el pozo y nadie puede jugar, la ronda termina y gana el atril con menos puntos.',
+		'tut.tWatch.b':
+			'Fíjate en el contador del pozo y en lo que los demás se guardan. Cuando se acaba el pozo y nadie puede jugar, la ronda termina y gana el atril con menos puntos.',
 		'tut.tDone.t': 'Listo',
-		'tut.tDone.b': 'Esas son las estrategias principales. La práctica hace al maestro: ¡prueba una partida contra el bot!',
+		'tut.tDone.b':
+			'Esas son las estrategias principales. La práctica hace al maestro: ¡prueba una partida contra el bot!',
 		'tut.timer.t': 'Turnos con tiempo',
-		'tut.timer.b': 'En las partidas en línea y contra bots, el anfitrión puede activar un temporizador de 60 segundos por turno. Una barra bajo el encabezado cuenta el tiempo (ámbar a los 20 s, roja con cuenta atrás y aviso sonoro a los 10 s). Si se acaba el tiempo robas una ficha automáticamente (3 si habías movido fichas). En este tutorial no hay temporizador.',
+		'tut.timer.b':
+			'En las partidas en línea y contra bots, el anfitrión puede activar un temporizador de 60 segundos por turno. Una barra bajo el encabezado cuenta el tiempo (ámbar a los 20 s, roja con cuenta atrás y aviso sonoro a los 10 s). Si se acaba el tiempo robas una ficha automáticamente (3 si habías movido fichas). En este tutorial no hay temporizador.',
 		'tut.select.t': 'Selecciona fichas',
-		'tut.select.b': 'Toca el 10, el 11 y el 12 rojos de tu atril para seleccionarlos. Toca de nuevo para quitar la selección.',
+		'tut.select.b':
+			'Toca el 10, el 11 y el 12 rojos de tu atril para seleccionarlos. Toca de nuevo para quitar la selección.',
 		'tut.newset.t': 'Crea una combinación',
-		'tut.newset.b': 'Toca «Añadir juego» para poner las fichas seleccionadas en la mesa como una escalera.',
+		'tut.newset.b':
+			'Toca «Añadir juego» para poner las fichas seleccionadas en la mesa como una escalera.',
 		'tut.end.t': 'Primera jugada: 30 puntos',
-		'tut.end.b': 'Tu primera jugada debe sumar al menos 30 puntos usando solo tus fichas. 10 + 11 + 12 = 33, ¡perfecto! Toca «Terminar turno».',
+		'tut.end.b':
+			'Tu primera jugada debe sumar al menos 30 puntos usando solo tus fichas. 10 + 11 + 12 = 33, ¡perfecto! Toca «Terminar turno».',
 		'tut.add.t': 'Añade a una combinación',
-		'tut.add.b': 'Puedes ampliar las combinaciones de la mesa. Selecciona el 13 rojo y toca el + de la escalera de rojos.',
+		'tut.add.b':
+			'Puedes ampliar las combinaciones de la mesa. Selecciona el 13 rojo y toca el + de la escalera de rojos.',
 		'tut.joker.t': 'El comodín vale por cualquiera',
-		'tut.joker.b': 'El comodín sustituye a cualquier ficha. Selecciona el 5 negro, el 5 rojo y el comodín para formar un grupo de 5.',
+		'tut.joker.b':
+			'El comodín sustituye a cualquier ficha. Selecciona el 5 negro, el 5 rojo y el comodín para formar un grupo de 5.',
 		'tut.group.t': 'Forma el grupo',
 		'tut.group.b': 'Toca «Añadir juego» para ponerlas en la mesa.',
 		'tut.end2.t': 'Termina tu turno',
-		'tut.end2.b': 'Toca «Terminar turno» para confirmar tus jugadas. Las combinaciones inválidas se marcan en rojo y Anular lo devuelve todo.',
+		'tut.end2.b':
+			'Toca «Terminar turno» para confirmar tus jugadas. Las combinaciones inválidas se marcan en rojo y Anular lo devuelve todo.',
 		'tut.draw.t': '¿Nada que jugar? Roba',
-		'tut.draw.b': 'Cuando no puedas (o no quieras) jugar, toca Robar para tomar una ficha y pasar el turno.',
+		'tut.draw.b':
+			'Cuando no puedas (o no quieras) jugar, toca Robar para tomar una ficha y pasar el turno.',
 		'tut.done.t': '¡Ya estás listo!',
-		'tut.done.b': 'Recuerda que también puedes reorganizar las fichas de la mesa, siempre que todas las combinaciones sean válidas al terminar tu turno. ¡A jugar una partida de verdad!',
+		'tut.done.b':
+			'Recuerda que también puedes reorganizar las fichas de la mesa, siempre que todas las combinaciones sean válidas al terminar tu turno. ¡A jugar una partida de verdad!',
 		'n.copied': 'Enlace de invitación copiado',
 		codeCopied: 'Código de sala copiado',
 		'n.codeCopied': 'Código de sala copiado',
@@ -510,7 +577,8 @@ export const D = {
 		'e.meld': p => `La primera jugada necesita 30 puntos o más (tienes ${p.n})`,
 		'e.full': 'La partida está llena o ya está en curso',
 		endRound: 'Terminar ronda',
-		endRoundQ: '¿Terminar esta ronda ahora? Nadie gana y los puntos no cambian. Después puedes añadir jugadores o bots antes de volver a empezar.',
+		endRoundQ:
+			'¿Terminar esta ronda ahora? Nadie gana y los puntos no cambian. Después puedes añadir jugadores o bots antes de volver a empezar.',
 		endRoundYes: 'Terminar ronda',
 		roundEnded: 'Ronda terminada',
 		roundEndedD: 'El anfitrión terminó la ronda. Los puntos no cambian.',

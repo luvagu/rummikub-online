@@ -110,7 +110,8 @@ export class Game {
 			}
 			return true
 		}
-		if ((s.phase !== 'lobby' && s.phase !== 'over') || s.players.length >= 4) return false // new players may also join between rounds (while there are free seats)
+		if ((s.phase !== 'lobby' && s.phase !== 'over') || s.players.length >= 4)
+			return false // new players may also join between rounds (while there are free seats)
 		s.players.push({ id: tok, name, rack: [], melded: false, on: true })
 		s.scores[tok] = 0
 		s.wins[tok] = 0
@@ -236,7 +237,10 @@ export class Game {
 		const lvl = p.lvl || 2,
 			before = p.rack.length
 		// beginners often just draw, even when they could play
-		const mv = lvl === 1 && Math.random() < 0.3 ? null : botMove(p.rack, s.board, p.melded, lvl)
+		const mv =
+			lvl === 1 && Math.random() < 0.3
+				? null
+				: botMove(p.rack, s.board, p.melded, lvl)
 		if (!mv || this.act(p.id, { t: 'end', board: mv.board, rack: mv.rack }))
 			this.draw(i, 1)
 		// summary for the host to decide on a (sporadic) reaction
@@ -247,7 +251,10 @@ export class Game {
 			played: Math.max(0, before - left),
 			drew: left > before,
 			left,
-			oppMin: Math.min(99, ...s.players.filter(x => x !== p).map(x => x.rack.length)),
+			oppMin: Math.min(
+				99,
+				...s.players.filter(x => x !== p).map(x => x.rack.length),
+			),
 		}
 	}
 	// returns an error string, or undefined on success
@@ -279,7 +286,11 @@ export class Game {
 			return
 		}
 		if (m.t === 'bot') {
-			if (i === 0 && (s.phase === 'lobby' || s.phase === 'over') && s.players.length < 4) {
+			if (
+				i === 0 &&
+				(s.phase === 'lobby' || s.phase === 'over') &&
+				s.players.length < 4
+			) {
 				let n = 1 // first unused number: ids stay unique after a middle bot was removed
 				while (s.players.some(x => x.id === 'bot' + n)) n++
 				const id = 'bot' + n
@@ -447,7 +458,8 @@ function solve(rack, board, melded, lvl, full) {
 	const dfs = (k, J, sets, tiles, pts) => {
 		if (stop) return
 		if (++nodes > (full ? 400000 : 40000)) return
-		if (full && nodes % 500 === 0 && Date.now() > deadline) return void (stop = 1)
+		if (full && nodes % 500 === 0 && Date.now() > deadline)
+			return void (stop = 1)
 		while (k < 52 && !cnt[slots[k][0]][slots[k][1]]) k++
 		if (k === 52) {
 			// every board tile (incl. board jokers) must still be on the table

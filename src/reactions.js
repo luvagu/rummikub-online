@@ -18,7 +18,13 @@ const pick = a => a[(Math.random() * a.length) | 0]
 const CHAT = { 1: 0.22, 2: 0.15, 3: 0.08 } // chance a bot reacts after a turn, by difficulty: beginners chat more, experts stay quiet
 
 // Bots react only sporadically, based on what just happened. ctx = {lvl, played, drew, left, oppMin}
-export function botReact({ lvl = 2, played = 0, drew = false, left = 99, oppMin = 99 }) {
+export function botReact({
+	lvl = 2,
+	played = 0,
+	drew = false,
+	left = 99,
+	oppMin = 99,
+}) {
 	if (left === 0) return pick(['haha', 'nice', 'gg']) // went out: always celebrates
 	if (Math.random() > (CHAT[lvl] || 0.15)) return null
 	if (oppMin <= 3 && Math.random() < 0.6) return pick(['wow', 'rage', 'hurry'])
