@@ -2184,7 +2184,18 @@ button.draw.pulse {
 		gap: 6px;
 	}
 	.seat.act {
-		flex: 2.2 1 0;
+		flex: 1 0 auto; /* never collapses below its content (avatar + badge + name) */
+		min-width: 104px;
+	}
+	.seats {
+		min-width: 0;
+	}
+	.seats:has(.seat:nth-child(3)) .seat:not(.act) .seat-bot {
+		display: none; /* frees room so the active seat keeps its name/score */
+	}
+	.pill {
+		padding: 6px 8px;
+		gap: 4px;
 	}
 	.seat .si {
 		min-width: 0;

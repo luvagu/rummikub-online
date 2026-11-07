@@ -550,7 +550,9 @@ export default function Game({
                   {s.wins[p.id]}
                 </small>
               </div>
-              {p.bot && <Bot size={14} aria-label={t("bot")} />}
+              {p.bot && (
+                <Bot size={14} className="seat-bot" aria-label={t("bot")} />
+              )}
               {p.on === false && <WifiOff size={14} aria-label={t("off")} />}
               {p.melded && <Check size={14} />}
             </div>
