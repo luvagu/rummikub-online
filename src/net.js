@@ -60,9 +60,13 @@ const watch = (c, onConn, closed) => {
 	}
 	;['connect', 'close', 'offline', 'end', 'message'].forEach(e => c.on(e, sync))
 	const iv = setInterval(sync, 2000)
-	c.once('end', () => clearInterval(iv))
 	addEventListener('online', sync)
 	document.addEventListener('visibilitychange', sync)
+	c.once('end', () => {
+		clearInterval(iv)
+		removeEventListener('online', sync)
+		document.removeEventListener('visibilitychange', sync)
+	})
 }
 
 // Reactions are ephemeral events (never part of the game state, so they are not saved or replayed on reconnect).
@@ -91,7 +95,7 @@ const runner = (game, push, react) => {
 		tt = 0,
 		seq = -1
 	const quiet = {} // per-bot cooldown so bots never spam
-	return () => {
+	const run = () => {
 		const s = game.s
 		if (!bt && game.botDue())
 			bt = setTimeout(() => {
@@ -123,6 +127,12 @@ const runner = (game, push, react) => {
 			}, game.s.opts.timer * 1000 + 3000)
 		}
 	}
+	run.stop = () => {
+		clearTimeout(bt)
+		clearTimeout(tt)
+		bt = tt = 0
+	}
+	return run
 }
 
 export function hostGame(
@@ -153,6 +163,7 @@ export function hostGame(
 		} catch (e) {}
 	}
 	const push = () => {
+		if (dead) return
 		game.s.players.forEach(p => {
 			if (!p.bot && p.id !== tok) out(p.id, { t: 'state', s: game.view(p.id) })
 		})
@@ -170,6 +181,7 @@ export function hostGame(
 	}
 	api.close = () => {
 		dead = 1
+		sched.stop()
 		if (c) {
 			status(false)
 			setTimeout(() => c.end(true), 200)
@@ -178,6 +190,7 @@ export function hostGame(
 	// End the room for everyone (explicit "leave" by the host). A plain refresh/close does NOT do this, so the host can resume.
 	api.endRoom = () => {
 		dead = 1
+		sched.stop()
 		try {
 			localStorage.removeItem('rmkHost')
 		} catch (e) {}
@@ -219,9 +232,10 @@ export function hostGame(
 			c.end(true)
 			return
 		}
-		c.on('connect', () => status(true)) // after an automatic reconnect
+		c.on('connect', () => !dead && status(true)) // after an automatic reconnect
 		watch(c, onConn, () => dead)
 		c.on('message', (_, buf) => {
+			if (dead) return
 			let d
 			try {
 				d = JSON.parse(buf.toString())
@@ -308,10 +322,11 @@ export function joinGame(
 				c.end(true)
 				return
 			}
-			const hello = () => pub({ t: 'join', name })
+			const hello = () => !dead && pub({ t: 'join', name })
 			c.on('connect', hello) // after an automatic reconnect: take the seat back
 			watch(c, onConn, () => dead)
 			c.on('message', (topic, buf) => {
+				if (dead) return
 				let d
 				try {
 					d = JSON.parse(buf.toString())

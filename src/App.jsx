@@ -148,6 +148,11 @@ export default function App() {
 				return
 			}
 		}
+		// Close any previous connection first: otherwise it keeps auto-reconnecting in the background
+		// and its callbacks would overwrite this new room's state/session.
+		const prev = netRef.current
+		netRef.current = null
+		prev && prev.close()
 		setConn(true) // fresh session: never inherit an old "offline" state
 		setGk(k => k + 1)
 		sess.current = { mode, name: nm, code: cd, tok, lesson: o.lesson }
@@ -162,8 +167,10 @@ export default function App() {
 						: mode,
 		)
 		let n
+		const stale = () => !!n && netRef.current !== n // a closed/replaced connection must not touch the UI
 		const cb = {
 			onState: st => {
+				if (stale()) return
 				setS(st)
 				setBusy(null)
 				if (
@@ -177,8 +184,9 @@ export default function App() {
 					saveSess(sess.current)
 				}
 			},
-			onReact: r => rbus.current.forEach(f => f(r)),
+			onReact: r => !stale() && rbus.current.forEach(f => f(r)),
 			onErr: (m, fatal) => {
+				if (stale()) return
 				toast(m)
 				if (fatal) {
 					setBusy(null)
