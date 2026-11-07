@@ -157,6 +157,7 @@ export class Game {
 			opts: s.opts,
 			scores: s.scores,
 			wins: s.wins,
+			games: s.games,
 			result: s.result,
 			me,
 			rack: me >= 0 ? s.players[me].rack : [],

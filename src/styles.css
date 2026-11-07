@@ -893,6 +893,40 @@ button.pulse {
 .res small {
 	opacity: 0.65;
 }
+.res li {
+	align-items: center;
+}
+.res li b {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.res .rk {
+	width: 20px;
+	opacity: 0.6;
+	font-weight: 700;
+}
+.res li b svg {
+	margin-left: 6px;
+	vertical-align: -2px;
+	color: #e69f00;
+}
+.res .meta {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	font-size: 13px;
+	opacity: 0.85;
+	white-space: nowrap;
+}
+.res .meta svg {
+	vertical-align: -1px;
+}
+.res .tot b {
+	flex: none;
+	font-size: 15px;
+}
 .res .pos {
 	color: #1b7a24;
 	font-weight: 800;
@@ -2290,17 +2324,35 @@ button.draw.pulse {
 		width: 17px;
 		height: 17px;
 	}
-	.decide {
-		gap: 14px;
-	}
 	.bar button.draw,
 	.bar button.primary.danger {
 		min-width: 76px;
 		justify-content: center;
+		white-space: nowrap;
+	}
+	.bar button.primary.danger {
+		min-width: 96px;
 	}
 	.bar button.primary[data-tut='end'] {
 		min-width: 84px;
 		padding: 6px 14px;
 		justify-content: center;
+	}
+}
+
+/* phones: the bot level list floats as a bottom sheet instead of pushing the page to scroll */
+@media (max-width: 520px) {
+	.lvlpop,
+	.card.felt .lvlpop {
+		position: fixed;
+		left: 12px;
+		right: 12px;
+		top: auto;
+		bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+		min-width: 0;
+		max-height: 70dvh;
+		overflow-y: auto;
+		z-index: 80;
+		box-shadow: 0 0 0 100vmax #0009;
 	}
 }
