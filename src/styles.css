@@ -2269,3 +2269,38 @@ button.draw.pulse {
 		flex: 1 1 100%;
 	}
 }
+
+/* action bar: Draw / End turn are the two decisions, kept apart with big targets */
+.decide {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-left: auto;
+}
+@media (max-width: 520px) {
+	.bar {
+		gap: 8px;
+	}
+	.bar button {
+		min-height: 40px;
+		padding: 6px 12px;
+		font-size: 14px;
+	}
+	.bar button svg {
+		width: 17px;
+		height: 17px;
+	}
+	.decide {
+		gap: 14px;
+	}
+	.bar button.draw,
+	.bar button.primary.danger {
+		min-width: 76px;
+		justify-content: center;
+	}
+	.bar button.primary[data-tut='end'] {
+		min-width: 84px;
+		padding: 6px 14px;
+		justify-content: center;
+	}
+}

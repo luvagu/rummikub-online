@@ -758,37 +758,39 @@ export default function Game({
 							<Undo2 size={18} />
 							<span className='lbl'>{t('undo')}</span>
 						</button>
-						<button
-							className={
-								cd
-									? 'primary danger'
-									: 'draw' + (hot && !edited ? ' pulse' : '')
-							}
-							data-tut='draw'
-							onClick={doDraw}
-						>
-							<CopyPlus size={18} />
-							{cd ? (
-								<span>{t('drawConfirm')}</span>
-							) : (
-								<span className='lbl'>{s.pool ? t('draw') : t('pass')}</span>
-							)}
-						</button>
-						<button
-							className='primary'
-							data-tut='end'
-							aria-label={t('end')}
-							disabled={!!why}
-							aria-describedby={edited && why ? 'why' : undefined}
-							title={why ? tr(t, why) : undefined}
-							onClick={() => net.send({ t: 'end', board: d.b, rack: d.r })}
-						>
-							<Check size={18} />
-							<span className='lg'>{t('end')}</span>
-							<span className='sh' aria-hidden='true'>
-								{t('endS')}
-							</span>
-						</button>
+						<div className='decide'>
+							<button
+								className={
+									cd
+										? 'primary danger'
+										: 'draw' + (hot && !edited ? ' pulse' : '')
+								}
+								data-tut='draw'
+								onClick={doDraw}
+							>
+								<CopyPlus size={18} />
+								{cd ? (
+									<span>{t('drawConfirm')}</span>
+								) : (
+									<span>{s.pool ? t('draw') : t('pass')}</span>
+								)}
+							</button>
+							<button
+								className='primary'
+								data-tut='end'
+								aria-label={t('end')}
+								disabled={!!why}
+								aria-describedby={edited && why ? 'why' : undefined}
+								title={why ? tr(t, why) : undefined}
+								onClick={() => net.send({ t: 'end', board: d.b, rack: d.r })}
+							>
+								<Check size={18} />
+								<span className='lg'>{t('end')}</span>
+								<span className='sh' aria-hidden='true'>
+									{t('endS')}
+								</span>
+							</button>
+						</div>
 					</>
 				)}
 				{!my && me === 0 && s.phase === 'play' && cur.on === false && (
