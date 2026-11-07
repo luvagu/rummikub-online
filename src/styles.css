@@ -2356,3 +2356,17 @@ button.draw.pulse {
 		box-shadow: 0 0 0 100vmax #0009;
 	}
 }
+
+/* phones: table tiles a bit bigger than the rack's, with tighter gaps between groups */
+@media (max-width: 520px) and (min-height: 481px) {
+	.board {
+		--tw: 33px;
+		gap: 8px;
+		row-gap: 16px;
+	}
+}
+@media (max-width: 380px) and (min-height: 481px) {
+	.board {
+		--tw: 31px;
+	}
+}
