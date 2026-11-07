@@ -11,7 +11,7 @@ import {
 	History,
 	ArrowLeft,
 } from 'lucide-react'
-import { COLORS } from './game.js'
+import { COLORS, TIMES } from './game.js'
 import { LESSON_ORDER } from './tutorial.js'
 import { useT } from './i18n.js'
 import { LangBtn, Modal, Invite } from './ui.jsx'
@@ -68,19 +68,44 @@ function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
 	)
 }
 
-export const getTimed = () => {
+export const getTimer = () => {
 	try {
-		return localStorage.rmkTimer === '1'
+		const n = +localStorage.rmkTimer
+		return n === 1 ? 60 : TIMES.includes(n) ? n : 0
 	} catch (e) {
-		return false
+		return 0
 	}
+}
+export function TimerPick({ value, onChange }) {
+	const t = useT()
+	return (
+		<div className='timerpick'>
+			<span>
+				<b>{t('timer')}</b>
+				<small>{t('timerD')}</small>
+			</span>
+			<div className='seg' role='radiogroup' aria-label={t('timer')}>
+				{TIMES.map(n => (
+					<button
+						key={n}
+						role='radio'
+						aria-checked={n === value}
+						className={n === value ? 'primary' : ''}
+						onClick={() => onChange(n)}
+					>
+						{n ? n + 's' : t('timerOff')}
+					</button>
+				))}
+			</div>
+		</div>
+	)
 }
 export const getLvl = () => {
 	try {
-		const n = +localStorage.rmkLvl
-		return [1, 2, 3].includes(n) ? n : 2
+		const n = +localStorage.rmkLvl5
+		return [1, 2, 3, 4, 5].includes(n) ? n : 3
 	} catch (e) {
-		return 2
+		return 3
 	}
 }
 
@@ -105,12 +130,12 @@ export function Home({
 	const t = useT(),
 		nf = { name, setName, nameErr, names, onForgetName },
 		[pick, setPick] = useState(false),
-		[timed, setTimed] = useState(getTimed),
+		[timed, setTimed] = useState(getTimer),
 		[mode, setMode] = useState(false),
 		[lessons, setLessons] = useState(false) // solo: choose between a bot game and the tutorial
 	const playSolo = n => {
 		try {
-			localStorage.rmkLvl = n
+			localStorage.rmkLvl5 = n
 		} catch (e) {}
 		setPick(false)
 		start('solo')
@@ -177,25 +202,17 @@ export function Home({
 	const lvlModal = pick && (
 		<Modal title={t('botLvl')} onClose={() => setPick(false)}>
 			<h2 className='lvltitle'>{t('botLvl')}</h2>
-			<label className='switch'>
-				<input
-					type='checkbox'
-					checked={timed}
-					onChange={e => {
-						setTimed(e.target.checked)
-						try {
-							localStorage.rmkTimer = e.target.checked ? '1' : '0'
-						} catch (err) {}
-					}}
-				/>
-				<span className='tr' />
-				<span>
-					<b>{t('timer')}</b>
-					<small>{t('timerD')}</small>
-				</span>
-			</label>
+			<TimerPick
+				value={timed}
+				onChange={n => {
+					setTimed(n)
+					try {
+						localStorage.rmkTimer = n
+					} catch (err) {}
+				}}
+			/>
 			<div className='lvlopts'>
-				{[1, 2, 3].map(n => (
+				{[1, 2, 3, 4, 5].map(n => (
 					<button
 						key={n}
 						className={n === getLvl() ? 'sel' : ''}
@@ -351,18 +368,10 @@ export function Lobby({ s, net, copy, share, leave, openRules }) {
 			<Seats s={s} net={net} host={host} />
 			{host ? (
 				<>
-					<label className='switch'>
-						<input
-							type='checkbox'
-							checked={s.opts.timer}
-							onChange={e => net.send({ t: 'opts', timer: e.target.checked })}
-						/>
-						<span className='tr' />
-						<span>
-							<b>{t('timer')}</b>
-							<small>{t('timerD')}</small>
-						</span>
-					</label>
+					<TimerPick
+						value={s.opts.timer}
+						onChange={n => net.send({ t: 'opts', timer: n })}
+					/>
 					<button
 						className='primary big'
 						disabled={s.players.length < 2}

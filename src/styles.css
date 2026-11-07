@@ -2076,3 +2076,196 @@ button.primary:disabled {
 	button[aria-selected='true']:not(.primary):not(.link) {
 	background: #ffffff38;
 }
+
+/* turn timer picker (lobby / solo setup) */
+.timerpick {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	align-items: stretch;
+	text-align: left;
+}
+.timerpick > span {
+	display: flex;
+	flex-direction: column;
+}
+.timerpick small {
+	opacity: 0.75;
+}
+.timerpick .seg {
+	margin-left: 0;
+	flex-wrap: nowrap;
+}
+.timerpick .seg button {
+	flex: 1 1 0;
+	min-width: 0;
+	padding: 8px 4px;
+}
+
+/* Draw: its own colour so it reads as an equal alternative to End turn */
+button.draw {
+	background: linear-gradient(#4fc3f7, #0288d1);
+	border-color: #01579b;
+	color: #fff;
+	box-shadow: 0 2px 0 #01579b;
+}
+button.draw:hover:not(:disabled) {
+	background: linear-gradient(#6fd0fa, #039be5);
+}
+button.draw:disabled {
+	opacity: 0.5;
+}
+button.draw.pulse {
+	animation: draw-pulse 0.9s ease-in-out infinite;
+}
+@keyframes draw-pulse {
+	0%,
+	100% {
+		box-shadow:
+			0 2px 0 #01579b,
+			0 0 0 0 #4fc3f700;
+		filter: brightness(1);
+	}
+	50% {
+		box-shadow:
+			0 2px 0 #01579b,
+			0 0 0 6px #4fc3f7aa;
+		filter: brightness(1.15);
+	}
+}
+
+/* ---- phone audit fixes ---- */
+@media (max-width: 520px) {
+	/* 4 players: chips share the row; only the active seat shows name + score */
+	.seats {
+		-webkit-mask-image: none;
+		mask-image: none;
+		gap: 6px;
+		padding-right: 0;
+	}
+	.seat {
+		flex: 1 1 0;
+		min-width: 0;
+		padding: 5px 8px 5px 6px;
+		gap: 6px;
+	}
+	.seat.act {
+		flex: 2.2 1 0;
+	}
+	.seat .si {
+		min-width: 0;
+		overflow: hidden;
+	}
+	.seat .si b {
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.seats:has(.seat:nth-child(3)) .seat:not(.act) .si {
+		display: none;
+	}
+	.seats:has(.seat:nth-child(3)) .seat:not(.act) {
+		flex: 0 0 auto;
+		padding: 5px 6px;
+	}
+	.seats:has(.seat:nth-child(3)) .seat:not(.act) .av {
+		margin-right: 0;
+	}
+	/* reaction picker: emoji grid, labels hidden, so it no longer covers the status line */
+	.rpick {
+		width: min(300px, calc(100vw - 20px));
+		grid-template-columns: repeat(5, 1fr);
+	}
+	.rpick button small {
+		display: none;
+	}
+	/* countdown badge: smaller so it hides fewer tiles */
+	.tnum {
+		top: 8px;
+		right: 8px;
+		font-size: 15px;
+		min-width: 30px;
+		padding: 0 8px;
+		opacity: 0.8;
+	}
+	.tnum.mine {
+		font-size: 21px;
+	}
+	.board {
+		overscroll-behavior: contain;
+		scroll-padding-top: 24px;
+	}
+	/* round-end / lobby dialogs: more room, primary action always reachable */
+	.modal {
+		padding: 10px;
+	}
+	.card {
+		padding: 14px;
+		max-height: 94dvh;
+	}
+	.card .endact {
+		position: sticky;
+		bottom: -14px;
+		margin: 8px -14px -14px;
+		padding: 10px 14px 12px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		background: linear-gradient(#0000, #1b5e20 30%);
+	}
+	.card:not(.felt) .endact {
+		background: linear-gradient(#fbfaf300, #fbfaf3 30%);
+	}
+	.res li {
+		padding: 6px 10px;
+	}
+}
+@media (max-width: 380px) {
+	:root {
+		--tw: 29px;
+	}
+	.rack {
+		gap: 3px;
+		max-height: 28dvh;
+	}
+}
+
+/* compact End turn + spacing fixes (phones) */
+.bar button .sh {
+	display: none;
+}
+.timerpick {
+	margin-bottom: 14px;
+	padding-bottom: 14px;
+	border-bottom: 1px solid #0000001f;
+}
+@media (max-width: 520px) {
+	.bar button .lg {
+		display: none;
+	}
+	.bar button .sh {
+		display: inline;
+	}
+	.bar button.primary[data-tut='end'] {
+		padding: 6px 12px;
+		min-width: 0;
+	}
+	.card:not(.felt) {
+		padding-top: 18px;
+	}
+	.card > svg:first-child,
+	.card .trophy {
+		margin-top: 6px;
+	}
+}
+@media (max-width: 380px) {
+	.bar {
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+	.bar .status {
+		flex: 1 1 100%;
+	}
+}

@@ -20,17 +20,21 @@ Classic Rummikub (2–4 players) in React. Multiplayer goes through free public 
 
 ## Bots
 
-Add up to 3 bots in the lobby or between rounds, or press "Play solo" on the home screen and choose "Play against the bot" (works fully offline, no network needed). Bots come in three difficulty levels:
+Add up to 3 bots in the lobby or between rounds, or press "Play solo" on the home screen and choose "Play against the bot" (works fully offline, no network needed). Bots come in five difficulty levels:
 
-| Level        | How it plays                                                                                                                                                                                                      |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Beginner     | Ignores jokers, plays only one set per turn (two if needed to meld), never adds to sets already on the table, and often draws instead of playing.                                                                 |
-| Intermediate | Plays the best combination of new sets from its rack, then tacks leftover tiles onto existing sets.                                                                                                               |
-| Expert       | Like Intermediate, but once it has melded it also rearranges the whole table (splits, merges and borrows tiles from sets) to empty its rack as fast as possible. The search is capped at roughly 300 ms per move. |
+| Level        | How it plays                                                                                                                       |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Beginner     | Ignores jokers, plays only one set per turn (two if needed to meld), never adds to the table, often misses plays and draws.        |
+| Casual       | Plays its best new sets and extends sets on the table, but ignores jokers and sometimes passes.                                    |
+| Intermediate | Uses jokers and can rearrange the table a little (search capped at about 60 ms per move).                                          |
+| Expert       | Rearranges the whole table, may use jokers in sets missing two tiles and holds jokers back unless they get it out faster (about 300 ms). |
+| Master       | Expert with a much larger search budget (about 900 ms per move).                                                                   |
 
-- **Solo:** "Play solo" asks whether to play against the bot or take the tutorial. The bot dialog picks the level and has a switch for the 1-minute turn timer; both choices are remembered.
+Levels live in the `BOT` table in `src/game.js`. `node scripts/bot-sim.mjs [games] [maxTurns]` plays bots against each other to compare strength (slow: use few games).
+
+- **Solo:** "Play solo" asks whether to play against the bot or take the tutorial. The bot dialog picks the level and has a selector for the turn timer (off, 15, 30, 45, 60 or 90 s); both choices are remembered.
 - **Lobby and between rounds:** the host picks the level in the dropdown next to "Add bot"; it applies to the next bot added, and each bot keeps its own level (shown next to its name). Any bot can be removed with its X.
-- A bot that takes over the seat of a player who left mid-game plays at Intermediate level.
+- A bot that takes over the seat of a player who left mid-game plays at Intermediate level (3).
 - The bot AI lives in `botMove()` in `src/game.js`.
 
 ## How online play works
@@ -76,13 +80,19 @@ Lessons live in `src/tutorial.js` (positions and steps) and `src/Tutorial.jsx` (
 
 ## Reactions, drawn tiles and drag & drop
 
-- **Reactions:** the smiley button next to the rack sort buttons sends one of nine fixed emoji + short messages (translated per player). Each one has its own short synthesized sound (no audio files; follows the sound toggle). They pop up over the sender's seat and are never part of the game state (not saved, not replayed on reconnect). The host validates the key and rate-limits each player. Bots react sporadically (beginners chat more, experts rarely) based on what just happened. Menu > Reactions mutes incoming ones. The set lives in `src/reactions.js`.
+- **Reactions:** the smiley button next to the rack sort buttons sends one of nine fixed emoji (including 😱 Scared and 🔥 On fire) + short messages (translated per player). Each one has its own short synthesized sound (no audio files; follows the sound toggle). They pop up over the sender's seat and are never part of the game state (not saved, not replayed on reconnect). The host validates the key and rate-limits each player. Bots react sporadically (beginners chat more, experts rarely) based on what just happened. Menu > Reactions mutes incoming ones. The set lives in `src/reactions.js`.
 - **Drawn tiles:** a tile you just drew (including the 3-tile timeout penalty) glows with a "+" tag and scrolls into view in a busy rack.
 - **Drag & drop:** on wide screens with a mouse/trackpad (`hover: hover`, `pointer: fine`, min-width 900px) tiles can be dragged onto a set, an empty board area (new set) or the rack. On phones/tablets drag is off and tap-to-select is used (it always works too).
 
 ## Turn timer
 
-It is optional: the host switches it on in the lobby, and in solo games it is a switch in the bot level dialog. A bar drains across the top of the table (green, amber at 20 s, red at 10 s). In the last 10 s the active player gets one soft chime, a gentle pulse on End turn, a large countdown and a short vibration; optional quiet ticks are in the menu. The host enforces the timer, so an offline player can't stall the game.
+Optional, in seconds: Off, 15, 30, 45, 60 or 90. The host picks it in the lobby; in solo games it is in the bot level dialog. A bar drains across the top of the table (green, then amber and red as time runs low; thresholds scale with the chosen length). In the last seconds the active player gets one soft chime, a pulse on the Draw button (the only valid move if nothing was changed), a large countdown and a short vibration; optional quiet ticks are in the menu. When time runs out the player draws a tile (3 if they had moved tiles). The host enforces the timer, so an offline player can't stall the game.
+
+## Robustness and fairness
+
+- The deck is shuffled with a Fisher-Yates shuffle driven by `crypto.getRandomValues` (`shuffle` in `src/game.js`).
+- Removing a player or bot between rounds re-indexes the turn and winner (`removeSeat`), saved games are sanitized on resume, and an error boundary in `src/main.jsx` clears a corrupt saved game instead of leaving a blank page.
+- The host's browser holds the full game state, so a determined host can cheat; this is inherent to the serverless design.
 
 ## Small conveniences
 

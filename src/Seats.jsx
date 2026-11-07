@@ -35,7 +35,7 @@ export function LevelMenu({ value, onChange, label, className = '' }) {
 			</button>
 			{open && (
 				<div className='menu lvlpop' role='listbox' aria-label={label}>
-					{[1, 2, 3].map(n => (
+					{[1, 2, 3, 4, 5].map(n => (
 						<button
 							key={n}
 							role='option'
@@ -76,7 +76,7 @@ export function Seats({ s, net, host }) {
 						{i === 0 && <Crown size={16} aria-label={t('host')} />}
 						{p.bot && <Bot size={16} aria-label={t('bot')} />}
 						{p.bot && !p.left && (
-							<small className='lvltag'>{t('lvl' + (p.lvl || 2))}</small>
+							<small className='lvltag'>{t('lvl' + (p.lvl || 3))}</small>
 						)}
 						{p.on === false && <WifiOff size={16} aria-label={t('off')} />}
 						{host && p.bot && (
@@ -96,7 +96,7 @@ export function Seats({ s, net, host }) {
 						{host && i === s.players.length ? (
 							<LevelMenu
 								className='inseat'
-								value={s.opts.lvl || 2}
+								value={s.opts.lvl || 3}
 								onChange={n => net.send({ t: 'opts', lvl: n })}
 								label={t('botLvlNext')}
 							/>

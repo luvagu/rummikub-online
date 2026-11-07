@@ -12,7 +12,7 @@ import {
 	Layers,
 	Undo2,
 	ArrowDownToLine,
-	CirclePlus,
+	CopyPlus,
 	Check,
 	Crown,
 	Bot,
@@ -155,7 +155,11 @@ export default function Game({
 		const el = document.querySelector('.board .tile.placed')
 		el &&
 			el.scrollIntoView &&
-			el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: sb() })
+			el.scrollIntoView({
+				block: 'nearest',
+				inline: 'nearest',
+				behavior: sb(),
+			})
 	}, [placed])
 	useEffect(() => {
 		// busy racks scroll: bring the new tile into view
@@ -163,7 +167,11 @@ export default function Game({
 		const el = document.querySelector('.rack .tile.fresh')
 		el &&
 			el.scrollIntoView &&
-			el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: sb() })
+			el.scrollIntoView({
+				block: 'nearest',
+				inline: 'nearest',
+				behavior: sb(),
+			})
 	}, [fresh])
 
 	// ---- turn timer: host sends the time left; we count down locally from the moment each state arrives ----
@@ -176,14 +184,17 @@ export default function Game({
 	}, [timed])
 	const ms = timed ? Math.max(0, dl - now) : null,
 		secs = timed ? Math.ceil(ms / 1000) : null
-	const hot = timed && secs <= 10,
-		cls = !timed ? '' : secs > 20 ? 'ok' : secs > 10 ? 'amber' : 'red'
+	const tot = s.opts.timer || 60,
+		redAt = Math.min(10, Math.max(5, Math.ceil(tot * 0.17))), // warning threshold scales with the turn length
+		amberAt = Math.ceil(tot / 3)
+	const hot = timed && secs <= redAt,
+		cls = !timed ? '' : secs > amberAt ? 'ok' : secs > redAt ? 'amber' : 'red'
 	const ev = useRef({ seq: -1, warn: 0, sent: 0 })
 	useEffect(() => {
 		if (!timed) return
 		if (ev.current.seq !== s.seq) ev.current = { seq: s.seq, warn: 0, sent: 0 }
 		const e = ev.current
-		if (my && secs > 0 && secs <= 10 && !e.warn) {
+		if (my && secs > 0 && secs <= redAt && !e.warn) {
 			e.warn = 1
 			warn()
 		}
@@ -199,7 +210,11 @@ export default function Game({
 		const el = seatsRef.current && seatsRef.current.querySelector('.seat.act')
 		el &&
 			el.scrollIntoView &&
-			el.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: sb() })
+			el.scrollIntoView({
+				inline: 'nearest',
+				block: 'nearest',
+				behavior: sb(),
+			})
 	}, [s.turn, s.phase])
 
 	// ---- alerts ----
@@ -224,7 +239,7 @@ export default function Game({
 			upd = () => {
 				document.title =
 					my && document.hidden
-						? timed && secs <= 20
+						? timed && secs <= amberAt
 							? `⏱ ${secs}s · ${t('turnMine')}`
 							: `● ${t('turnMine')} – ${base}`
 						: base
@@ -279,7 +294,7 @@ export default function Game({
 						Math.max(b.left + b.width / 2, sr.left + 24),
 						sr.right - 24,
 					),
-					y: sr.bottom,
+					y: sr.bottom + 12, // below the timer bar, not over the seat chips
 				},
 			}))
 			reactPop(r.k)
@@ -432,7 +447,7 @@ export default function Game({
 		0,
 	)
 	const allOk = info.every(x => x.ok),
-		cur = s.players[s.turn],
+		cur = s.players[s.turn] || s.players[0] || {},
 		showAdd = my && sel.length > 0
 	const melded = s.players[me] && s.players[me].melded
 	// why End is unavailable: same checks, same order and same messages as the host's act() so the player never hits a silent disabled button
@@ -471,7 +486,7 @@ export default function Game({
 		? [...s.players].sort((a, b) =>
 				cx
 					? s.scores[b.id] - s.scores[a.id]
-					: s.result.delta[b.id] - s.result.delta[a.id],
+					: (s.result.delta?.[b.id] || 0) - (s.result.delta?.[a.id] || 0),
 			)
 		: []
 
@@ -590,7 +605,7 @@ export default function Game({
 								{t('reactsT')}
 								<span className='sw'>{pf.reacts ? 'ON' : 'OFF'}</span>
 							</button>
-							{s.opts.timer && (
+							{s.opts.timer > 0 && (
 								<button role='menuitem' onClick={() => flip('ticks')}>
 									<Timer size={18} />
 									{t('ticks')}
@@ -637,11 +652,11 @@ export default function Game({
 					className={'tbar ' + cls + (hot ? ' hot' : '')}
 					role='progressbar'
 					aria-valuemin={0}
-					aria-valuemax={60}
+					aria-valuemax={tot}
 					aria-valuenow={secs}
 					aria-label='Timer'
 				>
-					<i style={{ width: ms / 600 + '%' }} />
+					<i style={{ width: ms / (tot * 10) + '%' }} />
 					{hot && (
 						<b className={'tnum' + (my ? ' mine' : '')} aria-hidden='true'>
 							{secs}
@@ -650,7 +665,7 @@ export default function Game({
 				</div>
 			)}
 			<div className='sr' aria-live='assertive'>
-				{my && secs === 10 ? t('tenLeft') : ''}
+				{my && secs === redAt ? t('tenLeft') : ''}
 			</div>
 			<div className='boardwrap'>
 				<main
@@ -744,11 +759,15 @@ export default function Game({
 							<span className='lbl'>{t('undo')}</span>
 						</button>
 						<button
-							className={cd ? 'primary danger' : ''}
+							className={
+								cd
+									? 'primary danger'
+									: 'draw' + (hot && !edited ? ' pulse' : '')
+							}
 							data-tut='draw'
 							onClick={doDraw}
 						>
-							<CirclePlus size={18} />
+							<CopyPlus size={18} />
 							{cd ? (
 								<span>{t('drawConfirm')}</span>
 							) : (
@@ -756,15 +775,19 @@ export default function Game({
 							)}
 						</button>
 						<button
-							className={'primary' + (hot ? ' pulse' : '')}
+							className='primary'
 							data-tut='end'
+							aria-label={t('end')}
 							disabled={!!why}
 							aria-describedby={edited && why ? 'why' : undefined}
 							title={why ? tr(t, why) : undefined}
 							onClick={() => net.send({ t: 'end', board: d.b, rack: d.r })}
 						>
 							<Check size={18} />
-							{t('end')}
+							<span className='lg'>{t('end')}</span>
+							<span className='sh' aria-hidden='true'>
+								{t('endS')}
+							</span>
 						</button>
 					</>
 				)}
@@ -866,7 +889,7 @@ export default function Game({
 						cx
 							? t('roundEnded')
 							: t(s.result.blocked ? 'winsPool' : 'wins', {
-									name: s.players[s.result.winner].name,
+									name: s.players[s.result.winner]?.name || '',
 								})
 					}
 				>
@@ -876,13 +899,13 @@ export default function Game({
 							{cx
 								? t('roundEnded')
 								: t(s.result.blocked ? 'winsPool' : 'wins', {
-										name: s.players[s.result.winner].name,
+										name: s.players[s.result.winner]?.name || '',
 									})}
 						</h2>
 						{cx && <p>{t('roundEndedD')}</p>}
 						<ul className='res'>
 							{ranked.map(p => {
-								const v = cx ? 0 : s.result.delta[p.id]
+								const v = cx ? 0 : s.result.delta?.[p.id] || 0
 								return (
 									<li key={p.id}>
 										<b>{p.name}</b>
@@ -908,25 +931,27 @@ export default function Game({
 								<Seats s={s} net={net} host={hostRoom} />
 							</>
 						)}
-						{me === 0 ? (
-							<button
-								className='primary big'
-								data-autofocus
-								disabled={s.players.length < 2}
-								onClick={() => net.send({ t: 'start' })}
-							>
-								{t('next')}
+						<div className='endact'>
+							{me === 0 ? (
+								<button
+									className='primary big'
+									data-autofocus
+									disabled={s.players.length < 2}
+									onClick={() => net.send({ t: 'start' })}
+								>
+									{t('next')}
+								</button>
+							) : (
+								<p>{t('waitNext')}</p>
+							)}
+							{me === 0 && s.players.length < 2 && (
+								<p className='sub'>{t('need2')}</p>
+							)}
+							<button className='link' onClick={onLeave}>
+								<LogOut size={16} />
+								{t('leave')}
 							</button>
-						) : (
-							<p>{t('waitNext')}</p>
-						)}
-						{me === 0 && s.players.length < 2 && (
-							<p className='sub'>{t('need2')}</p>
-						)}
-						<button className='link' onClick={onLeave}>
-							<LogOut size={16} />
-							{t('leave')}
-						</button>
+						</div>
 					</div>
 				</Modal>
 			)}

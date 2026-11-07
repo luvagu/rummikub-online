@@ -3,7 +3,7 @@
 // Room code = 1 letter (which relay) + 4 random characters.
 import * as M from 'mqtt'
 import { Game } from './game.js'
-import { RKEYS, RCOOL, botReact } from './reactions.js'
+import { RKEYS, RLEGACY, RCOOL, botReact } from './reactions.js'
 import { setupTutorial } from './tutorial.js'
 const connect = M.connect || M.default.connect,
 	env = import.meta.env || {}
@@ -70,6 +70,7 @@ const watch = (c, onConn, closed) => {
 const reactor = (game, deliver) => {
 	const last = {}
 	return (from, k) => {
+		k = RLEGACY[k] || k // older clients still send oops/sad
 		if (!RKEYS.has(k) || !game.s.players.some(p => p.id === from)) return
 		const now = Date.now()
 		if (now - (last[from] || 0) < RCOOL) return
@@ -103,7 +104,7 @@ const runner = (game, push, react) => {
 					quiet[r.id] = now
 					setTimeout(() => react(r.id, k), 350 + Math.random() * 600)
 				}
-			}, 1100)
+			}, 700 + Math.random() * 1100) // varied "thinking" time
 		if (s.phase !== 'play' || !s.opts.timer) {
 			clearTimeout(tt)
 			seq = -1
@@ -119,7 +120,7 @@ const runner = (game, push, react) => {
 					game.act(p.id, { t: 'timeout', dirty: false })
 					push()
 				}
-			}, 63000)
+			}, game.s.opts.timer * 1000 + 3000)
 		}
 	}
 }
@@ -329,6 +330,7 @@ export function joinGame(
 					clearTimeout(t)
 					onState(d.s)
 				} else if (d.t === 'react') {
+					d.k = RLEGACY[d.k] || d.k
 					if (got && RKEYS.has(d.k) && !rseen.includes(d.id)) {
 						rseen.push(d.id)
 						if (rseen.length > 30) rseen.shift()
@@ -369,11 +371,11 @@ export function localGame(
 	}
 	if (!resume) {
 		game.join(tok, name)
-		let lvl = 2,
-			timer = false
+		let lvl = 3,
+			timer = 0
 		try {
-			lvl = +localStorage.rmkLvl || 2
-			timer = localStorage.rmkTimer === '1'
+			lvl = +localStorage.rmkLvl5 || 3
+			timer = +localStorage.rmkTimer === 1 ? 60 : +localStorage.rmkTimer || 0
 		} catch (e) {}
 		game.act(tok, { t: 'opts', lvl, timer })
 		game.act(tok, { t: 'bot' })
@@ -415,7 +417,7 @@ export function tutorialGame(
 				}
 			}, 1300)
 	}
-	game.s.opts.timer = false
+	game.s.opts.timer = 0
 	game.join(tok, name)
 	game.act(tok, { t: 'bot' })
 	setupTutorial(game, botName, lesson)
