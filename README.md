@@ -16,7 +16,7 @@ Classic Rummikub (2–4 players) in React. Multiplayer goes through free public 
 
 - The host must keep their tab open. Guests who drop can rejoin with the same code and keep their seat.
 
-- Rules: `public/rules.pdf` and the in-game Rules button.
+- Rules: the in-game Rules button (menu > Rules).
 
 ## Bots
 
@@ -27,13 +27,13 @@ Add up to 3 bots in the lobby or between rounds, or press "Play solo" on the hom
 | Beginner     | Ignores jokers, plays only one set per turn (two if needed to meld), never adds to the table, often misses plays and draws.        |
 | Casual       | Plays its best new sets and extends sets on the table, but ignores jokers and sometimes passes.                                    |
 | Intermediate | Uses jokers and can rearrange the table a little (search capped at about 60 ms per move).                                          |
-| Expert       | Rearranges the whole table, may use jokers in sets missing two tiles and holds jokers back unless they get it out faster (about 300 ms). |
+| Expert       | Rearranges the whole table, may use jokers in runs missing two tiles (groups take at most one joker) and holds jokers back unless they get it out faster (about 300 ms). |
 | Master       | Expert with a much larger search budget (about 900 ms per move).                                                                   |
 
 Levels live in the `BOT` table in `src/game.js`. `node scripts/bot-sim.mjs [games] [maxTurns]` plays bots against each other to compare strength (slow: use few games).
 
 - **Solo:** "Play solo" asks whether to play against the bot or take the tutorial. The bot dialog picks the level and has a selector for the turn timer (off, 15, 30, 45, 60 or 90 s); both choices are remembered.
-- **Lobby and between rounds:** the host picks the level in the dropdown next to "Add bot"; it applies to the next bot added, and each bot keeps its own level (shown next to its name). Any bot can be removed with its X.
+- **Lobby and between rounds:** the host picks the level in the dropdown next to "Add bot"; it applies to the next bot added, and each bot keeps its own level (shown next to its name). Any bot, and any offline human player, can be removed with its X (host only, in the lobby or between rounds).
 - A bot that takes over the seat of a player who left mid-game plays at Intermediate level (3).
 - The bot AI lives in `botMove()` in `src/game.js`.
 
@@ -46,11 +46,11 @@ Caveats: public brokers are shared, so anyone who guessed your room code could w
 
 ## Languages
 
-English and Spanish (auto-detected from the browser, switch with the button on every screen). Add a language by copying a block in `src/i18n.js` and `src/Rules.jsx`.
+English and Latin American Spanish (auto-detected from the browser, switch with the button on every screen). Add a language by copying a block in `src/i18n.js` and `src/Rules.jsx`.
 
 ## Turn alerts
 
-A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibration) when it becomes your turn; the tab title also shows "● Your turn" while the tab is in the background. Toggle with the 🔔 / 📳 buttons in the top bar. iPhones in silent mode mute web audio.
+A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibration) when it becomes your turn; the tab title also shows "● Your turn" while the tab is in the background. Toggle them in the ⋮ menu (Turn sound, Turn vibration). The tab title also shows a countdown (⏱) when the timer is running low. iPhones in silent mode mute web audio.
 
 ## Sound and animation
 
@@ -61,13 +61,13 @@ A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibr
 
 ## Table patterns
 
-Menu > Table pattern cycles the table background through five patterns (Felt, Diamonds, Dots, Stripes, Weave). The choice is remembered in the browser. Patterns are pure CSS (`.board.bg0` to `.bg4` in `src/styles.css`).
+Menu > Table pattern cycles the table background through ten patterns (Felt, Diamonds, Dots, Stripes, Weave, Grid, Plaid, Waves, Zigzag, Rings). The choice is remembered in the browser. Patterns are pure CSS (`.board.bg0` to `.bg9` in `src/styles.css`).
 
 ## Between rounds
 
 When a round ends in a hosted room, the dialog has the same layout as the lobby: room code, copy/share, and the four seats.
 
-- The host can invite more players (while a seat is free), add bots and remove bots. New players start at 0 points and are dealt in on the next round; guests see the seat list read-only.
+- The host can invite more players (while a seat is free), add bots, and remove bots or offline players. New players start at 0 points and are dealt in on the next round; guests see the seat list read-only.
 - **End round** (host menu, with confirmation) cancels the round early: nobody wins and no points, wins or game count change. Use it to make room for a new player without finishing the round.
 
 ## Tutorial
@@ -97,15 +97,24 @@ Lessons live in `src/tutorial.js` (positions and steps) and `src/Tutorial.jsx` (
 
 ## Turn timer
 
-Optional, in seconds: Off, 15, 30, 45, 60 or 90. The host picks it in the lobby; in solo games it is in the bot level dialog. A bar drains across the top of the table (green, then amber and red as time runs low; thresholds scale with the chosen length). In the last seconds the active player gets one soft chime, a pulse on the Draw button (the only valid move if nothing was changed), a large countdown and a short vibration; optional quiet ticks are in the menu. When time runs out the player draws a tile (3 if they had moved tiles). The host enforces the timer, so an offline player can't stall the game.
+Optional, in seconds: Off, 15, 30, 45, 60 or 90 (45 by default, remembered per browser for solo games). The host picks it in the lobby; in solo games it is in the bot level dialog. A bar drains across the top of the table (green, then amber and red as time runs low; thresholds scale with the chosen length). In the last seconds the active player gets one soft chime, a pulse on the Draw button (the only valid move if nothing was changed), a large countdown and a short vibration; quiet ticks in the last 3 seconds are on by default and can be switched off in the menu. When time runs out the player draws a tile (3 if they had moved tiles). The host decides which from the player's last reported working state (their browser sends the tile count after each change), not from the timeout message itself. The host enforces the timer, so an offline player can't stall the game.
 
 ## Robustness and fairness
 
 - The deck is shuffled with a Fisher-Yates shuffle driven by `crypto.getRandomValues` (`shuffle` in `src/game.js`).
 - Removing a player or bot between rounds re-indexes the turn and winner (`removeSeat`), saved games are sanitized on resume, and an error boundary in `src/main.jsx` clears a corrupt saved game instead of leaving a blank page.
-- The host's browser holds the full game state, so a determined host can cheat; this is inherent to the serverless design.
+- The host's browser holds the full game state, so a determined host can cheat; this is inherent to the serverless design. Likewise a modified guest client could withhold its working-state updates and so dodge the 3-tile timeout penalty.
+
+## Scoring and games
+
+Scores and wins add up across games in the same room (the round-end dialog shows each player's delta, total and wins). The player who starts rotates every game. If the pool runs out and nobody can play, the lowest rack wins and the others lose the difference; on a tie the first seat at the table wins. Drawing from an empty pool counts as a pass.
 
 ## Small conveniences
+
+- All menu switches (turn sound, vibration, countdown ticks, reactions) default to ON.
+- Tiles show a small shape (circle, triangle, square, diamond) next to the number so colours can be told apart.
+- **Skip offline player:** when it is an offline player's turn the host gets a button that makes them draw a tile and moves on.
+- **Share:** where the browser supports it, the invite panel has a Share button next to Copy link.
 
 - Rack sort (by number or colour) is remembered, re-applied after every draw/turn, and the active option is highlighted. Tap it again to return to manual order.
 - Recently used names appear as chips under the name field (tap to reuse, × to forget).

@@ -11,7 +11,7 @@ const read = () => {
 export const getPrefs = () => ({
 	sound: true,
 	vibe: true,
-	ticks: false,
+	ticks: true,
 	reacts: true,
 	...read(),
 })

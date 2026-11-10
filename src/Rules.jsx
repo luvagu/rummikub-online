@@ -23,30 +23,35 @@ const R = {
 			],
 			[
 				'Your turn.',
-				"Play tiles from your rack and/or rearrange the table: add to sets, split runs, take a fourth tile from a group, combine sets. When you finish, every set must be valid and no loose tiles may remain. You must play at least one rack tile, or draw one tile (your turn ends, and you can't play that tile until your next turn).",
+				"Play tiles from your rack and/or rearrange the table: add to sets, split runs, take a fourth tile from a group, combine sets. When you finish, every set must be valid and no loose tiles may remain. You must play at least one rack tile, or draw one tile (your turn ends, and you can't play that tile until your next turn). If the pool is empty, drawing counts as a pass.",
 			],
 			[
 				'Jokers.',
-				'A joker can be any tile. After your first meld you may take a joker from a set by replacing it with the tile it stood for, but you must play that joker in a new set in the same turn. A joker left on your rack costs 30 points.',
+				'A joker can be any tile. After your first meld you may take a joker from a set, for example by replacing it with the tile it stood for, but the joker must end the turn in a valid set (a new one or an existing one). Jokers never return to your rack. A joker left on your rack costs 30 points.',
 			],
 			[
 				'Winning a game.',
-				'Empty your rack and call "Rummikub!". Everyone else scores minus the face value of their remaining tiles, and the winner scores the total. If the pool runs out and nobody can play, the lowest rack wins and the others lose the difference.',
+				'Empty your rack and call "Rummikub!". Everyone else scores minus the face value of their remaining tiles, and the winner scores the total. If the pool runs out and nobody can play, the lowest rack wins and the others lose the difference (on a tie, the player who sits first at the table wins).',
+			],
+			[
+				'Several games.',
+				'Scores and wins add up across games in the same room. The player who starts rotates every game.',
 			],
 			[
 				'Timer.',
-				'Optional, 1 minute per turn. A soft chime and a draining bar warn you in the last 10 seconds. If time runs out you draw one tile, or three if your move was unfinished.',
+				'Optional: the host picks Off, 15, 30, 45, 60 or 90 seconds per turn (45 by default). A draining bar shows the time left, and a soft chime and a countdown warn you in the last few seconds. If time runs out you draw one tile, or three if your move was unfinished.',
 			],
 		],
 		c: 'Controls in this game',
 		ctl: [
 			'Tap tiles to select them (several at once). They can be in your rack or on the table.',
-			'Tap New set to start a set with them, or the + at the end of a set to add them to it.',
+			'Tap New set to start a set with them, or the + at the end of a set to add them to it. On a computer with a mouse you can also drag tiles onto a set, an empty part of the table, or your rack.',
 			'To rack returns selected tiles you brought from your rack. Undo resets your turn.',
+			'Draw takes a tile and ends your turn. The sort buttons order your rack by number or colour, and the smiley button sends a reaction.',
+			'The host can use Skip offline player when it is the turn of someone who lost connection, and End round to cancel the round with no points.',
 			'Sets with a red outline are not valid yet. End turn unlocks when everything is valid.',
 			'The small shape on each tile (circle, triangle, square, diamond) shows its colour, for colour-blind players.',
 		],
-		pdf: 'Open the original rules PDF',
 	},
 	es: {
 		h: 'Reglas de Rummikub',
@@ -69,30 +74,35 @@ const R = {
 			],
 			[
 				'Tu turno.',
-				'Juega fichas de tu estante y/o reorganiza la mesa: añade a combinaciones, divide escaleras, toma la cuarta ficha de un grupo, une combinaciones. Al terminar, todas las combinaciones deben ser válidas y no puede quedar ninguna ficha suelta. Debes jugar al menos una ficha de tu estante o robar una del pozo (tu turno termina y no puedes jugar esa ficha hasta tu próximo turno).',
+				'Juega fichas de tu estante y/o reorganiza la mesa: agrega a combinaciones, divide escaleras, toma la cuarta ficha de un grupo, une combinaciones. Al terminar, todas las combinaciones deben ser válidas y no puede quedar ninguna ficha suelta. Debes jugar al menos una ficha de tu estante o tomar una del pozo (tu turno termina y no puedes jugar esa ficha hasta tu próximo turno). Si el pozo está vacío, tomar cuenta como pasar.',
 			],
 			[
 				'Comodines.',
-				'Un comodín puede ser cualquier ficha. Tras tu primera jugada puedes recuperar un comodín de una combinación sustituyéndolo por la ficha que representaba, pero debes usarlo en una combinación nueva en ese mismo turno. Un comodín que se queda en tu estante cuesta 30 puntos.',
+				'Un comodín puede ser cualquier ficha. Tras tu primera jugada puedes tomar un comodín de una combinación, por ejemplo sustituyéndolo por la ficha que representaba, pero el comodín debe terminar el turno en una combinación válida (nueva o ya existente). Los comodines nunca vuelven a tu estante. Un comodín que se queda en tu estante cuesta 30 puntos.',
 			],
 			[
 				'Ganar una partida.',
-				'Vacía tu estante y grita «¡Rummikub!». Los demás restan el valor de sus fichas restantes y el ganador suma el total. Si se acaba el pozo y nadie puede jugar, gana quien tenga el estante de menor valor y los demás pierden la diferencia.',
+				'Vacía tu estante y grita «¡Rummikub!». Los demás restan el valor de sus fichas restantes y el ganador suma el total. Si se acaba el pozo y nadie puede jugar, gana quien tenga el estante de menor valor y los demás pierden la diferencia (en caso de empate gana quien se siente primero en la mesa).',
+			],
+			[
+				'Varias partidas.',
+				'Los puntos y las victorias se acumulan entre partidas de la misma sala. El jugador que empieza rota en cada partida.',
 			],
 			[
 				'Temporizador.',
-				'Opcional, 1 minuto por turno. Un sonido suave y una barra que se vacía te avisan en los últimos 10 segundos. Si se acaba el tiempo robas una ficha, o tres si tu jugada estaba sin terminar.',
+				'Opcional: el anfitrión elige No, 15, 30, 45, 60 o 90 segundos por turno (45 por defecto). Una barra que se vacía muestra el tiempo restante, y un sonido suave y una cuenta atrás te avisan en los últimos segundos. Si se acaba el tiempo tomas una ficha, o tres si tu jugada estaba sin terminar.',
 			],
 		],
 		c: 'Controles en este juego',
 		ctl: [
 			'Toca fichas para seleccionarlas (varias a la vez). Pueden estar en tu estante o en la mesa.',
-			'Toca Nueva combinación para formar una con ellas, o el + al final de una combinación para añadirlas.',
+			'Toca Agregar juego para formar uno con ellas, o el + al final de una combinación para agregarlas. En una computadora con mouse también puedes arrastrar fichas a una combinación, a un espacio vacío de la mesa o a tu estante.',
 			'Al estante devuelve las fichas seleccionadas que sacaste de tu estante. Deshacer reinicia tu turno.',
+			'Tomar saca una ficha del pozo y termina tu turno. Los botones de orden ordenan tu estante por número o color, y el botón de la carita envía una reacción.',
+			'El anfitrión puede usar Saltar jugador desconectado cuando es el turno de alguien sin conexión, y Terminar ronda para cancelar la ronda sin puntos.',
 			'Las combinaciones con borde rojo aún no son válidas. Terminar turno se activa cuando todo es válido.',
 			'La pequeña forma en cada ficha (círculo, triángulo, cuadrado, rombo) indica su color, para jugadores daltónicos.',
 		],
-		pdf: 'Abrir el PDF original de las reglas (en inglés)',
 	},
 }
 export default function Rules({ close }) {
@@ -113,11 +123,6 @@ export default function Rules({ close }) {
 					<li key={x}>{x}</li>
 				))}
 			</ul>
-			<p>
-				<a href='./rules.pdf' target='_blank' rel='noreferrer'>
-					{r.pdf}
-				</a>
-			</p>
 			<button onClick={close}>{t('close')}</button>
 		</Modal>
 	)

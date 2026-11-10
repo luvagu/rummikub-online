@@ -2441,3 +2441,25 @@ button.draw.pulse {
 		repeating-linear-gradient(45deg, #ffffff0d 0 2px, transparent 2px 12px),
 		repeating-linear-gradient(-45deg, #ffffff0d 0 2px, transparent 2px 12px);
 }
+.board.bg5 {
+	background:
+		linear-gradient(#ffffff0c 1px, transparent 1px) 0 0 / 40px 40px,
+		linear-gradient(90deg, #ffffff0c 1px, transparent 1px) 0 0 / 40px 40px;
+}
+.board.bg6 {
+	background:
+		repeating-linear-gradient(0deg, #ffffff09 0 16px, transparent 16px 48px),
+		repeating-linear-gradient(90deg, #ffffff09 0 16px, transparent 16px 48px);
+}
+.board.bg7 {
+	background:
+		radial-gradient(circle at 50% 0, transparent 13px, #ffffff0d 14px, #ffffff0d 15px, transparent 16px) 0 0 / 32px 16px;
+}
+.board.bg8 {
+	background:
+		linear-gradient(135deg, #ffffff0b 25%, transparent 25%) 0 0 / 32px 32px,
+		linear-gradient(225deg, #ffffff0b 25%, transparent 25%) 0 0 / 32px 32px;
+}
+.board.bg9 {
+	background: repeating-radial-gradient(circle at 50% 50%, transparent 0 8px, #ffffff0c 8px 9px) 0 0 / 56px 56px;
+}

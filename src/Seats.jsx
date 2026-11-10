@@ -79,11 +79,11 @@ export function Seats({ s, net, host }) {
 							<small className='lvltag'>{t('lvl' + (p.lvl || 3))}</small>
 						)}
 						{p.on === false && <WifiOff size={16} aria-label={t('off')} />}
-						{host && p.bot && (
+						{host && i > 0 && (p.bot || p.on === false) && (
 							<button
 								className='icon'
-								aria-label={t('rmBot') + ' ' + p.name}
-								title={t('rmBot')}
+								aria-label={t(p.bot ? 'rmBot' : 'rmPlayer') + ' ' + p.name}
+								title={t(p.bot ? 'rmBot' : 'rmPlayer')}
 								onClick={() => net.send({ t: 'unbot', id: p.id })}
 							>
 								<X size={16} />

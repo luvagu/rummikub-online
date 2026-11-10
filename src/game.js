@@ -104,7 +104,7 @@ export class Game {
 			t0: 0,
 			passes: 0,
 			log: '',
-			opts: { timer: 60, lvl: 3 },
+			opts: { timer: 45, lvl: 3 },
 			v: 2,
 			scores: {},
 			wins: {},
@@ -269,6 +269,20 @@ export class Game {
 	bump() {
 		this.s.seq++
 		this.s.t0 = Date.now()
+		this.s.draft = null
+	}
+	// Active player reports how many tiles are in their working rack (no state change, no broadcast).
+	draft(tok, n) {
+		const s = this.s,
+			p = s.players[s.turn]
+		if (s.phase !== 'play' || !p || p.id !== tok || !Number.isInteger(n)) return
+		s.draft = { seq: s.seq, n: Math.max(0, Math.min(n, p.rack.length)) }
+	}
+	// Moved tiles from the rack this turn? (decided from the last reported draft, not from the client's timeout message)
+	dirty(i) {
+		const s = this.s,
+			p = s.players[i]
+		return !!(s.draft && s.draft.seq === s.seq && p && s.draft.n < p.rack.length)
 	} // new turn: restart the clock
 	resume(hostTok) {
 		const s = this.s
@@ -361,7 +375,7 @@ export class Game {
 			// lobby or between rounds; `id` removes that bot, otherwise the last one
 			if (i === 0 && (s.phase === 'lobby' || s.phase === 'over')) {
 				const k = m.id
-					? s.players.findIndex(x => x.id === m.id && x.bot)
+					? s.players.findIndex(x => x.id === m.id && (x.bot || x.on === false))
 					: s.players.map(x => !!x.bot).lastIndexOf(true)
 				if (k > 0) this.removeSeat(k)
 			}
@@ -389,7 +403,7 @@ export class Game {
 		}
 		if (s.phase !== 'play' || i !== s.turn) return E('e.notTurn')
 		if (m.t === 'draw') return this.draw(i, 1)
-		if (m.t === 'timeout') return this.draw(i, m.dirty ? 3 : 1, true)
+		if (m.t === 'timeout') return this.draw(i, this.dirty(i) ? 3 : 1, true)
 		if (m.t !== 'end') return
 		const { board, rack } = m
 		if (

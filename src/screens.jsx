@@ -70,10 +70,12 @@ function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
 
 export const getTimer = () => {
 	try {
-		const n = +localStorage.rmkTimer
+		const v = localStorage.rmkTimer
+		if (v == null) return 45
+		const n = +v
 		return n === 1 ? 60 : TIMES.includes(n) ? n : 0
 	} catch (e) {
-		return 0
+		return 45
 	}
 }
 export function TimerPick({ value, onChange }) {

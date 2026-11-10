@@ -96,7 +96,7 @@ const flyTile = (layer, a, b, delay, onEnd, w = 28, h = 38) => {
   };
 };
 const DND_MQ = "(hover: hover) and (pointer: fine) and (min-width: 900px)";
-const BGS = 5; // table patterns (CSS classes bg0..bg4)
+const BGS = 10; // table patterns (CSS classes bg0..bg9)
 const loadBg = () => {
   try {
     return Math.min(BGS - 1, Math.max(0, parseInt(localStorage.rmkBg) || 0));
@@ -138,8 +138,16 @@ export default function Game({
   const [pf, setPf] = useState(getPrefs),
     [now, setNow] = useState(Date.now()),
     seatsRef = useRef(null);
-  const dirty = useRef(false);
-  dirty.current = d.r.length !== s.rack.length;
+  // tell the host how many tiles are in my working rack so IT decides the timeout penalty (1 vs 3 tiles)
+  const draftSent = useRef({ seq: -1, n: -1 });
+  useEffect(() => {
+    if (!my) return;
+    const n = d.r.length,
+      x = draftSent.current;
+    if (x.seq === s.seq && x.n === n) return;
+    draftSent.current = { seq: s.seq, n };
+    net.send({ t: "draft", n });
+  }, [my, s.seq, d.r.length]);
   // NB: in solo/host mode s.rack is the engine's live array (mutated in place by draw), so keep a COPY to diff against
   const prev = useRef({
       rack: [...s.rack],
@@ -339,7 +347,7 @@ export default function Game({
     if (my && secs > 0 && secs <= 3) tick();
     if (my && secs === 0 && !e.sent) {
       e.sent = 1;
-      net.send({ t: "timeout", dirty: dirty.current });
+      net.send({ t: "timeout" });
     }
   }, [secs, s.seq]);
 

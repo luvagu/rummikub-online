@@ -121,7 +121,7 @@ const runner = (game, push, react) => {
 				const g = game.s,
 					p = g.players[g.turn]
 				if (g.seq === seq && g.phase === 'play' && !p.bot) {
-					game.act(p.id, { t: 'timeout', dirty: false })
+					game.act(p.id, { t: 'timeout' })
 					push()
 				}
 			}, game.s.opts.timer * 1000 + 3000)
@@ -175,6 +175,7 @@ export function hostGame(
 		c.publish(`${base}/host`, J({ up }), { qos: 1, retain: true })
 	api.send = m => {
 		if (m.t === 'react') return react(tok, m.k)
+		if (m.t === 'draft') return game.draft(tok, m.n)
 		const e = game.act(tok, m)
 		if (e) onErr(e)
 		push()
@@ -259,6 +260,7 @@ export function hostGame(
 				return
 			}
 			if (m.t === 'react') return react(t, m.k)
+			if (m.t === 'draft') return game.draft(t, m.n)
 			const e = game.act(t, m)
 			if (e) out(t, { t: 'err', msg: e })
 			push()
@@ -387,10 +389,11 @@ export function localGame(
 	if (!resume) {
 		game.join(tok, name)
 		let lvl = 3,
-			timer = 0
+			timer = 45
 		try {
 			lvl = +localStorage.rmkLvl5 || 3
-			timer = +localStorage.rmkTimer === 1 ? 60 : +localStorage.rmkTimer || 0
+			const v = localStorage.rmkTimer
+			if (v != null) timer = +v === 1 ? 60 : +v || 0
 		} catch (e) {}
 		game.act(tok, { t: 'opts', lvl, timer })
 		game.act(tok, { t: 'bot' })
@@ -401,6 +404,7 @@ export function localGame(
 		code: 'SOLO',
 		send: m => {
 			if (m.t === 'react') return react(tok, m.k)
+			if (m.t === 'draft') return game.draft(tok, m.n)
 			const e = game.act(tok, m)
 			if (e) onErr(e)
 			push()
@@ -440,7 +444,7 @@ export function tutorialGame(
 	return {
 		code: 'TUTORIAL',
 		send: m => {
-			if (m.t === 'react') return
+			if (m.t === 'react' || m.t === 'draft') return
 			const e = game.act(tok, m)
 			if (e) onErr(e)
 			push()
