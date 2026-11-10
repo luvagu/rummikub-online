@@ -2381,3 +2381,63 @@ button.draw.pulse {
 		--tw: 31px;
 	}
 }
+
+/* dealer / draw animation: face-down tiles flying from the pool to a seat or the rack */
+.fly-layer {
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 60;
+	overflow: hidden;
+}
+.fly-tile {
+	position: fixed;
+	width: 28px;
+	height: 38px;
+	border-radius: 5px;
+	border: 1px solid #b9a56a;
+	background:
+		repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.07) 0 3px, transparent 3px 6px),
+		linear-gradient(#e8d9a3, #c9b475);
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+	opacity: 0;
+	will-change: transform, opacity;
+}
+.rack.dealing .tile {
+	opacity: 0;
+}
+.seat.bump {
+	animation: seatbump 0.4s ease-out;
+}
+@keyframes seatbump {
+	40% {
+		transform: scale(1.08);
+	}
+}
+.tile.dealhide {
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* table patterns (menu → Table pattern): low-contrast overlays on the green felt */
+.board.bg0 {
+	background: radial-gradient(#ffffff0c 1px, transparent 1.2px) 0 0 / 7px 7px;
+}
+.board.bg1 {
+	background:
+		linear-gradient(135deg, #ffffff0b 25%, transparent 25%) -24px 0 / 48px 48px,
+		linear-gradient(225deg, #ffffff0b 25%, transparent 25%) -24px 0 / 48px 48px,
+		linear-gradient(315deg, #ffffff0b 25%, transparent 25%) 0 0 / 48px 48px,
+		linear-gradient(45deg, #ffffff0b 25%, transparent 25%) 0 0 / 48px 48px;
+}
+.board.bg2 {
+	background: radial-gradient(#ffffff18 2px, transparent 2.5px) 0 0 / 28px 28px;
+}
+.board.bg3 {
+	background: repeating-linear-gradient(90deg, #ffffff0a 0 24px, transparent 24px 48px);
+}
+.board.bg4 {
+	background:
+		repeating-linear-gradient(45deg, #ffffff0d 0 2px, transparent 2px 12px),
+		repeating-linear-gradient(-45deg, #ffffff0d 0 2px, transparent 2px 12px);
+}

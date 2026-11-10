@@ -21,6 +21,7 @@ export const Tile = ({
 	placed,
 	ghost,
 	enter,
+	hide,
 	dnd,
 	onClick,
 }) => {
@@ -50,6 +51,7 @@ export const Tile = ({
 				(placed ? ' placed' : '') +
 				(ghost ? ' ghost' : '') +
 				(enter ? ' enter' : '') +
+				(hide ? ' dealhide' : '') +
 				(x.j ? ' joker' : '')
 			}
 			data-c={x.c}

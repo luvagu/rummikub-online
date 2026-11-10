@@ -52,6 +52,17 @@ English and Spanish (auto-detected from the browser, switch with the button on e
 
 A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibration) when it becomes your turn; the tab title also shows "● Your turn" while the tab is in the background. Toggle with the 🔔 / 📳 buttons in the top bar. iPhones in silent mode mute web audio.
 
+## Sound and animation
+
+- **Dealing:** at the start of a round, face-down tiles fly from the pool counter to each seat, one at a time round-robin, and your 14 tiles land in your rack one by one with a card-flick sound. Pace is 100 ms per tile with 2 players, 80 ms with 3 and 60 ms with 4 (`dealGap()` in `src/Game.jsx`). The seat tile counts and the pool counter update as tiles are dealt.
+- **Other players drawing:** when someone else draws, tiles fly from the pool to their seat with a swish sound.
+- **Action buttons:** To rack, Undo, Draw (and its confirm step), End turn, Skip, the sort buttons and the reactions button each play their own short cue. Sounds are synthesized with WebAudio (`src/notify.js`), no audio files.
+- The menu's turn sound switch mutes all of these. With "reduce motion" enabled in the OS, tiles don't fly but the sounds still play. A reload or rejoin mid-round does not replay the deal.
+
+## Table patterns
+
+Menu > Table pattern cycles the table background through five patterns (Felt, Diamonds, Dots, Stripes, Weave). The choice is remembered in the browser. Patterns are pure CSS (`.board.bg0` to `.bg4` in `src/styles.css`).
+
 ## Between rounds
 
 When a round ends in a hosted room, the dialog has the same layout as the lobby: room code, copy/share, and the four seats.

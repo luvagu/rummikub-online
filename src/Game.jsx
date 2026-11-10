@@ -8,6 +8,7 @@ import {
   VibrateOff,
   Timer,
   Languages,
+  Grid3x3,
   LogOut,
   Layers,
   Undo2,
@@ -38,6 +39,10 @@ import {
   warn,
   tick,
   timeUp,
+  dealRound,
+  dealCard,
+  drawSlide,
+  sfx,
   reactPop,
 } from "./notify.js";
 import { REACTIONS, RCOOL } from "./reactions.js";
@@ -58,7 +63,47 @@ const orderRack = (r, m) =>
     : r; // jokers last
 const sb = () =>
   matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const DEAL_FLY = 560; // ms a dealt tile is in the air
+const dealGap = (np) => Math.max(50, 140 - 20 * np); // ms per tile: 100 (2 players), 80 (3), 60 (4)
+// Fly one face-down tile between two points on a fixed overlay (Web Animations API, self-removing).
+// a, b: centres; w, h: the tile's size when it lands (it starts smaller, like leaving the deck).
+const flyTile = (layer, a, b, delay, onEnd, w = 28, h = 38) => {
+  if (!layer) return;
+  const el = document.createElement("div");
+  el.className = "fly-tile";
+  el.style.width = w + "px";
+  el.style.height = h + "px";
+  el.style.left = a.x - w / 2 + "px";
+  el.style.top = a.y - h / 2 + "px";
+  layer.appendChild(el);
+  const rot = (Math.random() * 16 - 8).toFixed(1),
+    dx = b.x - a.x,
+    dy = b.y - a.y;
+  const an = el.animate(
+    [
+      { transform: "translate(0,0) rotate(-14deg) scale(.55)", opacity: 0 },
+      { opacity: 1, offset: 0.1 },
+      { transform: `translate(${dx * 0.55}px,${dy * 0.55 - 26}px) rotate(${rot}deg) scale(.95)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${dx}px,${dy}px) rotate(0deg) scale(1)`, opacity: 1, offset: 0.96 },
+      { transform: `translate(${dx}px,${dy}px) rotate(0deg) scale(1)`, opacity: 0 },
+    ],
+    { duration: DEAL_FLY, delay, easing: "cubic-bezier(.3,.6,.35,1)", fill: "both" },
+  );
+  an.onfinish = () => {
+    el.remove();
+    onEnd && onEnd();
+  };
+};
 const DND_MQ = "(hover: hover) and (pointer: fine) and (min-width: 900px)";
+const BGS = 5; // table patterns (CSS classes bg0..bg4)
+const loadBg = () => {
+  try {
+    return Math.min(BGS - 1, Math.max(0, parseInt(localStorage.rmkBg) || 0));
+  } catch (e) {
+    return 0;
+  }
+};
 const loadSort = () => {
   try {
     return localStorage.rmkSort || null;
@@ -88,7 +133,8 @@ export default function Game({
     })),
     [sel, setSel] = useState([]),
     [menu, setMenu] = useState(false),
-    [sm, setSm] = useState(loadSort);
+    [sm, setSm] = useState(loadSort),
+    [bg, setBg] = useState(loadBg);
   const [pf, setPf] = useState(getPrefs),
     [now, setNow] = useState(Date.now()),
     seatsRef = useRef(null);
@@ -100,6 +146,7 @@ export default function Game({
       phase: s.phase,
       board: s.board.flat(),
       turn: s.turn,
+      pn: s.players.map((p) => p.n),
     }),
     [fresh, setFresh] = useState([]),
     [enter, setEnter] = useState(true),
@@ -107,6 +154,85 @@ export default function Game({
     ftm = useRef(0),
     [placed, setPlaced] = useState([]),
     ptm = useRef(0);
+  const flyRef = useRef(null),
+    ftimers = useRef([]),
+    [dealt, setDealt] = useState(() =>
+      !reduced() && s.phase === "play" && s.players.every((p) => p.n === 14) ? 0 : null,
+    ), // tiles dealt so far while the dealer animation runs (null = not dealing)
+    [bump, setBump] = useState(0);
+  const later = (fn, ms) => ftimers.current.push(setTimeout(fn, ms));
+  const pt = (el, fallback) => {
+    // centre of an element (clamped into the visible seat row if it is scrolled out)
+    if (!el) return fallback;
+    const b = el.getBoundingClientRect();
+    let x = b.left + b.width / 2;
+    const sr = seatsRef.current && el.closest(".seats") && seatsRef.current.getBoundingClientRect();
+    if (sr) x = Math.min(Math.max(x, sr.left + 16), sr.right - 16);
+    return { x, y: b.top + b.height / 2 };
+  };
+  const poolPt = () =>
+    pt(document.querySelector(".top .pill"), { x: window.innerWidth / 2, y: 20 });
+  const seatPt = (pid) =>
+    pt(seatsRef.current && seatsRef.current.querySelector('[data-pid="' + pid + '"] .av, [data-pid="' + pid + '"]'), poolPt());
+  const rackPt = () =>
+    pt(document.querySelector(".rack"), { x: window.innerWidth / 2, y: window.innerHeight - 60 });
+  // Dealer: round-robin, one tile at a time from the pool to every seat; ours land in the rack slot by slot.
+  const deal = (players) => {
+    const np = players.length,
+      N = 14 * np,
+      gap = dealGap(np);
+    if (reduced()) {
+      setDealt(null);
+      dealRound(N, gap / 1000, DEAL_FLY / 1000);
+      return;
+    }
+    setDealt(0);
+    setEnter(false);
+    clearTimeout(etm.current);
+    const from = poolPt(),
+      slots = [...document.querySelectorAll(".rack .tile")];
+    for (let j = 0; j < N; j++) {
+      const r = Math.floor(j / np),
+        i = j % np,
+        mine = i === me,
+        sl = mine && slots[r] && slots[r].getBoundingClientRect(),
+        to = sl
+          ? {
+              x: Math.min(Math.max(sl.left + sl.width / 2, 16), window.innerWidth - 16),
+              y: sl.top + sl.height / 2,
+            }
+          : seatPt(players[i].id);
+      flyTile(
+        flyRef.current,
+        from,
+        to,
+        j * gap,
+        undefined,
+        sl ? sl.width : 24,
+        sl ? sl.height : 32,
+      );
+      dealCard(j * gap + DEAL_FLY, mine);
+      later(() => setDealt(j + 1), j * gap + DEAL_FLY);
+    }
+    later(() => setDealt(null), N * gap + DEAL_FLY + 80);
+  };
+  // Someone else drew: tiles fly from the pool to their seat.
+  const drawFly = (pid, n) => {
+    drawSlide(n);
+    if (reduced()) return;
+    const from = poolPt(),
+      to = seatPt(pid);
+    for (let k = 0; k < Math.min(n, 3); k++)
+      flyTile(flyRef.current, from, to, k * 120, k === Math.min(n, 3) - 1 ? () => {
+        setBump(pid);
+        later(() => setBump(0), 450);
+      } : undefined);
+  };
+  useEffect(() => {
+    // first render: a freshly dealt round (everyone on 14 tiles) gets the dealer animation; a rejoin mid-game does not
+    if (s.phase === "play" && s.players.every((p) => p.n === 14)) later(() => deal(s.players), 150);
+    return () => ftimers.current.forEach(clearTimeout);
+  }, []);
   useEffect(() => {
     etm.current = setTimeout(() => setEnter(false), 500);
     return () => {
@@ -119,6 +245,7 @@ export default function Game({
     setD({ b: s.board, r: orderRack(s.rack, sm) });
     setSel([]); // new turn / draw: keep the chosen sort
     const p = prev.current,
+      p0 = p,
       add =
         p.phase === s.phase && s.phase === "play"
           ? s.rack.filter((i) => !p.rack.includes(i))
@@ -130,12 +257,23 @@ export default function Game({
       setEnter(true);
       clearTimeout(etm.current);
       etm.current = setTimeout(() => setEnter(false), 500);
+      if (s.phase === "play") {
+        if (!reduced()) setDealt(0);
+        later(() => deal(s.players), 120);
+      }
     } // deal / new round: tiles pop in
+    else
+      s.players.forEach((p, i) => {
+        // a player (not us) whose tile count went up drew from the pool (playing tiles only lowers it)
+        const was = (p0.pn || [])[i];
+        if (i !== me && was != null && p.n > was) drawFly(p.id, p.n - was);
+      });
     prev.current = {
       rack: [...s.rack],
       phase: s.phase,
       board: bd,
       turn: s.turn,
+      pn: s.players.map((x) => x.n),
     };
     if (put.length) {
       setPlaced(put);
@@ -470,11 +608,13 @@ export default function Game({
     [cd, setCd] = useState(false);
   const doDraw = () => {
     if (edited && !cd) {
+      sfx("drawAsk");
       setCd(true);
       setTimeout(() => setCd(false), 3000);
       return;
     } // unsaved edits would be thrown away: ask once
     setCd(false);
+    sfx("draw");
     net.send({ t: "draw" });
   };
   const cx = !!(s.result && s.result.cancelled),
@@ -489,6 +629,7 @@ export default function Game({
 
   return (
     <div className={"game" + (dnd ? " dnd" : "")}>
+      <div className="fly-layer" ref={flyRef} aria-hidden="true" />
       {Object.entries(bub).map(([id, b]) => {
         const r = REACTIONS.find((x) => x.k === b.k);
         return (
@@ -531,10 +672,19 @@ export default function Game({
               className={
                 "seat" +
                 (i === s.turn && s.phase === "play" ? " act" : "") +
-                (p.on === false ? " off" : "")
+                (p.on === false ? " off" : "") +
+                (bump === p.id ? " bump" : "")
               }
             >
-              <Avatar name={p.name} i={i} badge={p.n} />
+              <Avatar
+                name={p.name}
+                i={i}
+                badge={
+                  dealt != null
+                    ? Math.min(p.n, Math.max(0, Math.ceil((dealt - i) / s.players.length)))
+                    : p.n
+                }
+              />
               <div className="si">
                 <b>
                   {p.name}
@@ -564,7 +714,7 @@ export default function Game({
           aria-label={t("pool", { n: s.pool })}
         >
           <Layers size={16} />
-          {s.pool}
+          {dealt != null ? s.pool + 14 * s.players.length - dealt : s.pool}
         </span>
         <div className="menuwrap">
           <button
@@ -611,6 +761,21 @@ export default function Game({
                   <span className="sw">{pf.ticks ? "ON" : "OFF"}</span>
                 </button>
               )}
+              <button
+                role="menuitem"
+                onClick={() => {
+                  const v = (bg + 1) % BGS;
+                  sfx("click");
+                  setBg(v);
+                  try {
+                    localStorage.rmkBg = v;
+                  } catch (e) {}
+                }}
+              >
+                <Grid3x3 size={18} />
+                {t("bg")}
+                <span className="sw">{t("bg" + bg)}</span>
+              </button>
               <button
                 role="menuitem"
                 onClick={() => setLang(lang === "en" ? "es" : "en")}
@@ -669,7 +834,7 @@ export default function Game({
       <div className="boardwrap">
         <main
           className={
-            "board" +
+            "board bg" + bg +
             (over === "n" ? " dropping" : "") +
             (showAdd ? " adding" : "")
           }
@@ -749,11 +914,24 @@ export default function Game({
         </div>
         {my && (
           <>
-            <button disabled={!canBack} onClick={() => back()}>
+            <button
+              disabled={!canBack}
+              onClick={() => {
+                sfx("toRack");
+                back();
+              }}
+            >
               <ArrowDownToLine size={18} />
               <span className="lbl">{t("toRack")}</span>
             </button>
-            <button disabled={!edited} data-tut="undo" onClick={reset}>
+            <button
+              disabled={!edited}
+              data-tut="undo"
+              onClick={() => {
+                sfx("undo");
+                reset();
+              }}
+            >
               <Undo2 size={18} />
               <span className="lbl">{t("undo")}</span>
             </button>
@@ -787,7 +965,10 @@ export default function Game({
                 disabled={!!why}
                 aria-describedby={edited && why ? "why" : undefined}
                 title={why ? tr(t, why) : undefined}
-                onClick={() => net.send({ t: "end", board: d.b, rack: d.r })}
+                onClick={() => {
+                  sfx("end");
+                  net.send({ t: "end", board: d.b, rack: d.r });
+                }}
               >
                 <Check size={18} />
                 <span className="lg">{t("end")}</span>
@@ -799,7 +980,14 @@ export default function Game({
           </>
         )}
         {!my && me === 0 && s.phase === "play" && cur.on === false && (
-          <button onClick={() => net.send({ t: "skip" })}>{t("skip")}</button>
+          <button
+            onClick={() => {
+              sfx("skip");
+              net.send({ t: "skip" });
+            }}
+          >
+            {t("skip")}
+          </button>
         )}
       </div>
       <div className="rackwrap">
@@ -812,7 +1000,10 @@ export default function Game({
               aria-label={t("react")}
               title={t("react")}
               aria-expanded={pk}
-              onClick={() => setPk((v) => !v)}
+              onClick={() => {
+                sfx("click");
+                setPk((v) => !v);
+              }}
             >
               <SmilePlus size={18} />
             </button>
@@ -837,7 +1028,10 @@ export default function Game({
               aria-label={t("sort123")}
               title={t("sort123")}
               aria-pressed={sm === "num"}
-              onClick={() => setSort("num")}
+              onClick={() => {
+                sfx("sort");
+                setSort("num");
+              }}
             >
               <ArrowDown01 size={18} />
             </button>
@@ -845,28 +1039,39 @@ export default function Game({
               aria-label={t("sortCol")}
               title={t("sortCol")}
               aria-pressed={sm === "col"}
-              onClick={() => setSort("col")}
+              onClick={() => {
+                sfx("sort");
+                setSort("col");
+              }}
             >
               <Palette size={18} />
             </button>
           </div>
         </div>
         <div
-          className={"rack" + (over === "r" ? " dropping" : "")}
+          className={
+            "rack" + (over === "r" ? " dropping" : "")
+          }
           {...dz("r", back)}
         >
-          {d.r.map((id) => (
+          {d.r.map((id, ix) => {
+            const hid =
+              dealt != null &&
+              ix >= Math.max(0, Math.ceil((dealt - me) / s.players.length));
+            return (
             <Tile
               key={id}
               id={id}
+              hide={hid}
               sel={sel.includes(id)}
               fresh={fresh.includes(id)}
-              enter={enter}
+              enter={dealt != null ? !hid : enter}
               ghost={gh.includes(id)}
               dnd={tdrag(id)}
               onClick={() => toggle(id)}
             />
-          ))}
+            );
+          })}
         </div>
       </div>
       {endAsk && s.phase === "play" && (
