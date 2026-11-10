@@ -495,15 +495,19 @@ export default function Game({
   // ---- table editing (tap to select, then tap a target) ----
   const norm = (b) => b.filter((x) => x.length).map((x) => analyze(x).order);
   const strip = (b, ids) => b.map((x) => x.filter((i) => !ids.includes(i)));
-  const toggle = (id) =>
-    my &&
+  const toggle = (id) => {
+    if (!my) return;
+    sfx(sel.includes(id) ? "deselect" : "select");
     setSel((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
+  };
   const fromRack = (r, ids) => r.filter((i) => !ids.includes(i));
   const newSet = (ids = sel) => {
+    if (my) sfx("newSet");
     setD({ b: norm([...strip(d.b, ids), ids]), r: fromRack(d.r, ids) });
     setSel([]);
   };
   const addTo = (k, ids = sel) => {
+    if (my) sfx("addTo");
     const b = strip(d.b, ids);
     b[k] = [...b[k], ...ids];
     setD({ b: norm(b), r: fromRack(d.r, ids) });
@@ -704,15 +708,18 @@ export default function Game({
                     w: s.wins[p.id],
                   })}
                 >
-                  {s.scores[p.id]} pts · <Trophy size={11} />
-                  {s.wins[p.id]}
+                  {s.scores[p.id]} pts
+                  <span className="wn">
+                    {" "}· <Trophy size={11} />
+                    {s.wins[p.id]}
+                  </span>
                 </small>
               </div>
               {p.bot && (
                 <Bot size={14} className="seat-bot" aria-label={t("bot")} />
               )}
               {p.on === false && <WifiOff size={14} aria-label={t("off")} />}
-              {p.melded && <Check size={14} />}
+              {p.melded && <Check size={14} className="seat-ok" />}
             </div>
           ))}
         </div>

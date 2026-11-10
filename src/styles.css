@@ -2207,12 +2207,58 @@ button.draw.pulse {
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) {
+		flex: 1 1 auto; /* 2 players: keep the other chip at its content width (name, score, bot + check icons) */
+	}
+	.seat .si small {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+@media (max-width: 400px) {
+	/* very narrow, 2 players: the other chip shows avatar + score only (name and icons hidden) and the active chip may shrink (its name ellipsizes) */
+	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) {
+		flex: 0 0 auto;
+	}
+	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) .si b,
+	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) > svg {
+		display: none;
+	}
+	.seats:not(:has(.seat:nth-child(3))) .seat.act {
+		flex: 1 1 auto;
+	}
+	.seats:not(:has(.seat:nth-child(3))) .seat {
+		padding: 4px 6px 4px 4px;
+		gap: 4px;
+	}
+	.seats:not(:has(.seat:nth-child(3))) .seat .si small {
+		font-size: 10px;
+	}
+	.seats:not(:has(.seat:nth-child(3))) .seat .seat-bot {
+		display: none; /* the "Bot n" name already says it */
+	}
+}
+@media (max-width: 340px) {
+	/* tiniest phones: same compact look as 3-4 players, the other chip is avatar + tile count only */
+	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) .si {
+		display: none;
+	}
+}
+@media (max-width: 520px) {
 	.seats:has(.seat:nth-child(3)) .seat:not(.act) .si {
 		display: none;
 	}
+	.seats:has(.seat:nth-child(3)) {
+		gap: 4px; /* 3-4 players: all chips must fit next to the pool count and menu on a 360 px phone */
+		padding-right: 8px; /* room for the last chip's tile-count badge, which overhangs its avatar */
+	}
 	.seats:has(.seat:nth-child(3)) .seat:not(.act) {
 		flex: 0 0 auto;
-		padding: 5px 6px;
+		padding: 5px 3px;
+	}
+	.seats:has(.seat:nth-child(3)) .seat.act {
+		flex: 1 1 auto; /* may shrink to its minimum (the name ellipsizes) instead of pushing the last chip off-screen */
+		min-width: 96px;
 	}
 	.seats:has(.seat:nth-child(3)) .seat:not(.act) .av {
 		margin-right: 0;
@@ -2265,6 +2311,35 @@ button.draw.pulse {
 	}
 	.res li {
 		padding: 6px 10px;
+	}
+}
+@media (max-width: 400px) {
+	/* 3-4 players on a phone: the active chip shows "N pts" only (wins are in the round-end dialog) and the other chips get tighter, so all seats fit */
+	.seats:has(.seat:nth-child(3)) .seat.act .wn {
+		display: none;
+	}
+	.seats:has(.seat:nth-child(3)) .seat .seat-bot,
+	.seats:has(.seat:nth-child(3)) .seat .seat-ok {
+		display: none; /* the name already says "Bot n"; the melded check would widen the chips (the status line shows meld progress) */
+	}
+	.seats:has(.seat:nth-child(3)) .seat:not(.act) {
+		padding: 5px 2px;
+	}
+}
+@media (max-width: 340px) {
+	/* tiniest phones, 3-4 players: smaller avatars and no name on the active chip (its avatar + "N pts" remain) */
+	.seats:has(.seat:nth-child(3)) .seat .av {
+		width: 26px;
+		height: 26px;
+		font-size: 14px;
+	}
+	.seats:has(.seat:nth-child(3)) .seat.act {
+		min-width: 70px;
+		padding: 5px 6px 5px 4px;
+		gap: 4px;
+	}
+	.seats:has(.seat:nth-child(3)) .seat.act .si b {
+		display: none;
 	}
 }
 @media (max-width: 380px) {
@@ -2453,13 +2528,11 @@ button.draw.pulse {
 }
 .board.bg7 {
 	background:
-		radial-gradient(circle at 50% 0, transparent 13px, #ffffff0d 14px, #ffffff0d 15px, transparent 16px) 0 0 / 32px 16px;
+		radial-gradient(circle at 50% 0, transparent 13px, #ffffff14 14px, #ffffff14 15px, transparent 16px) 0 0 / 32px 16px;
 }
 .board.bg8 {
-	background:
-		linear-gradient(135deg, #ffffff0b 25%, transparent 25%) 0 0 / 32px 32px,
-		linear-gradient(225deg, #ffffff0b 25%, transparent 25%) 0 0 / 32px 32px;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cpath d='M18 12v12M12 18h12' stroke='white' stroke-opacity='.14' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 0 0 / 36px 36px;
 }
 .board.bg9 {
-	background: repeating-radial-gradient(circle at 50% 50%, transparent 0 8px, #ffffff0c 8px 9px) 0 0 / 56px 56px;
+	background: repeating-radial-gradient(circle at 50% 50%, transparent 0 8px, #ffffff14 8px 9px) 0 0 / 56px 56px;
 }
