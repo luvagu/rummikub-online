@@ -547,9 +547,14 @@ export default function Game({
     return () => m.removeEventListener("change", f);
   }, []);
   const dnd = my && canDnd;
+  // Off-turn we still hand Tile an (inert) object on drag-capable devices: Tile picks div vs button from it, and
+  // flipping the element type on every turn change would remount every tile and replay its placed/fresh animation.
   const tdrag = (id) =>
-    dnd
-      ? {
+    !dnd
+      ? canDnd
+        ? { draggable: false }
+        : null
+      : {
           draggable: true,
           onDragStart: (e) => {
             const ids = sel.includes(id) ? sel : [id];
@@ -563,8 +568,7 @@ export default function Game({
             setGh([]);
             setOver(null);
           },
-        }
-      : null;
+        };
   const dz = (key, fn) =>
     dnd
       ? {
