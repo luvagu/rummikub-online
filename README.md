@@ -61,7 +61,7 @@ A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibr
 
 ## Table patterns
 
-Menu > Table pattern cycles the table background through ten patterns (Felt, Diamonds, Dots, Stripes, Weave, Grid, Plaid, Scales, Crosses, Rings). The choice is remembered in the browser. Patterns are pure CSS (`.board.bg0` to `.bg9` in `src/styles.css`).
+Menu > Table pattern cycles the table background through ten patterns (Felt, Diamonds, Dots, Stripes, Weave, Grid, Plaid, Scales, Crosses, Rings). The choice is remembered in the browser. Patterns are pure CSS (`.board.bg0` to `.bg9` in `src/styles/components.css`).
 
 ## Between rounds
 
@@ -119,3 +119,12 @@ Scores and wins add up across games in the same room (the round-end dialog shows
 - Rack sort (by number or colour) is remembered, re-applied after every draw/turn, and the active option is highlighted. Tap it again to return to manual order.
 - Recently used names appear as chips under the name field (tap to reuse, × to forget).
 - Opening an invite link shows a minimal join screen (name + Join room, plus "Back to start").
+
+## Development
+
+- `npm run dev` / `npm run build` / `npm test`. The tests (`tests/game.test.mjs`, Node's built-in runner, no dependencies) cover the rules engine and the bots.
+- **Browser support:** the app targets Baseline "newly available" web features (native `<dialog>`, Popover API with anchor positioning, `@layer`, `color-mix()`, `toSorted()`, `Promise.withResolvers()`), with no polyfills. `closedby` on dialogs is progressive enhancement; a pointer-position fallback covers Safari.
+- **CSS** is an entry file (`src/styles.css`) that imports `src/styles/*.css` into an explicit cascade: `tokens` (custom properties), then the layers `base`, `components`, `motion`, `overrides`. Later layers win regardless of specificity, so there is no `!important`. Decorative motion is opt-in (`prefers-reduced-motion: no-preference`) and lives in `motion.css`.
+- **Modals** use `<dialog>` (`Modal` in `src/ui.jsx`); menus and pickers use the Popover API (`Popup`); toasts and the offline banner are top-layer popovers (`TopLayer`) so they stay above open dialogs.
+- **Drag and drop** (mouse/pen on large screens) uses Pointer Events with delegation from the game root; touch uses tap-to-select. Each tile group is a single tab stop with arrow-key navigation.
+- Browser storage goes through `src/store.js` (guarded, same keys as before).

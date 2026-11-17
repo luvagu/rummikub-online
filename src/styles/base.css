@@ -7,7 +7,12 @@ body,
 	margin: 0;
 	height: 100%;
 }
+html {
+	-webkit-text-size-adjust: 100%; /* iOS must not inflate text in landscape */
+	text-size-adjust: 100%;
+}
 body {
+	overscroll-behavior: none; /* no pull-to-refresh / rubber-banding over the table */
 	font-family: var(--font);
 	color: #fff;
 	-webkit-tap-highlight-color: transparent;

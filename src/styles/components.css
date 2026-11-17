@@ -79,7 +79,7 @@ button.link:hover:not(:disabled) {
 	align-items: center;
 }
 .sub {
-	opacity: 0.8;
+	opacity: 0.85;
 	margin: 0;
 	text-wrap: balance;
 }
@@ -194,7 +194,7 @@ button.link:hover:not(:disabled) {
 }
 .opt small {
 	display: block;
-	opacity: 0.78;
+	opacity: 0.85;
 	font-weight: 400;
 }
 button.opt.primary {
@@ -282,7 +282,7 @@ button.opt.primary small {
 }
 .lseat em {
 	font-weight: 400;
-	opacity: 0.75;
+	opacity: 0.85;
 }
 .lseat.off {
 	opacity: 0.55;
@@ -307,16 +307,24 @@ button.opt.primary small {
 	text-align: start;
 	max-width: 440px;
 }
+.switch {
+	position: relative; /* anchors the visually-hidden checkbox so it cannot scroll the page when focused */
+}
 .switch input {
 	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
 	opacity: 0;
+	cursor: pointer;
 }
 .switch b {
 	display: block;
 }
 .switch small {
 	display: block;
-	opacity: 0.75;
+	opacity: 0.85;
 }
 .switch .tr {
 	flex: none;
@@ -407,12 +415,12 @@ button.opt.primary small {
 }
 .si em {
 	font-weight: 400;
-	opacity: 0.7;
+	opacity: 0.85;
 	font-style: normal;
 }
 .si small {
-	font-size: 11px;
-	opacity: 0.75;
+	font-size: 0.75rem;
+	opacity: 0.85;
 	white-space: nowrap;
 }
 .av {
@@ -432,7 +440,7 @@ button.opt.primary small {
 	bottom: -6px;
 	background: #fff8e1;
 	color: #222;
-	font: 700 11px var(--font);
+	font: 700 0.75rem var(--font);
 	border-radius: 9px;
 	padding: 1px 5px;
 	border: 1px solid #0003;
@@ -479,9 +487,9 @@ button.opt.primary small {
 }
 .menu .sw {
 	margin-inline-start: auto;
-	font-size: 11px;
+	font-size: 0.75rem;
 	font-weight: 700;
-	opacity: 0.8;
+	opacity: 0.85;
 	letter-spacing: 0.05em;
 }
 .menu hr {
@@ -587,7 +595,7 @@ button.opt.primary small {
 	min-width: 0;
 }
 .status .log {
-	opacity: 0.75;
+	opacity: 0.85;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -710,9 +718,9 @@ button.pulse {
 	position: absolute;
 	top: 3px;
 	right: 4px;
-	font: 600 10px var(--font);
+	font: 600 0.75rem var(--font);
 	color: #333;
-	opacity: 0.7;
+	opacity: 0.85;
 }
 .tile .mk {
 	position: absolute;
@@ -841,7 +849,7 @@ dialog.card::backdrop {
 	text-align: start;
 }
 .res small {
-	opacity: 0.65;
+	opacity: 0.85;
 }
 .res li {
 	align-items: center;
@@ -854,7 +862,7 @@ dialog.card::backdrop {
 }
 .res .rk {
 	width: 20px;
-	opacity: 0.6;
+	opacity: 0.85;
 	font-weight: 700;
 }
 .res li b svg {
@@ -940,7 +948,7 @@ dialog.card::backdrop {
 	margin: 0;
 	border: 0;
 	color: #fff;
-	background: #e65100;
+	background: #bf360c; /* white text 5.6:1 (was 3.8:1) */
 	gap: 8px;
 	justify-content: center;
 	align-items: center;
@@ -1024,7 +1032,7 @@ dialog.card::backdrop {
 	line-height: 1.1;
 }
 .rpick button small {
-	font-size: 11px;
+	font-size: 0.75rem;
 	font-weight: 600;
 	opacity: 0.85;
 }
@@ -1246,10 +1254,10 @@ dialog.card::backdrop {
 }
 .lvlpop small {
 	font-weight: 400;
-	opacity: 0.8;
+	opacity: 0.85;
 }
 .lvltag {
-	opacity: 0.75;
+	opacity: 0.85;
 	font-weight: 500;
 }
 
@@ -1453,7 +1461,7 @@ button,
 		padding-bottom: 6px;
 	}
 	.bar button {
-		min-height: 38px;
+		min-height: 44px;
 		padding: 6px 12px;
 		font-size: 14px;
 	}
@@ -1489,7 +1497,7 @@ button,
 	.rackbar button,
 	.rackbar .seg button,
 	.rackbar .rwrap button {
-		min-height: 34px;
+		min-height: 44px;
 		padding: 4px 10px;
 	}
 	.rackbar button svg {
@@ -1586,7 +1594,7 @@ button.primary:disabled {
 }
 .coachn {
 	font-size: 0.75rem;
-	opacity: 0.6;
+	opacity: 0.85;
 }
 .coach .row {
 	flex-wrap: wrap;
@@ -1826,7 +1834,7 @@ button.primary:disabled {
 	flex-direction: column;
 }
 .timerpick small {
-	opacity: 0.75;
+	opacity: 0.85;
 }
 .timerpick .seg {
 	margin-inline-start: 0;
@@ -1840,14 +1848,14 @@ button.primary:disabled {
 
 /* Draw: its own colour so it reads as an equal alternative to End turn */
 button.draw {
-	background: linear-gradient(var(--sky), #0288d1);
+	background: linear-gradient(#0277bd, var(--sky-deep)); /* white text: 4.8-7.5:1 (was ~2:1 on the light top) */
 	border-color: var(--sky-deep);
 	color: #fff;
 	box-shadow: 0 2px 0 var(--sky-deep);
 }
 @media (hover: hover) {
 button.draw:hover:not(:disabled) {
-	background: linear-gradient(#6fd0fa, #039be5);
+	background: linear-gradient(#0288d1, #0277bd);
 }
 }
 button.draw:disabled {
@@ -1918,7 +1926,7 @@ button.draw:disabled {
 		gap: 4px;
 	}
 	.seats:not([data-many]) .seat .si small {
-		font-size: 10px;
+		font-size: 0.75rem;
 	}
 	.seats:not([data-many]) .seat .seat-bot {
 		display: none; /* the "Bot n" name already says it */
@@ -2081,7 +2089,7 @@ button.draw:disabled {
 		gap: 8px;
 	}
 	.bar button {
-		min-height: 40px;
+		min-height: 44px;
 		padding: 6px 12px;
 		font-size: 14px;
 	}
@@ -2273,4 +2281,22 @@ button.draw.pulse {
 	color: #222;
 	font: 800 12px/20px var(--font);
 	text-align: center;
+}
+
+/* ---- short landscape phones: every pixel of height counts, the table was left with about a third of it ---- */
+@media (height <= 480px) and (orientation: landscape) {
+	.top {
+		padding-block: calc(4px + env(safe-area-inset-top)) 4px;
+	}
+	.bar {
+		padding-block: 4px;
+	}
+	.rackbar {
+		padding-top: 2px;
+	}
+	.rackbar button,
+	.rackbar .seg button,
+	.rackbar .rwrap button {
+		min-height: 40px; /* secondary controls; the action bar keeps 44px */
+	}
 }

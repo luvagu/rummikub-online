@@ -48,7 +48,7 @@ import {
 import { REACTIONS, RCOOL } from "./reactions.js";
 import { Tile, Avatar, Modal, Invite, Popup, hidePopup } from "./ui.jsx";
 import { Seats } from "./Seats.jsx";
-import { local } from "./store.js";
+import { local, session } from "./store.js";
 
 const CMP = {
   num: (x, y) => x.n - y.n || x.c - y.c,
@@ -155,11 +155,17 @@ export default function Game({
     ptm = useRef(0);
   const flyRef = useRef(null),
     ftimers = useRef([]),
-    [dealt, setDealt] = useState(() =>
-      !reduced() && s.phase === "play" && s.players.every((p) => p.n === 14) ? 0 : null,
-    ), // tiles dealt so far while the dealer animation runs (null = not dealing)
+    [dealt, setDealt] = useState(() => (!reduced() && freshDeal() ? 0 : null)), // tiles dealt so far while the dealer animation runs (null = not dealing)
     [bump, setBump] = useState(0);
   const later = (fn, ms) => ftimers.current.push(setTimeout(fn, ms));
+  // A deal is animated once per round: reloading, or a resize that remounts the screen, must not replay it. The
+  // round is identified by room + round number + move counter, remembered for this tab.
+  function dealMark(st) {
+    return `${net.code}:${st.games ?? 0}:${st.seq}`;
+  }
+  function freshDeal() {
+    return s.phase === "play" && s.players.every((p) => p.n === 14) && session.get("rmkDealt") !== dealMark(s);
+  }
   const pt = (el, fallback) => {
     // centre of an element (clamped into the visible seat row if it is scrolled out)
     if (!el) return fallback;
@@ -177,6 +183,7 @@ export default function Game({
     pt(document.querySelector(".rack"), { x: window.innerWidth / 2, y: window.innerHeight - 60 });
   // Dealer: round-robin, one tile at a time from the pool to every seat; ours land in the rack slot by slot.
   const deal = (players) => {
+    session.set("rmkDealt", dealMark(s));
     const np = players.length,
       N = 14 * np,
       gap = dealGap(np);
@@ -231,7 +238,7 @@ export default function Game({
   };
   useEffect(() => {
     // first render: a freshly dealt round (everyone on 14 tiles) gets the dealer animation; a rejoin mid-game does not
-    if (s.phase === "play" && s.players.every((p) => p.n === 14)) later(() => deal(s.players), 150);
+    if (freshDeal()) later(() => deal(s.players), 150);
     return () => ftimers.current.forEach(clearTimeout);
   }, []);
   useEffect(() => {
@@ -771,7 +778,7 @@ export default function Game({
                     w: s.wins[p.id],
                   })}
                 >
-                  {s.scores[p.id]} pts
+                  {t("pts", { n: s.scores[p.id] })}
                   <span className="wn">
                     {" "}· <Trophy size={11} />
                     {s.wins[p.id]}
@@ -819,25 +826,25 @@ export default function Game({
               <button role="menuitemcheckbox" aria-checked={pf.sound} onClick={() => flip("sound")}>
                 {pf.sound ? <Bell size={18} /> : <BellOff size={18} />}
                 {t("snd")}
-                <span className="sw">{pf.sound ? "ON" : "OFF"}</span>
+                <span className="sw">{pf.sound ? t("sw.on") : t("sw.off")}</span>
               </button>
               {canVibrate() && (
                 <button role="menuitemcheckbox" aria-checked={pf.vibe} onClick={() => flip("vibe")}>
                   {pf.vibe ? <Vibrate size={18} /> : <VibrateOff size={18} />}
                   {t("vib")}
-                  <span className="sw">{pf.vibe ? "ON" : "OFF"}</span>
+                  <span className="sw">{pf.vibe ? t("sw.on") : t("sw.off")}</span>
                 </button>
               )}
               <button role="menuitemcheckbox" aria-checked={pf.reacts} onClick={() => flip("reacts")}>
                 <Smile size={18} />
                 {t("reactsT")}
-                <span className="sw">{pf.reacts ? "ON" : "OFF"}</span>
+                <span className="sw">{pf.reacts ? t("sw.on") : t("sw.off")}</span>
               </button>
               {s.opts.timer > 0 && (
                 <button role="menuitemcheckbox" aria-checked={pf.ticks} onClick={() => flip("ticks")}>
                   <Timer size={18} />
                   {t("ticks")}
-                  <span className="sw">{pf.ticks ? "ON" : "OFF"}</span>
+                  <span className="sw">{pf.ticks ? t("sw.on") : t("sw.off")}</span>
                 </button>
               )}
               <button
@@ -894,7 +901,8 @@ export default function Game({
           aria-valuemin={0}
           aria-valuemax={tot}
           aria-valuenow={secs}
-          aria-label="Timer"
+          aria-valuetext={t("secsLeft", { n: secs })}
+          aria-label={t("timer")}
         >
           <i key={dl} style={{ "--p0": s.tl / (tot * 1000), "--dur": s.tl + "ms" }} />
           {hot && (
@@ -924,6 +932,9 @@ export default function Game({
                 (info[k].ok ? "" : " bad") +
                 (over === String(k) ? " dropping" : "")
               }
+              role="group"
+              aria-label={t("setN", { k: k + 1 }) + (info[k].ok ? "" : " " + t("setBad"))}
+              aria-invalid={info[k].ok ? undefined : true}
               data-zone={k}
             >
               {info[k].order.map((id, j) => (
@@ -990,6 +1001,7 @@ export default function Game({
         {my && (
           <>
             <button
+              aria-label={t("toRack")}
               disabled={!canBack}
               onClick={() => {
                 sfx("toRack");
@@ -1000,6 +1012,7 @@ export default function Game({
               <span className="lbl">{t("toRack")}</span>
             </button>
             <button
+              aria-label={t("undo")}
               disabled={!edited}
               data-tut="undo"
               onClick={() => {

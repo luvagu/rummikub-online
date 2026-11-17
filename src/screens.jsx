@@ -18,18 +18,21 @@ import { LangBtn, Modal, Invite } from './ui.jsx'
 import { Seats } from './Seats.jsx'
 import { local } from './store.js'
 
+// The page heading: one accessible name, with the decorative tiles hidden so it is not read letter by letter.
 const Logo = () => (
-	<div className='logo' aria-label='Rummikub'>
+	<h1 className='logo'>
+		<span className='sr'>Rummikub</span>
 		{'RUMMIKUB'.split('').map((c, i) => (
 			<span
 				key={i}
 				className='ltile'
+				aria-hidden='true'
 				style={{ color: COLORS[i % 4], '--i': i }}
 			>
 				{c}
 			</span>
 		))}
-	</div>
+	</h1>
 )
 
 function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
@@ -44,11 +47,19 @@ function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
 				value={name}
 				maxLength={16}
 				autoComplete='nickname'
+				autoCapitalize='words'
+				spellCheck={false}
+				enterKeyHint='go'
 				aria-invalid={nameErr}
+				aria-describedby={nameErr ? 'rmk-name-err' : undefined}
 				onChange={e => setName(e.target.value)}
 				onKeyDown={e => e.key === 'Enter' && onEnter && onEnter()}
 			/>
-			{nameErr && <small className='errtxt'>{t('needName')}</small>}
+			{nameErr && (
+				<small id='rmk-name-err' className='errtxt'>
+					{t('needName')}
+				</small>
+			)}
 			{recent.length > 0 && (
 				<div className='chips' role='group' aria-label={t('recent')}>
 					{recent.map(n => (
@@ -319,6 +330,18 @@ export function Home({
 							aria-label={t('code')}
 							autoCapitalize='characters'
 							autoComplete='off'
+							autoCorrect='off'
+							spellCheck={false}
+							enterKeyHint='go'
+							onPaste={e => {
+								// a pasted invite link (…/#ABCDE) or a code inside other text: take the code, not the first 5 characters
+								const txt = e.clipboardData.getData('text'),
+									m = /#([A-Za-z0-9]{5})\b/.exec(txt) || /\b([A-Za-z0-9]{5})\b/.exec(txt)
+								if (m) {
+									e.preventDefault()
+									setCode(m[1].toUpperCase())
+								}
+							}}
 							onChange={e =>
 								setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))
 							}

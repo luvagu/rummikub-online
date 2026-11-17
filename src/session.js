@@ -11,6 +11,7 @@ export const loadSess = useLocal =>
 export const loadSnap = k => local.getJSON(k)
 export const clearSess = mode => {
 	session.remove('rmkSess')
+	session.remove('rmkDealt') // the next game in this tab gets its deal animation
 	local.remove('rmkSess')
 	if (mode === 'host') local.remove('rmkHost')
 	if (mode === 'solo') local.remove('rmkSolo')

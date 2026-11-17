@@ -54,9 +54,12 @@ export const chime = () => {
 	tone(880, 0.16, 0.3, 0.25)
 }
 export const buzz = (p = [200, 100, 200]) => {
+	// Browsers block vibration until the player has tapped the page (and log an intervention error), e.g. when a saved
+	// game resumes on load, so skip it until then.
+	if (navigator.userActivation?.hasBeenActive === false) return
 	try {
 		if (canVibrate()) navigator.vibrate(p)
-	} catch (e) {}
+	} catch {}
 }
 // One short synthesized cue per reaction key (see REACTIONS in reactions.js). Steps are [freq, at, dur, gain, type].
 const RSND = {

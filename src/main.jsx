@@ -19,7 +19,8 @@ class ErrorBoundary extends Component {
 	static getDerivedStateFromError(err) {
 		return { err }
 	}
-	componentDidCatch() {
+	componentDidCatch(err, info) {
+		console.error(err, info?.componentStack) // the crash is reported, then saved state is dropped so it cannot lock the player out
 		wipe()
 	}
 	render() {

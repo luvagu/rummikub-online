@@ -1,0 +1,11 @@
+{
+	"name": "Rummikub Online",
+	"short_name": "Rummikub",
+	"description": "Play classic Rummikub online with friends or solo against bots.",
+	"start_url": "./",
+	"scope": "./",
+	"display": "standalone",
+	"background_color": "#1b5e20",
+	"theme_color": "#1b5e20",
+	"icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

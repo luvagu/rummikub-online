@@ -56,7 +56,8 @@ export const LangBtn = () => {
 	return (
 		<button
 			className='lang'
-			aria-label='Language / Idioma'
+			// the accessible name must contain the visible text (WCAG 2.5.3 Label in Name)
+			aria-label={`${lang === 'en' ? 'Español' : 'English'} – Language / Idioma`}
 			onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
 		>
 			<Languages size={16} />

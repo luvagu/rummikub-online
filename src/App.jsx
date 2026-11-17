@@ -344,7 +344,10 @@ export default function App() {
 				<Home
 					{...{
 						name,
-						setName,
+						setName: v => {
+							setName(v)
+							setNameErr(false) // the error is about an empty name: it goes as soon as the player types
+						},
 						nameErr,
 						names,
 						code,
