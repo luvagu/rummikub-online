@@ -1,6 +1,8 @@
 import { createContext, useContext } from 'react'
+import { local } from './store.js'
 // Messages from the game engine/network are {k,p} objects so each player sees them in their own language.
-const s1 = n => (n > 1 ? 's' : '')
+const PLURALS = new Intl.PluralRules('en') // en and es both use the plain -s plural
+const s1 = n => (PLURALS.select(n) === 'one' ? '' : 's')
 export const D = {
 	en: {
 		sub: 'Play with friends online, 2–4 players',
@@ -651,16 +653,13 @@ export const fmt = (lang, k, p = {}) => {
 	const v = (D[lang] && D[lang][k]) ?? D.en[k] ?? k
 	return typeof v === 'function' ? v(p) : v
 }
-export const guessLang = () => {
-	try {
-		return (
-			localStorage.rmkLang ||
-			((navigator.language || 'en').slice(0, 2) === 'es' ? 'es' : 'en')
-		)
-	} catch (e) {
-		return 'en'
-	}
-}
+// Saved choice first; otherwise the first of the browser's preferred languages that we translate.
+export const guessLang = () =>
+	local.get('rmkLang') ||
+	globalThis.navigator?.languages
+		?.map(l => l.slice(0, 2).toLowerCase())
+		.find(l => l === 'es' || l === 'en') ||
+	'en'
 export const LangCtx = createContext({ lang: 'en', setLang() {} })
 export const useT = () => {
 	const { lang } = useContext(LangCtx)

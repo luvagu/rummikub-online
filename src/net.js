@@ -5,11 +5,12 @@ import * as M from 'mqtt'
 import { Game } from './game.js'
 import { RKEYS, RLEGACY, RCOOL, botReact } from './reactions.js'
 import { setupTutorial } from './tutorial.js'
+import { local, session } from './store.js'
 const connect = M.connect || M.default.connect,
 	env = import.meta.env || {}
-export const TOK =
-	sessionStorage.rmkTok ||
-	(sessionStorage.rmkTok = Math.random().toString(36).slice(2))
+let tok0 = session.get('rmkTok')
+if (!tok0) session.set('rmkTok', (tok0 = Math.random().toString(36).slice(2)))
+export const TOK = tok0
 const BROKERS = [
 	...(env.VITE_MQTT_URL ? [env.VITE_MQTT_URL] : []),
 	...(globalThis.__RMKB_BROKERS || [
@@ -24,30 +25,34 @@ const LET = 'ABCDEFGH',
 const NOBROKER = { k: 'e.nobroker' },
 	J = JSON.stringify
 
-const open = (url, will) =>
-	new Promise((res, rej) => {
-		const c = connect(url, {
-			clientId: 'rmkb_' + Math.random().toString(16).slice(2, 10),
-			connectTimeout: 6000,
-			reconnectPeriod: 3000,
-			keepalive: 30,
-			will,
-		})
-		const t = setTimeout(() => {
-			c.end(true)
-			rej(new Error('timeout'))
-		}, 7000)
-		c.on('error', () => {})
-		c.once('connect', () => {
-			clearTimeout(t)
-			res(c)
-		})
-		c.once('error', e => {
-			clearTimeout(t)
-			c.end(true)
-			rej(e)
-		})
+const open = (url, will) => {
+	const { promise, resolve, reject } = Promise.withResolvers()
+	const c = connect(url, {
+		clientId: 'rmkb_' + Math.random().toString(16).slice(2, 10),
+		connectTimeout: 6000,
+		reconnectPeriod: 3000,
+		keepalive: 30,
+		will,
 	})
+	// Backstop deadline for a stalled handshake. Bound to `settled` so it can never fire after we connected.
+	const settled = new AbortController(),
+		deadline = AbortSignal.timeout(7000)
+	const fail = e => {
+		settled.abort()
+		c.end(true)
+		reject(e)
+	}
+	deadline.addEventListener('abort', () => fail(new Error('timeout', { cause: deadline.reason })), {
+		signal: settled.signal,
+	})
+	c.on('error', () => {})
+	c.once('connect', () => {
+		settled.abort()
+		resolve(c)
+	})
+	c.once('error', fail)
+	return promise
+}
 
 // Keep the UI's connection flag in sync with the client's real state. Event edges alone can be missed or
 // reordered (tab suspended, network switch), which left the "reconnecting" banner stuck, so also poll.
@@ -59,13 +64,13 @@ const watch = (c, onConn, closed) => {
 		if (v !== last) onConn((last = v))
 	}
 	;['connect', 'close', 'offline', 'end', 'message'].forEach(e => c.on(e, sync))
-	const iv = setInterval(sync, 2000)
-	addEventListener('online', sync)
-	document.addEventListener('visibilitychange', sync)
+	const iv = setInterval(sync, 2000),
+		ac = new AbortController()
+	addEventListener('online', sync, { signal: ac.signal })
+	document.addEventListener('visibilitychange', sync, { signal: ac.signal })
 	c.once('end', () => {
 		clearInterval(iv)
-		removeEventListener('online', sync)
-		document.removeEventListener('visibilitychange', sync)
+		ac.abort() // removes both listeners
 	})
 }
 
@@ -158,9 +163,7 @@ export function hostGame(
 	const sched = runner(game, () => push(), react)
 	const save = () => {
 		if (dead) return
-		try {
-			localStorage.rmkHost = J({ code: api.code, s: game.s })
-		} catch (e) {}
+		local.setJSON('rmkHost', { code: api.code, s: game.s })
 	}
 	const push = () => {
 		if (dead) return
@@ -192,9 +195,7 @@ export function hostGame(
 	api.endRoom = () => {
 		dead = 1
 		sched.stop()
-		try {
-			localStorage.removeItem('rmkHost')
-		} catch (e) {}
+		local.remove('rmkHost')
 		if (c) {
 			game.s.players.forEach(p => {
 				if (!p.bot && p.id !== tok)
@@ -380,21 +381,15 @@ export function localGame(
 		react = reactor(game, onReact),
 		sched = runner(game, () => push(), react)
 	const push = () => {
-		try {
-			localStorage.rmkSolo = J({ s: game.s })
-		} catch (e) {}
+		local.setJSON('rmkSolo', { s: game.s })
 		onState(game.view(tok))
 		sched()
 	}
 	if (!resume) {
 		game.join(tok, name)
-		let lvl = 3,
-			timer = 45
-		try {
-			lvl = +localStorage.rmkLvl5 || 3
-			const v = localStorage.rmkTimer
-			if (v != null) timer = +v === 1 ? 60 : +v || 0
-		} catch (e) {}
+		const lvl = +local.get('rmkLvl5') || 3,
+			v = local.get('rmkTimer'),
+			timer = v == null ? 45 : +v === 1 ? 60 : +v || 0
 		game.act(tok, { t: 'opts', lvl, timer })
 		game.act(tok, { t: 'bot' })
 		game.act(tok, { t: 'start' })

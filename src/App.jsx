@@ -18,6 +18,7 @@ import Rules from './Rules.jsx'
 import Tutorial from './Tutorial.jsx'
 import { useT } from './i18n.js'
 import { unlockAudio } from './notify.js'
+import { local, session } from './store.js'
 
 function LeaveDialog({ mode, phase, onYes, onNo }) {
 	const t = useT(),
@@ -50,13 +51,13 @@ function LeaveDialog({ mode, phase, onYes, onNo }) {
 	)
 }
 
+const isCode = c => /^[A-Z0-9]{5}$/.test(c) // room code in an invite link (#ABCDE)
+
 export default function App() {
 	const [lang, setLangState] = useState(guessLang)
 	const setLang = l => {
 		setLangState(l)
-		try {
-			localStorage.rmkLang = l
-		} catch (e) {}
+		local.set('rmkLang', l)
 	}
 	const t = (k, p) => fmt(lang, k, p)
 	useEffect(() => {
@@ -64,10 +65,10 @@ export default function App() {
 	}, [lang])
 	useEffect(() => {
 		// browsers only allow sound after a user gesture: unlock on the first tap/click/key
-		const u = () => unlockAudio(),
-			ev = ['click', 'touchend', 'keydown']
-		ev.forEach(e => window.addEventListener(e, u, { passive: true }))
-		return () => ev.forEach(e => window.removeEventListener(e, u))
+		const ac = new AbortController()
+		for (const e of ['click', 'touchend', 'keydown'])
+			addEventListener(e, () => unlockAudio(), { passive: true, signal: ac.signal })
+		return () => ac.abort()
 	}, [])
 
 	const hash0 = useRef(location.hash.slice(1).toUpperCase())
@@ -90,22 +91,18 @@ export default function App() {
 		[rules, setRules] = useState(false),
 		[leaving, setLeaving] = useState(false)
 	const [saved, setSaved] = useState(() => loadSess(true))
-	const [name, setName] = useState(() => {
-		try {
-			return sessionStorage.rmkName || localStorage.rmkName || ''
-		} catch (e) {
-			return ''
-		}
-	})
+	const [name, setName] = useState(
+		() => session.get('rmkName') || local.get('rmkName') || '',
+	)
 	const [code, setCode] = useState(() =>
-		/^[A-Z0-9]{5}$/.test(hash0.current) ? hash0.current : '',
+		isCode(hash0.current) ? hash0.current : '',
 	)
 	const [nameErr, setNameErr] = useState(false),
 		[names, setNames] = useState(loadNames)
 	// Arrived through an invite link (and not auto-resuming that same room): show the minimal join screen
 	const [invite, setInvite] = useState(
 		() =>
-			/^[A-Z0-9]{5}$/.test(hash0.current) &&
+			isCode(hash0.current) &&
 			!(saved && saved.code === hash0.current),
 	)
 	const sess = useRef(null),
@@ -136,10 +133,8 @@ export default function App() {
 		setNames(loadNames())
 		const tok = o.tok || TOK,
 			cd = mode === 'join' ? o.code || code : ''
-		try {
-			sessionStorage.rmkName = nm
-			localStorage.rmkName = nm
-		} catch (e) {}
+		session.set('rmkName', nm)
+		local.set('rmkName', nm)
 		let snap
 		if (o.resume && mode !== 'join') {
 			snap = loadSnap(mode === 'host' ? 'rmkHost' : 'rmkSolo')

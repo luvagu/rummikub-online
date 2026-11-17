@@ -1,6 +1,6 @@
 // Bot-vs-bot simulation: node scripts/bot-sim.mjs [games=30] [maxTurns=150]
 // Seats levels against each other and prints win rates + avg move time per level.
-import { Game } from '../src/game.js'
+import { Game, shuffle } from '../src/game.js'
 
 const games = +process.argv[2] || 30,
 	maxTurns = +process.argv[3] || 150,
@@ -16,8 +16,8 @@ for (let g = 0; g < games; g++) {
 	game.s.scores = {}
 	game.s.wins = {}
 	game.s.opts.timer = 0
-	const order = [...lv].sort(() => Math.random() - 0.5)
-	order.forEach((l, i) => {
+	const order = shuffle([...lv]) // unbiased Fisher-Yates (a random-comparator sort is not a fair shuffle)
+	order.forEach(l => {
 		game.s.players.push({ id: 'b' + l, name: 'L' + l, bot: true, lvl: l, rack: [], melded: false, on: true })
 		game.s.scores['b' + l] = 0
 		game.s.wins['b' + l] = 0

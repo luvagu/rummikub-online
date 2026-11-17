@@ -1,33 +1,29 @@
 // "It's your turn" alerts: a short two-note chime (generated with WebAudio, no files) and device
 // vibration where supported (Android browsers; iOS Safari has no web vibration API).
+import { local } from './store.js'
+
 let ctx
-const read = () => {
-	try {
-		return JSON.parse(localStorage.rmkNotify || '{}')
-	} catch (e) {
-		return {}
-	}
-}
-export const getPrefs = () => ({
-	sound: true,
-	vibe: true,
-	ticks: true,
-	reacts: true,
-	...read(),
-})
+// Prefs are read on every tone (including each card of the 56-tile deal), so keep them in memory and
+// only re-read storage when another tab changes them.
+const DEFAULTS = { sound: true, vibe: true, ticks: true, reacts: true }
+let prefs
+export const getPrefs = () => (prefs ??= { ...DEFAULTS, ...local.getJSON('rmkNotify', {}) })
 export const setPref = (k, v) => {
-	try {
-		localStorage.rmkNotify = JSON.stringify({ ...getPrefs(), [k]: v })
-	} catch (e) {}
+	prefs = { ...getPrefs(), [k]: v }
+	local.setJSON('rmkNotify', prefs)
 }
+if (typeof addEventListener === 'function')
+	addEventListener('storage', e => {
+		if (e.key === 'rmkNotify' || e.key === null) prefs = undefined
+	})
 export const canVibrate = () =>
 	typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
 // Browsers only allow audio after a user gesture, so this is called on the first tap/click/key press.
 export function unlockAudio() {
 	try {
-		const AC = window.AudioContext || window.webkitAudioContext
+		const AC = window.AudioContext
 		if (!AC) return
-		ctx = ctx || new AC()
+		ctx ??= new AC()
 		if (ctx.state === 'suspended') ctx.resume()
 	} catch (e) {}
 }

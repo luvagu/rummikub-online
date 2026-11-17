@@ -3,16 +3,15 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/outfit'
 import '@fontsource-variable/inter'
 import App from './App.jsx'
+import { local, session } from './store.js'
 import './styles.css'
 
 const wipe = () => {
 	// a corrupt saved game/session must never lock the player out: drop all saved state
-	try {
-		for (const k of ['rmkHost', 'rmkSolo', 'rmkSess']) {
-			localStorage.removeItem(k)
-			sessionStorage.removeItem(k)
-		}
-	} catch (e) {}
+	for (const k of ['rmkHost', 'rmkSolo', 'rmkSess']) {
+		local.remove(k)
+		session.remove(k)
+	}
 }
 
 class ErrorBoundary extends Component {

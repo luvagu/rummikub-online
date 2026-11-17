@@ -48,6 +48,7 @@ import {
 import { REACTIONS, RCOOL } from "./reactions.js";
 import { Tile, Avatar, Modal, Invite } from "./ui.jsx";
 import { Seats } from "./Seats.jsx";
+import { local } from "./store.js";
 
 const CMP = {
   num: (x, y) => x.n - y.n || x.c - y.c,
@@ -55,15 +56,16 @@ const CMP = {
 };
 const orderRack = (r, m) =>
   m
-    ? [...r].sort((a, b) => {
+    ? r.toSorted((a, b) => {
         const x = T(a),
           y = T(b);
         return (x.j ? 1 : 0) - (y.j ? 1 : 0) || CMP[m](x, y);
       })
     : r; // jokers last
-const sb = () =>
-  matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// One live MediaQueryList (its .matches always reflects the current preference) instead of a new one per call.
+const REDUCED_MQ = matchMedia("(prefers-reduced-motion: reduce)");
+const reduced = () => REDUCED_MQ.matches;
+const sb = () => (reduced() ? "auto" : "smooth");
 const DEAL_FLY = 560; // ms a dealt tile is in the air
 const dealGap = (np) => Math.max(50, 140 - 20 * np); // ms per tile: 100 (2 players), 80 (3), 60 (4)
 // Fly one face-down tile between two points on a fixed overlay (Web Animations API, self-removing).
@@ -95,22 +97,12 @@ const flyTile = (layer, a, b, delay, onEnd, w = 28, h = 38) => {
     onEnd && onEnd();
   };
 };
+const SIGNED = new Intl.NumberFormat("en", { signDisplay: "exceptZero", useGrouping: false }); // +12 / -5 / 0
 const DND_MQ = "(hover: hover) and (pointer: fine) and (min-width: 900px)";
 const BGS = 10; // table patterns (CSS classes bg0..bg9)
-const loadBg = () => {
-  try {
-    return Math.min(BGS - 1, Math.max(0, parseInt(localStorage.rmkBg) || 0));
-  } catch (e) {
-    return 0;
-  }
-};
-const loadSort = () => {
-  try {
-    return localStorage.rmkSort || null;
-  } catch (e) {
-    return null;
-  }
-};
+const loadBg = () =>
+  Math.min(BGS - 1, Math.max(0, parseInt(local.get("rmkBg")) || 0));
+const loadSort = () => local.get("rmkSort") || null;
 
 export default function Game({
   s,
@@ -529,9 +521,8 @@ export default function Game({
   const setSort = (m) => {
     const v = sm === m ? null : m;
     setSm(v); // tap the active option again to go back to manual order
-    try {
-      v ? (localStorage.rmkSort = v) : localStorage.removeItem("rmkSort");
-    } catch (e) {}
+    if (v) local.set("rmkSort", v);
+    else local.remove("rmkSort");
     setD((x) => ({ ...x, r: orderRack(x.r, v) }));
   };
 
@@ -640,7 +631,7 @@ export default function Game({
       (!!net.code && net.code !== "SOLO" && net.code !== "TUTORIAL"),
     [endAsk, setEndAsk] = useState(false); // cx: the host ended the round early (no winner, no score change)
   const ranked = s.result
-    ? [...s.players].sort((a, b) => s.scores[b.id] - s.scores[a.id])
+    ? s.players.toSorted((a, b) => s.scores[b.id] - s.scores[a.id])
     : [];
 
   return (
@@ -786,9 +777,7 @@ export default function Game({
                   const v = (bg + 1) % BGS;
                   sfx("click");
                   setBg(v);
-                  try {
-                    localStorage.rmkBg = v;
-                  } catch (e) {}
+                  local.set("rmkBg", v);
                 }}
               >
                 <Grid3x3 size={18} />
@@ -1148,8 +1137,7 @@ export default function Game({
                     </b>
                     {!cx && (
                       <span className={v > 0 ? "pos" : "neg"}>
-                        {v > 0 ? "+" : ""}
-                        {v}
+                        {SIGNED.format(v)}
                       </span>
                     )}
                     <span className="meta">

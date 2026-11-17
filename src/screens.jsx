@@ -16,6 +16,7 @@ import { LESSON_ORDER } from './tutorial.js'
 import { useT } from './i18n.js'
 import { LangBtn, Modal, Invite } from './ui.jsx'
 import { Seats } from './Seats.jsx'
+import { local } from './store.js'
 
 const Logo = () => (
 	<div className='logo' aria-label='Rummikub'>
@@ -69,14 +70,10 @@ function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
 }
 
 export const getTimer = () => {
-	try {
-		const v = localStorage.rmkTimer
-		if (v == null) return 45
-		const n = +v
-		return n === 1 ? 60 : TIMES.includes(n) ? n : 0
-	} catch (e) {
-		return 45
-	}
+	const v = local.get('rmkTimer')
+	if (v == null) return 45
+	const n = +v
+	return n === 1 ? 60 : TIMES.includes(n) ? n : 0
 }
 export function TimerPick({ value, onChange }) {
 	const t = useT()
@@ -103,12 +100,8 @@ export function TimerPick({ value, onChange }) {
 	)
 }
 export const getLvl = () => {
-	try {
-		const n = +localStorage.rmkLvl5
-		return [1, 2, 3, 4, 5].includes(n) ? n : 3
-	} catch (e) {
-		return 3
-	}
+	const n = +local.get('rmkLvl5')
+	return [1, 2, 3, 4, 5].includes(n) ? n : 3
 }
 
 export function Home({
@@ -136,9 +129,7 @@ export function Home({
 		[mode, setMode] = useState(false),
 		[lessons, setLessons] = useState(false) // solo: choose between a bot game and the tutorial
 	const playSolo = n => {
-		try {
-			localStorage.rmkLvl5 = n
-		} catch (e) {}
+		local.set('rmkLvl5', n)
 		setPick(false)
 		start('solo')
 	}
@@ -208,9 +199,7 @@ export function Home({
 				value={timed}
 				onChange={n => {
 					setTimed(n)
-					try {
-						localStorage.rmkTimer = n
-					} catch (err) {}
+					local.set('rmkTimer', n)
 				}}
 			/>
 			<div className='lvlopts'>
