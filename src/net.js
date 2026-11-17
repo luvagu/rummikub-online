@@ -65,7 +65,7 @@ const watch = (c, onConn, closed) => {
 		if (v !== last) onConn((last = v))
 	}
 	;['connect', 'close', 'offline', 'end', 'message'].forEach(e => c.on(e, sync))
-	const iv = setInterval(sync, 2000),
+	const iv = setInterval(() => document.hidden || sync(), 2000), // a hidden tab is throttled anyway; visibilitychange below syncs on return
 		ac = new AbortController()
 	addEventListener('online', sync, { signal: ac.signal })
 	document.addEventListener('visibilitychange', sync, { signal: ac.signal })
@@ -235,7 +235,12 @@ export function hostGame(
 			c.end(true)
 			return
 		}
-		c.on('connect', () => !dead && status(true)) // after an automatic reconnect
+		c.on('connect', () => {
+			// after an automatic reconnect: guests that stayed connected may have missed state while we were away
+			if (dead) return
+			status(true)
+			push()
+		})
 		watch(c, onConn, () => dead)
 		c.on('message', (_, buf) => {
 			if (dead) return

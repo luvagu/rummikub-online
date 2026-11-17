@@ -12,10 +12,15 @@ export const setPref = (k, v) => {
 	prefs = { ...getPrefs(), [k]: v }
 	local.setJSON('rmkNotify', prefs)
 }
-if (typeof addEventListener === 'function')
+if (typeof addEventListener === 'function') {
 	addEventListener('storage', e => {
 		if (e.key === 'rmkNotify' || e.key === null) prefs = undefined
 	})
+	// iOS suspends/interrupts audio when the tab is backgrounded; bring it back when the player returns
+	document.addEventListener('visibilitychange', () => {
+		if (!document.hidden && ctx && ctx.state !== 'running') ctx.resume().catch(() => {})
+	})
+}
 export const canVibrate = () =>
 	typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
 // Browsers only allow audio after a user gesture, so this is called on the first tap/click/key press.

@@ -188,31 +188,33 @@ export default function Game({
     setDealt(0);
     setEnter(false);
     clearTimeout(etm.current);
+    // Read phase: measure everything first. Reading geometry inside the loop below would force a layout per tile
+    // (the fly tiles it appends invalidate layout), so the write phase must not touch layout at all.
     const from = poolPt(),
-      slots = [...document.querySelectorAll(".rack .tile")];
-    for (let j = 0; j < N; j++) {
+      slots = [...document.querySelectorAll(".rack .tile")].map((el) => el.getBoundingClientRect()),
+      seatPts = players.map((p) => seatPt(p.id)); // once per player, not once per tile
+    const targets = Array.from({ length: N }, (_, j) => {
       const r = Math.floor(j / np),
         i = j % np,
-        mine = i === me,
-        sl = mine && slots[r] && slots[r].getBoundingClientRect(),
-        to = sl
-          ? {
+        sl = i === me && slots[r];
+      return sl
+        ? {
+            to: {
               x: Math.min(Math.max(sl.left + sl.width / 2, 16), window.innerWidth - 16),
               y: sl.top + sl.height / 2,
-            }
-          : seatPt(players[i].id);
-      flyTile(
-        flyRef.current,
-        from,
-        to,
-        j * gap,
-        undefined,
-        sl ? sl.width : 24,
-        sl ? sl.height : 32,
-      );
-      dealCard(j * gap + DEAL_FLY, mine);
+            },
+            w: sl.width,
+            h: sl.height,
+            mine: true,
+          }
+        : { to: seatPts[i], w: 24, h: 32, mine: i === me };
+    });
+    // Write phase: create the flying tiles and schedule the sounds / counters.
+    targets.forEach((t, j) => {
+      flyTile(flyRef.current, from, t.to, j * gap, undefined, t.w, t.h);
+      dealCard(j * gap + DEAL_FLY, t.mine);
       later(() => setDealt(j + 1), j * gap + DEAL_FLY);
-    }
+    });
     later(() => setDealt(null), N * gap + DEAL_FLY + 80);
   };
   // Someone else drew: tiles fly from the pool to their seat.
@@ -593,20 +595,22 @@ export default function Game({
         }
       : {};
 
-  const info = d.b.map(analyze),
-    oldK = new Set(s.board.map(key));
-  const pts = d.b.reduce(
-    (a, x, j) => a + (oldK.has(key(x)) ? 0 : info[j].val),
-    0,
-  );
+  // Only recomputed when the working table (d.b) or the server's table (s.board) changes, not on every tick/render.
+  const { info, pts, boardEdited } = useMemo(() => {
+    const info = d.b.map(analyze),
+      oldK = new Set(s.board.map(key));
+    return {
+      info,
+      pts: d.b.reduce((a, x, j) => a + (oldK.has(key(x)) ? 0 : info[j].val), 0),
+      boardEdited: JSON.stringify(d.b) !== JSON.stringify(s.board),
+    };
+  }, [d.b, s.board]);
   const allOk = info.every((x) => x.ok),
     cur = s.players[s.turn] || s.players[0] || {},
     showAdd = my && sel.length > 0;
   const melded = s.players[me] && s.players[me].melded;
   // why End is unavailable: same checks, same order and same messages as the host's act() so the player never hits a silent disabled button
-  const edited =
-    d.r.length !== s.rack.length ||
-    JSON.stringify(d.b) !== JSON.stringify(s.board);
+  const edited = d.r.length !== s.rack.length || boardEdited;
   const why = !my
     ? null
     : d.r.length === s.rack.length

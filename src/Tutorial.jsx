@@ -45,12 +45,23 @@ export default function Tutorial({
 	useEffect(() => {
 		if (!mine || !step.hl) return
 		const q = step.hl.map(sel).join(','),
-			mark = () =>
-				document.querySelectorAll(q).forEach(el => el.classList.add('tut-hl'))
+			mark = () => {
+				// only add when absent: classList.add on an existing class still queues a mutation record,
+				// which would make the observer below re-trigger itself forever
+				for (const el of document.querySelectorAll(q))
+					if (!el.classList.contains('tut-hl')) el.classList.add('tut-hl')
+			}
 		mark()
-		const iv = setInterval(mark, 250) // React rewrites className on re-render, so keep re-applying
+		// React rewrites className when a tile/button re-renders, so re-apply on DOM changes (no polling)
+		const mo = new MutationObserver(mark)
+		mo.observe(document.querySelector('.game') ?? document.body, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			attributeFilter: ['class'],
+		})
 		return () => {
-			clearInterval(iv)
+			mo.disconnect()
 			document
 				.querySelectorAll('.tut-hl')
 				.forEach(el => el.classList.remove('tut-hl'))
