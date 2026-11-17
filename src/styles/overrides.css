@@ -21,3 +21,10 @@
 		animation: tutpulse 1s ease-in-out infinite;
 	}
 }
+
+/* while a tile is being dragged the whole page shows the grabbing cursor (the pointer leaves the tile at once) */
+html.dragging,
+html.dragging * {
+	cursor: grabbing;
+	user-select: none;
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useContext } from 'react'
+import { memo, useState, useEffect, useLayoutEffect, useRef, useContext } from 'react'
 import {
 	X,
 	CircleCheck,
@@ -13,37 +13,13 @@ import {
 import { COLORS, T } from './game.js'
 import { useT, tr, LangCtx } from './i18n.js'
 
-export const Tile = ({
-	id,
-	sel,
-	num,
-	fresh,
-	placed,
-	ghost,
-	enter,
-	hide,
-	dnd,
-	onClick,
-}) => {
+// A tile is a plain <button> with only primitive props and no handlers, so React.memo can skip it unless its own state
+// changed. Clicks and drags are handled once, by delegation, on the game root (see Game.jsx).
+export const Tile = memo(function Tile({ id, sel, num, fresh, placed, ghost, enter, hide, rove }) {
 	const t = useT(),
 		x = T(id)
-	// Firefox never starts a native drag from a <button>, so while drag & drop is on the tile is a role=button div
-	const Tag = dnd ? 'div' : 'button',
-		kb = dnd
-			? {
-					role: 'button',
-					tabIndex: 0,
-					onKeyDown: e => {
-						if (e.key === 'Enter' || e.key === ' ') {
-							e.preventDefault()
-							onClick && onClick(e)
-						}
-					},
-				}
-			: null
 	return (
-		<Tag
-			{...kb}
+		<button
 			className={
 				'tile' +
 				(sel ? ' sel' : '') +
@@ -57,16 +33,15 @@ export const Tile = ({
 			data-c={x.c}
 			data-id={id}
 			style={{ '--tc': x.j ? '#7b1fa2' : COLORS[x.c] }}
+			tabIndex={rove ? 0 : -1}
 			aria-pressed={!!sel}
 			aria-label={x.j ? t('joker') : `${x.n} ${t('c' + x.c)}`}
-			onClick={onClick}
-			{...dnd}
 		>
 			<span className='n'>{x.j ? '☺' : x.n}</span>
 			{x.j ? num ? <small>{num}</small> : null : <i className='mk' />}
-		</Tag>
+		</button>
 	)
-}
+})
 
 const AV = ['#ffb300', '#81c784', '#4fc3f7', '#f48fb1']
 export const Avatar = ({ name, i, badge }) => (

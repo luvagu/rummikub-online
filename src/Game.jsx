@@ -478,11 +478,13 @@ export default function Game({
   const fromRack = (r, ids) => r.filter((i) => !ids.includes(i));
   const newSet = (ids = sel) => {
     if (my) sfx("newSet");
+    setSay(t("a.new", { n: ids.length }));
     setD({ b: norm([...strip(d.b, ids), ids]), r: fromRack(d.r, ids) });
     setSel([]);
   };
   const addTo = (k, ids = sel) => {
     if (my) sfx("addTo");
+    setSay(t("a.set", { n: ids.length, k: k + 1 }));
     const b = strip(d.b, ids);
     b[k] = [...b[k], ...ids];
     setD({ b: norm(b), r: fromRack(d.r, ids) });
@@ -491,6 +493,7 @@ export default function Game({
   const back = (ids = sel) => {
     const bk = ids.filter((i) => s.rack.includes(i) && !d.r.includes(i));
     if (!bk.length) return setSel([]);
+    setSay(t("a.rack", { n: bk.length }));
     setD({
       b: norm(d.b.map((x) => x.filter((i) => !bk.includes(i)))),
       r: orderRack([...d.r, ...bk], sm),
@@ -509,65 +512,135 @@ export default function Game({
     setD((x) => ({ ...x, r: orderRack(x.r, v) }));
   };
 
-  // ---- drag & drop (mouse on large screens only; tap-to-select stays available everywhere) ----
+  // ---- drag & drop with Pointer Events (mouse/pen on large screens; tap-to-select works everywhere) ----
+  // Tiles carry no handlers (so React.memo can skip them): everything is delegated from the game root.
   const [canDnd, setCanDnd] = useState(() => matchMedia(DND_MQ).matches),
-    [over, setOver] = useState(null),
-    [gh, setGh] = useState([]),
-    drag = useRef(null);
+    [over, setOver] = useState(null), // zone under the pointer while dragging: "n" (new set), "r" (rack) or a set index
+    [gh, setGh] = useState([]), // tiles being dragged (dimmed in place)
+    [say, setSay] = useState(""), // polite announcement of the last move, for screen readers
+    actions = useRef(),
+    suppressClick = useRef(false),
+    abortDrag = useRef(null);
   useEffect(() => {
     const m = matchMedia(DND_MQ),
       f = () => setCanDnd(m.matches);
     m.addEventListener("change", f);
-    return () => m.removeEventListener("change", f);
+    return () => {
+      m.removeEventListener("change", f);
+      abortDrag.current?.();
+    };
   }, []);
   const dnd = my && canDnd;
-  // Off-turn we still hand Tile an (inert) object on drag-capable devices: Tile picks div vs button from it, and
-  // flipping the element type on every turn change would remount every tile and replay its placed/fresh animation.
-  const tdrag = (id) =>
-    !dnd
-      ? canDnd
-        ? { draggable: false }
-        : null
-      : {
-          draggable: true,
-          onDragStart: (e) => {
-            const ids = sel.includes(id) ? sel : [id];
-            drag.current = ids;
-            setGh(ids);
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("text/plain", ids.join(","));
-          },
-          onDragEnd: () => {
-            drag.current = null;
-            setGh([]);
-            setOver(null);
-          },
-        };
-  const dz = (key, fn) =>
-    dnd
-      ? {
-          onDragOver: (e) => {
-            if (!drag.current) return;
-            e.preventDefault();
-            e.stopPropagation();
-            if (over !== key) setOver(key);
-          },
-          onDragLeave: (e) => {
-            if (!e.currentTarget.contains(e.relatedTarget) && over === key)
-              setOver(null);
-          },
-          onDrop: (e) => {
-            if (!drag.current) return;
-            e.preventDefault();
-            e.stopPropagation();
-            const ids = drag.current;
-            drag.current = null;
-            setGh([]);
-            setOver(null);
-            fn(ids);
-          },
+  actions.current = { newSet, addTo, back }; // the latest closures: the drop outlives the render that started the drag
+  const onTilePointerDown = (e) => {
+    if (!dnd || e.button !== 0 || e.pointerType === "touch") return;
+    const tile = e.target.closest(".tile");
+    if (!tile) return;
+    const id = +tile.dataset.id,
+      pid = e.pointerId, // follow exactly one pointer: a second one can neither start nor end this drag
+      x0 = e.clientX,
+      y0 = e.clientY,
+      ac = new AbortController(),
+      sig = { signal: ac.signal };
+    let drag = null,
+      raf = 0,
+      last = { x: x0, y: y0 };
+    const zoneAt = (x, y) => document.elementFromPoint(x, y)?.closest("[data-zone]")?.dataset.zone ?? null,
+      track = () => {
+        drag.pv.style.translate = `${last.x - drag.w / 2}px ${last.y - drag.h / 2}px`;
+        setOver(zoneAt(last.x, last.y));
+      },
+      // auto-scroll the rack/board while the pointer is near its top or bottom edge
+      autoscroll = () => {
+        const sc = document.elementFromPoint(last.x, last.y)?.closest(".board, .rack");
+        if (sc && sc.scrollHeight > sc.clientHeight) {
+          const r = sc.getBoundingClientRect(),
+            edge = 36,
+            v = last.y < r.top + edge ? last.y - (r.top + edge) : last.y > r.bottom - edge ? last.y - (r.bottom - edge) : 0;
+          if (v) {
+            sc.scrollTop += Math.sign(v) * Math.min(18, Math.abs(v) / 2 + 2);
+            track();
+          }
         }
-      : {};
+        raf = requestAnimationFrame(autoscroll);
+      },
+      end = (drop) => {
+        ac.abort();
+        cancelAnimationFrame(raf);
+        abortDrag.current = null;
+        if (!drag) return; // never moved far enough: it was a plain click, which proceeds normally
+        const z = drop ? zoneAt(last.x, last.y) : null;
+        drag.pv.remove();
+        document.documentElement.classList.remove("dragging");
+        setGh([]);
+        setOver(null);
+        suppressClick.current = true; // the click that follows a drag must not also toggle a tile
+        setTimeout(() => (suppressClick.current = false), 0);
+        const a = actions.current;
+        if (z === "n") a.newSet(drag.ids);
+        else if (z === "r") a.back(drag.ids);
+        else if (z != null) a.addTo(+z, drag.ids);
+      };
+    window.addEventListener(
+      "pointermove",
+      (ev) => {
+        if (ev.pointerId !== pid) return;
+        last = { x: ev.clientX, y: ev.clientY };
+        if (!drag) {
+          if (Math.hypot(last.x - x0, last.y - y0) < 5) return;
+          const r = tile.getBoundingClientRect(),
+            pv = tile.cloneNode(true),
+            ids = sel.includes(id) ? sel : [id];
+          pv.className = "tile drag-preview";
+          for (const a of ["data-id", "aria-label", "aria-pressed"]) pv.removeAttribute(a);
+          pv.setAttribute("aria-hidden", "true");
+          pv.tabIndex = -1;
+          pv.style.setProperty("--tw", r.width + "px"); // the preview lives outside the board, which may override --tw
+          pv.style.width = r.width + "px";
+          if (ids.length > 1) pv.dataset.count = ids.length;
+          document.body.append(pv);
+          document.documentElement.classList.add("dragging");
+          drag = { ids, pv, w: r.width, h: r.height };
+          setGh(ids);
+          tile.setPointerCapture?.(pid); // keep receiving moves/up even if the pointer leaves the window
+          raf = requestAnimationFrame(autoscroll);
+        }
+        track();
+      },
+      sig,
+    );
+    window.addEventListener("pointerup", (ev) => ev.pointerId === pid && end(true), sig);
+    window.addEventListener("pointercancel", (ev) => ev.pointerId === pid && end(false), sig);
+    window.addEventListener("keydown", (ev) => ev.key === "Escape" && end(false), sig); // Escape cancels the drag
+    abortDrag.current = () => end(false);
+  };
+  const onTileClick = (e) => {
+    const tile = e.target.closest(".tile");
+    if (tile && !suppressClick.current) toggle(+tile.dataset.id);
+  };
+
+  // ---- keyboard: each tile group (rack, table) is a single tab stop; arrow keys move between its tiles ----
+  const [rk, setRk] = useState(null),
+    [bk, setBk] = useState(null);
+  const onTileFocus = (e) => {
+    const tile = e.target.closest?.(".tile");
+    if (tile) (tile.closest(".rack") ? setRk : setBk)(+tile.dataset.id);
+  };
+  const onTileKeys = (e) => {
+    const tile = e.target.closest?.(".tile");
+    if (!tile) return;
+    const list = [...tile.closest(".rack, .board").querySelectorAll(".tile")],
+      i = list.indexOf(tile),
+      n =
+        e.key === "ArrowRight" || e.key === "ArrowDown" ? i + 1
+        : e.key === "ArrowLeft" || e.key === "ArrowUp" ? i - 1
+        : e.key === "Home" ? 0
+        : e.key === "End" ? list.length - 1
+        : -1;
+    if (n < 0) return;
+    e.preventDefault();
+    list[Math.min(list.length - 1, Math.max(0, n))].focus();
+  };
 
   // Only recomputed when the working table (d.b) or the server's table (s.board) changes, not on every tick/render.
   const { info, pts, boardEdited } = useMemo(() => {
@@ -579,6 +652,9 @@ export default function Game({
       boardEdited: JSON.stringify(d.b) !== JSON.stringify(s.board),
     };
   }, [d.b, s.board]);
+  const boardOrder = useMemo(() => info.flatMap((x) => x.order), [info]),
+    boardRove = boardOrder.includes(bk) ? bk : boardOrder[0], // the one tabbable tile of each group
+    rackRove = d.r.includes(rk) ? rk : d.r[0];
   const allOk = info.every((x) => x.ok),
     cur = s.players[s.turn] || s.players[0] || {},
     showAdd = my && sel.length > 0;
@@ -620,7 +696,14 @@ export default function Game({
     : [];
 
   return (
-    <div className={"game" + (dnd ? " dnd" : "")}>
+    <div
+      className={"game" + (dnd ? " dnd" : "")}
+      onPointerDown={onTilePointerDown}
+      onClick={onTileClick}
+      onFocus={onTileFocus}
+      onKeyDown={onTileKeys}
+    >
+      <div className="sr" role="status">{say}</div>
       <div className="fly-layer" ref={flyRef} aria-hidden="true" />
       {Object.entries(bub).map(([id, b]) => {
         const r = REACTIONS.find((x) => x.k === b.k);
@@ -831,7 +914,7 @@ export default function Game({
             (over === "n" ? " dropping" : "") +
             (showAdd ? " adding" : "")
           }
-          {...dz("n", newSet)}
+          data-zone="n"
         >
           {d.b.map((b, k) => (
             <div
@@ -839,9 +922,9 @@ export default function Game({
               className={
                 "set" +
                 (info[k].ok ? "" : " bad") +
-                (over === k ? " dropping" : "")
+                (over === String(k) ? " dropping" : "")
               }
-              {...dz(k, (ids) => addTo(k, ids))}
+              data-zone={k}
             >
               {info[k].order.map((id, j) => (
                 <Tile
@@ -852,8 +935,7 @@ export default function Game({
                   placed={placed.includes(id)}
                   enter={enter}
                   ghost={gh.includes(id)}
-                  dnd={tdrag(id)}
-                  onClick={() => toggle(id)}
+                  rove={id === boardRove}
                 />
               ))}
               {showAdd && (
@@ -1043,7 +1125,7 @@ export default function Game({
           className={
             "rack" + (over === "r" ? " dropping" : "")
           }
-          {...dz("r", back)}
+          data-zone="r"
         >
           {d.r.map((id, ix) => {
             const hid =
@@ -1058,8 +1140,7 @@ export default function Game({
               fresh={fresh.includes(id)}
               enter={dealt != null ? !hid : enter}
               ghost={gh.includes(id)}
-              dnd={tdrag(id)}
-              onClick={() => toggle(id)}
+              rove={id === rackRove}
             />
             );
           })}
