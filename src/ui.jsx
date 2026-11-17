@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useContext } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useContext } from 'react'
 import {
 	X,
 	CircleCheck,
@@ -90,65 +90,103 @@ export const LangBtn = () => {
 	)
 }
 
-// Accessible dialog: Escape closes, focus moves in and is trapped, and returns to the opener on close.
+// Modal dialog on the native <dialog> element: it provides the top layer, inert page, focus containment, Escape and
+// focus return to the opener. React stays in charge of visibility: every close request (Escape, back gesture,
+// click outside) is cancelled and handed to onClose, and dialogs without onClose (e.g. "connecting") cannot be dismissed.
+const LIGHT_DISMISS = 'closedBy' in HTMLDialogElement.prototype // not in Safari yet: handled with the pointer fallback below
+const outside = (e, d) => {
+	// test the pointer position, not e.target: the <dialog> itself is the target for its own padding and gaps
+	const r = d.getBoundingClientRect()
+	return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom
+}
 export function Modal({ title, onClose, children, felt }) {
-	const ref = useRef()
-	useEffect(() => {
-		const prev = document.activeElement,
-			el = ref.current
-		const foc = () => [
-			...el.querySelectorAll(
-				'button:not(:disabled),a[href],input,[tabindex="0"]',
-			),
-		]
-		;(el.querySelector('[data-autofocus]') || foc()[0] || el).focus({
-			preventScroll: true,
-		})
-		const k = e => {
-			if (e.key === 'Escape' && onClose) {
-				e.stopPropagation()
-				onClose()
-			}
-			if (e.key === 'Tab') {
-				const f = foc()
-				if (!f.length) return
-				const a = f[0],
-					z = f[f.length - 1]
-				if (e.shiftKey && document.activeElement === a) {
-					e.preventDefault()
-					z.focus()
-				} else if (!e.shiftKey && document.activeElement === z) {
-					e.preventDefault()
-					a.focus()
-				}
-			}
-		}
-		document.addEventListener('keydown', k)
-		return () => {
-			document.removeEventListener('keydown', k)
-			prev && prev.focus && prev.focus()
-		}
+	const t = useT(),
+		ref = useRef(),
+		pressedOutside = useRef(false)
+	useLayoutEffect(() => {
+		const d = ref.current
+		if (!d.open) d.showModal()
+		// the first focusable element (the close button) is focused by default; a dialog can name a safer/primary target
+		d.querySelector('[data-autofocus]')?.focus({ preventScroll: true })
+		return () => d.close() // runs before React removes the node, so the browser returns focus to the opener
 	}, [])
 	return (
-		<div
-			className='modal'
-			onMouseDown={e => e.target === e.currentTarget && onClose && onClose()}
+		<dialog
+			ref={ref}
+			className={'card' + (felt ? ' felt' : '')}
+			aria-label={title}
+			closedby={onClose ? 'any' : 'none'}
+			onCancel={e => {
+				e.preventDefault()
+				onClose?.()
+			}}
+			onPointerDown={e => {
+				pressedOutside.current = !LIGHT_DISMISS && !!onClose && outside(e, ref.current)
+			}}
+			onPointerUp={e => {
+				// require press AND release outside, so a text-selection drag that ends on the backdrop does not dismiss
+				if (pressedOutside.current && outside(e, ref.current)) onClose()
+				pressedOutside.current = false
+			}}
 		>
-			<div
-				className={'card' + (felt ? ' felt' : '')}
-				role='dialog'
-				aria-modal='true'
-				aria-label={title}
-				ref={ref}
-				tabIndex={-1}
-			>
-				{onClose && (
-					<button className='icon xbtn' aria-label='×' onClick={onClose}>
-						<X size={18} />
-					</button>
-				)}
-				{children}
-			</div>
+			{onClose && (
+				<button className='icon xbtn' aria-label={t('close')} onClick={onClose}>
+					<X size={18} />
+				</button>
+			)}
+			{children}
+		</dialog>
+	)
+}
+
+// Native popover for menus and pickers: light dismiss, Escape, top layer and focus return to the trigger come from the
+// browser; the trigger opens it declaratively (command="toggle-popover" commandfor=id) and anchor positioning places it.
+// React only mirrors open/closed (for aria-expanded) and adds what the platform does not: arrow keys between items.
+const ITEM = 'button:not(:disabled)'
+const STEP = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }
+export function Popup({ id, className, role = 'menu', label, onOpenChange, children }) {
+	const ref = useRef()
+	useEffect(() => {
+		const el = ref.current,
+			on = e => {
+				onOpenChange?.(e.newState === 'open')
+				if (e.newState === 'open') el.querySelector(ITEM)?.focus({ preventScroll: true }) // land on the first item
+			}
+		el.addEventListener('toggle', on)
+		return () => el.removeEventListener('toggle', on)
+	}, [onOpenChange])
+	const onKeyDown = e => {
+		const items = [...ref.current.querySelectorAll(ITEM)]
+		if (!items.length) return
+		const i = items.indexOf(document.activeElement)
+		let n
+		if (e.key in STEP) n = (i + STEP[e.key] + items.length) % items.length
+		else if (e.key === 'Home') n = 0
+		else if (e.key === 'End') n = items.length - 1
+		else return
+		e.preventDefault()
+		items[n].focus()
+	}
+	return (
+		<div ref={ref} id={id} popover='auto' className={className} role={role} aria-label={label} onKeyDown={onKeyDown}>
+			{children}
+		</div>
+	)
+}
+export const hidePopup = id => document.getElementById(id)?.hidePopover?.()
+
+// A manual popover shown for as long as it is mounted. Modal <dialog>s live in the top layer and paint above any z-index,
+// so toasts and the offline banner join the top layer too (later promotion = painted on top) to stay visible over them.
+export function TopLayer({ children, ...props }) {
+	const ref = useRef()
+	useLayoutEffect(() => {
+		const el = ref.current
+		el.showPopover()
+		return () => el.matches(':popover-open') && el.hidePopover()
+	}, [])
+	return (
+		<div ref={ref} popover='manual' {...props}>
+			{children}
 		</div>
 	)
 }
@@ -160,18 +198,34 @@ export const Toasts = ({ list, t }) => {
 		warn: TriangleAlert,
 		info: Info,
 	}
+	// The visible stack is aria-hidden; two always-mounted visually-hidden regions do the announcing (a live region
+	// that is display:none until shown is not reliably announced). Errors interrupt (alert), the rest are polite.
+	const say = pred => {
+		const x = list.findLast(pred)
+		return x ? tr(t, x.m) : ''
+	}
 	return (
-		<div className='toasts' aria-live='polite'>
-			{list.map(x => {
-				const Ic = I[x.type] || Info
-				return (
-					<div key={x.id} className={'toast ' + x.type}>
-						<Ic size={18} />
-						<span>{tr(t, x.m)}</span>
-					</div>
-				)
-			})}
-		</div>
+		<>
+			<div className='sr' role='status'>
+				{say(x => x.type !== 'err')}
+			</div>
+			<div className='sr' role='alert'>
+				{say(x => x.type === 'err')}
+			</div>
+			{list.length > 0 && (
+				<TopLayer className='toasts' aria-hidden='true'>
+					{list.map(x => {
+						const Ic = I[x.type] || Info
+						return (
+							<div key={x.id} className={'toast ' + x.type}>
+								<Ic size={18} />
+								<span>{tr(t, x.m)}</span>
+							</div>
+						)
+					})}
+				</TopLayer>
+			)}
+		</>
 	)
 }
 

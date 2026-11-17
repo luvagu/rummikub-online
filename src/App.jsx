@@ -11,7 +11,7 @@ import {
 	rememberName,
 	forgetName,
 } from './session.js'
-import { Toasts, Modal } from './ui.jsx'
+import { Toasts, Modal, TopLayer } from './ui.jsx'
 import { Home, Lobby } from './screens.jsx'
 import Game from './Game.jsx'
 // secondary screens load on first use
@@ -335,10 +335,10 @@ export default function App() {
 	return (
 		<LangCtx.Provider value={{ lang, setLang }}>
 			{!conn && inRoom && (
-				<div className='banner' role='status'>
+				<TopLayer className='banner' role='status'>
 					<LoaderCircle className='spin' size={16} />
 					{t('reconnecting')}
-				</div>
+				</TopLayer>
 			)}
 			{!inRoom ? (
 				<Home

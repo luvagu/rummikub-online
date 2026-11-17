@@ -46,7 +46,7 @@ import {
   reactPop,
 } from "./notify.js";
 import { REACTIONS, RCOOL } from "./reactions.js";
-import { Tile, Avatar, Modal, Invite } from "./ui.jsx";
+import { Tile, Avatar, Modal, Invite, Popup, hidePopup } from "./ui.jsx";
 import { Seats } from "./Seats.jsx";
 import { local } from "./store.js";
 
@@ -399,19 +399,6 @@ export default function Game({
     };
   }, [my, s.seq, secs]);
   useEffect(() => {
-    if (!menu) return;
-    const h = (e) => {
-        if (!e.target.closest(".menuwrap")) setMenu(false);
-      },
-      k = (e) => e.key === "Escape" && setMenu(false);
-    document.addEventListener("pointerdown", h);
-    document.addEventListener("keydown", k);
-    return () => {
-      document.removeEventListener("pointerdown", h);
-      document.removeEventListener("keydown", k);
-    };
-  }, [menu]);
-  useEffect(() => {
     tut && tut(sel, d);
   }, [tut, sel, d]); // tutorial: tell the coach what the player has selected / placed so far
   // ---- reactions: emoji bubbles over the sender's seat (fixed layer: the seat row scrolls/clips) ----
@@ -461,23 +448,10 @@ export default function Game({
       Object.values(to).forEach(clearTimeout);
     };
   }, [reacts]);
-  useEffect(() => {
-    if (!pk) return;
-    const h = (e) => {
-        if (!e.target.closest(".rwrap")) setPk(false);
-      },
-      k = (e) => e.key === "Escape" && setPk(false);
-    document.addEventListener("pointerdown", h);
-    document.addEventListener("keydown", k);
-    return () => {
-      document.removeEventListener("pointerdown", h);
-      document.removeEventListener("keydown", k);
-    };
-  }, [pk]);
   const sendR = (k) => {
     if (cool) return;
     net.send({ t: "react", k });
-    setPk(false);
+    hidePopup("react-picker");
     setCool(true);
     setTimeout(() => setCool(false), RCOOL);
   };
@@ -741,42 +715,43 @@ export default function Game({
           <button
             className="icon"
             aria-label={t("menu")}
+            aria-haspopup="menu"
             aria-expanded={menu}
-            onClick={() => setMenu((v) => !v)}
+            command="toggle-popover"
+            commandfor="game-menu"
           >
             <EllipsisVertical size={20} />
           </button>
-          {menu && (
-            <div className="menu" role="menu">
+          <Popup id="game-menu" className="menu" label={t("menu")} onOpenChange={setMenu}>
               <button
                 role="menuitem"
                 onClick={() => {
-                  setMenu(false);
+                  hidePopup("game-menu");
                   openRules();
                 }}
               >
                 <BookOpen size={18} />
                 {t("rules")}
               </button>
-              <button role="menuitem" onClick={() => flip("sound")}>
+              <button role="menuitemcheckbox" aria-checked={pf.sound} onClick={() => flip("sound")}>
                 {pf.sound ? <Bell size={18} /> : <BellOff size={18} />}
                 {t("snd")}
                 <span className="sw">{pf.sound ? "ON" : "OFF"}</span>
               </button>
               {canVibrate() && (
-                <button role="menuitem" onClick={() => flip("vibe")}>
+                <button role="menuitemcheckbox" aria-checked={pf.vibe} onClick={() => flip("vibe")}>
                   {pf.vibe ? <Vibrate size={18} /> : <VibrateOff size={18} />}
                   {t("vib")}
                   <span className="sw">{pf.vibe ? "ON" : "OFF"}</span>
                 </button>
               )}
-              <button role="menuitem" onClick={() => flip("reacts")}>
+              <button role="menuitemcheckbox" aria-checked={pf.reacts} onClick={() => flip("reacts")}>
                 <Smile size={18} />
                 {t("reactsT")}
                 <span className="sw">{pf.reacts ? "ON" : "OFF"}</span>
               </button>
               {s.opts.timer > 0 && (
-                <button role="menuitem" onClick={() => flip("ticks")}>
+                <button role="menuitemcheckbox" aria-checked={pf.ticks} onClick={() => flip("ticks")}>
                   <Timer size={18} />
                   {t("ticks")}
                   <span className="sw">{pf.ticks ? "ON" : "OFF"}</span>
@@ -808,7 +783,7 @@ export default function Game({
                 <button
                   role="menuitem"
                   onClick={() => {
-                    setMenu(false);
+                    hidePopup("game-menu");
                     setEndAsk(true);
                   }}
                 >
@@ -819,15 +794,14 @@ export default function Game({
               <button
                 role="menuitem"
                 onClick={() => {
-                  setMenu(false);
+                  hidePopup("game-menu");
                   onLeave();
                 }}
               >
                 <LogOut size={18} />
                 {t("leave")}
               </button>
-            </div>
-          )}
+          </Popup>
         </div>
       </header>
       {timed && (
@@ -1018,16 +992,15 @@ export default function Game({
             <button
               aria-label={t("react")}
               title={t("react")}
+              aria-haspopup="menu"
               aria-expanded={pk}
-              onClick={() => {
-                sfx("click");
-                setPk((v) => !v);
-              }}
+              command="toggle-popover"
+              commandfor="react-picker"
+              onClick={() => sfx("click")}
             >
               <SmilePlus size={18} />
             </button>
-            {pk && (
-              <div className="rpick" role="menu">
+            <Popup id="react-picker" className="rpick" label={t("react")} onOpenChange={setPk}>
                 {REACTIONS.map((r) => (
                   <button
                     key={r.k}
@@ -1039,8 +1012,7 @@ export default function Game({
                     <small>{t("r." + r.k)}</small>
                   </button>
                 ))}
-              </div>
-            )}
+            </Popup>
           </div>
           <div className="seg">
             <button

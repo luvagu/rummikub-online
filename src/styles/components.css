@@ -452,18 +452,22 @@ button.opt.primary small {
 	flex: none;
 }
 .menu {
-	position: absolute;
-	inset-inline-end: 0;
-	top: calc(100% + 6px);
+	/* a native popover (top layer): placed against its trigger with anchor positioning, flipping when it would overflow */
+	position-area: block-end span-inline-start;
+	position-try-fallbacks: flip-block, flip-inline;
+	inset: auto;
+	margin-block: 6px;
+	color: #fff;
 	min-width: 240px;
 	background: var(--felt-deep);
 	border: 1px solid #ffffff30;
 	border-radius: 14px;
 	padding: 6px;
 	box-shadow: 0 14px 34px #0008;
-	z-index: 20;
-	display: flex;
 	flex-direction: column;
+}
+.menu:popover-open {
+	display: flex; /* never unconditional: it would override the closed (display: none) state */
 }
 .menu button {
 	justify-content: flex-start;
@@ -763,29 +767,26 @@ button.pulse {
 }
 
 /* ---- dialogs, toasts, banner ---- */
-.modal {
-	position: fixed;
-	inset: 0;
-	background: #000a;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 16px;
-	z-index: 40;
-	animation: fadein 0.15s both;
-}
 .card {
+	/* the <dialog> itself: fixed and centred in the top layer by the UA, so no position/inset here */
 	overscroll-behavior: contain;
-	position: relative;
 	background: #fbfaf3;
 	color: #1d2b1e;
+	border: 0;
 	border-radius: 20px;
 	padding: 22px;
 	width: min(560px, 100%);
+	max-width: calc(100% - 32px);
 	max-height: 88dvh;
 	overflow: auto;
 	line-height: 1.5;
 	box-shadow: 0 20px 50px #0009;
+}
+dialog.card::backdrop {
+	background: #000a;
+	overflow: hidden; /* ::backdrop is not a scroll container by default, so it would ignore overscroll-behavior */
+	overscroll-behavior: contain;
+	animation: fadein 0.15s both;
 }
 .card h2 {
 	margin-bottom: 10px;
@@ -891,12 +892,22 @@ button.pulse {
 	); /* below the header: never hide the seats / menu button */
 	left: 50%;
 	translate: -50% 0;
-	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	z-index: 60;
 	width: min(92%, 420px);
 	pointer-events: none;
+	/* a manual popover (top layer, so it stays above open dialogs): neutralise the UA popover box */
+	inset-inline-end: auto;
+	inset-block-end: auto;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	overflow: visible;
+}
+.toasts:popover-open {
+	display: flex;
 }
 .toast {
 	display: flex;
@@ -924,15 +935,21 @@ button.pulse {
 		62px + env(safe-area-inset-top)
 	); /* under the header so the menu stays usable while offline */
 	inset-inline: 0;
-	z-index: 29;
+	inset-block-end: auto;
+	width: auto;
+	margin: 0;
+	border: 0;
+	color: #fff;
 	background: #e65100;
-	display: flex;
 	gap: 8px;
 	justify-content: center;
 	align-items: center;
 	padding: 6px 10px;
 	font-size: 14px;
 	font-weight: 600;
+}
+.banner:popover-open {
+	display: flex;
 }
 
 /* ---- motion ---- */
@@ -971,13 +988,13 @@ button.pulse {
 	padding: 5px 12px;
 }
 .rpick {
-	position: absolute;
-	inset-inline-end: 10px; /* anchored to the rack bar, not the button: never clipped on narrow phones */
-	bottom: calc(100% + 8px);
-	z-index: 25;
+	position-area: block-start span-inline-start;
+	position-try-fallbacks: flip-block, flip-inline; /* flips instead of being clipped on narrow phones */
+	inset: auto;
+	margin-block: 8px;
+	color: #fff;
 	width: 276px;
 	max-width: calc(100% - 20px);
-	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 4px;
 	padding: 6px;
@@ -985,6 +1002,9 @@ button.pulse {
 	border: 1px solid #ffffff30;
 	border-radius: 14px;
 	box-shadow: 0 -10px 30px #0008;
+}
+.rpick:popover-open {
+	display: grid;
 }
 .rpick button {
 	flex-direction: column;
@@ -1099,7 +1119,6 @@ button.pulse {
 	z-index: 30;
 }
 .menu {
-	z-index: 31;
 	min-width: 270px;
 	max-width: calc(100vw - 20px);
 }
@@ -1210,7 +1229,7 @@ button.pulse {
 	text-overflow: ellipsis;
 }
 .lvlpop {
-	inset-inline: 0 auto;
+	position-area: block-end span-inline-end;
 	min-width: 250px;
 }
 .lvlpop button {
@@ -1237,10 +1256,6 @@ button.pulse {
 /* keep the open difficulty popup above the seat rows below it (rows are stacking contexts via opacity) */
 .lseat {
 	position: relative;
-}
-.lseat:has(.lvlpop) {
-	z-index: 40;
-	opacity: 1;
 }
 .lvlpop {
 	background: var(--felt-deep);
@@ -1784,12 +1799,6 @@ button.primary:disabled {
 }
 
 
-/* inside the scrolling dialog the difficulty popup opens upward, so the card doesn't clip it */
-.card.felt .lvlpop {
-	top: auto;
-	bottom: calc(100% + 6px);
-}
-
 /* dropdown rows stay flat: the generic felt button style above has equal-or-higher specificity, so repeat it here */
 :is(.lobby, .card.felt) .menu button:not(.primary):not(.link) {
 	background: none;
@@ -1968,11 +1977,9 @@ button.draw:disabled {
 		scroll-padding-top: 24px;
 	}
 	/* round-end / lobby dialogs: more room, primary action always reachable */
-	.modal {
-		padding: 10px;
-	}
 	.card {
 		padding: 14px;
+		max-width: calc(100% - 20px);
 		max-height: 94dvh;
 	}
 	.card .endact {
@@ -2106,15 +2113,17 @@ button.draw:disabled {
 @media (width <= 520px) {
 	.lvlpop,
 	.card.felt .lvlpop {
-		position: fixed;
+		position-area: none; /* a bottom sheet, not anchored to its trigger */
+		position-try-fallbacks: none;
 		inset-inline: 12px;
-		top: auto;
-		bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+		inset-block: auto calc(12px + env(safe-area-inset-bottom, 0px));
+		margin: 0;
 		min-width: 0;
 		max-height: 70dvh;
 		overflow-y: auto;
-		z-index: 80;
-		box-shadow: 0 0 0 100vmax #0009;
+	}
+	.lvlpop::backdrop {
+		background: #0009; /* replaces the old 100vmax box-shadow scrim */
 	}
 }
 
