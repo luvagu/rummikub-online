@@ -1,0 +1,46 @@
+/* Design tokens. The --tw (tile width) ladder keeps the original cascade order: later rules win. */
+:root {
+	--felt: #1b5e20;
+	--felt2: #2e7d32;
+	--amber: #ffb300;
+	--amber-hi: #ffc233;
+	--amber-edge: #e69f00;
+	--amber-deep: #b07800;
+	--ink: #2a1d00;
+	--felt-deep: #12361a;
+	--felt-edge: #14471a;
+	--sky: #4fc3f7;
+	--sky-deep: #01579b;
+	--paper: #fffdf6;
+	--paper-2: #f1e7c4;
+	--paper-edge: #d6c690;
+	--tile-edge: #b9a77a;
+	--tw: 40px;
+	--font: 'Inter Variable', system-ui, -apple-system, sans-serif;
+	--disp: 'Outfit Variable', 'Inter Variable', system-ui, sans-serif;
+}
+@media (width <= 520px) {
+	:root {
+		--tw: 31px;
+	}
+}
+@media (height <= 480px) and (orientation: landscape) {
+	:root {
+		--tw: 28px;
+	}
+}
+@media (width >= 1200px) {
+	:root {
+		--tw: 48px;
+	}
+}
+@media (width >= 1800px) {
+	:root {
+		--tw: 58px;
+	}
+}
+@media (width <= 380px) {
+	:root {
+		--tw: 29px;
+	}
+}

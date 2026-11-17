@@ -671,7 +671,7 @@ export default function Game({
           .join(". ")}
       </div>
       <header className="top">
-        <div className="seats" ref={seatsRef}>
+        <div className="seats" ref={seatsRef} data-many={s.players.length > 2 || undefined}>
           {s.players.map((p, i) => (
             <div
               key={p.id}
