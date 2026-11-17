@@ -1,13 +1,11 @@
 // Online play through a free public MQTT relay (over WebSockets). No WebRTC, so no NAT/firewall
 // trouble. The host's browser is the authoritative game server; guests talk to it via the relay.
 // Room code = 1 letter (which relay) + 4 random characters.
-import * as M from 'mqtt'
 import { Game } from './game.js'
 import { RKEYS, RLEGACY, RCOOL, botReact } from './reactions.js'
 import { setupTutorial } from './tutorial.js'
 import { local, session } from './store.js'
-const connect = M.connect || M.default.connect,
-	env = import.meta.env || {}
+const env = import.meta.env || {}
 let tok0 = session.get('rmkTok')
 if (!tok0) session.set('rmkTok', (tok0 = Math.random().toString(36).slice(2)))
 export const TOK = tok0
@@ -25,7 +23,10 @@ const LET = 'ABCDEFGH',
 const NOBROKER = { k: 'e.nobroker' },
 	J = JSON.stringify
 
-const open = (url, will) => {
+// mqtt is only needed for online rooms, so it is a separate chunk loaded on demand (solo/tutorial never pay for it)
+const open = async (url, will) => {
+	const M = await import('mqtt')
+	const connect = M.connect || M.default.connect
 	const { promise, resolve, reject } = Promise.withResolvers()
 	const c = connect(url, {
 		clientId: 'rmkb_' + Math.random().toString(16).slice(2, 10),

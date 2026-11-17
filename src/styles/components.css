@@ -366,7 +366,6 @@ button.opt.primary small {
 	gap: 8px;
 	padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
 	background: #0000003d;
-	backdrop-filter: blur(6px);
 }
 .seats {
 	display: flex;
@@ -495,11 +494,15 @@ button.opt.primary small {
 }
 .tbar i {
 	display: block;
+	width: 100%;
 	height: 100%;
 	background: #66bb6a;
-	transition:
-		width 0.22s linear,
-		background 0.4s;
+	/* The bar drains by scaling (compositor only) over the time left that the host sent with this state,
+	   instead of re-rendering React and animating width 5x a second. --p0 = fraction left, --dur = ms left. */
+	transform-origin: left;
+	transform: scaleX(var(--p0, 1));
+	animation: drain var(--dur, 1s) linear forwards;
+	transition: background-color 0.4s;
 }
 .tbar.amber i {
 	background: var(--amber);
@@ -2202,4 +2205,40 @@ button.draw:disabled {
 }
 .board.bg9 {
 	background: repeating-radial-gradient(circle at 50% 50%, transparent 0 8px, #ffffff14 8px 9px) 0 0 / 56px 56px;
+}
+
+/* ---- attention rings (animated in motion.css; here only the static, invisible ring) ---- */
+.seat.act,
+button.pulse {
+	position: relative; /* anchor for the ::after ring */
+}
+.seat.act::after,
+.tnum.mine::after,
+button.pulse::after,
+.tile.placed::before {
+	content: '';
+	position: absolute;
+	inset: -1px;
+	border-radius: inherit;
+	pointer-events: none;
+	box-shadow: 0 0 0 var(--ring, 7px) var(--ring-color, color-mix(in srgb, var(--amber) 33.33%, transparent));
+	opacity: 0;
+}
+.tnum.mine::after {
+	inset: 0;
+}
+.seat.act {
+	--ring: 3px;
+	--ring-color: color-mix(in srgb, var(--amber) 20%, transparent);
+	--ring-dur: 2.4s;
+}
+button.draw.pulse {
+	--ring: 6px;
+	--ring-color: color-mix(in srgb, var(--sky) 66.67%, transparent);
+	--ring-dur: 0.9s;
+}
+.tile.placed::before {
+	--ring: 10px;
+	--ring-color: color-mix(in srgb, var(--sky) 40%, transparent);
+	inset: 0;
 }

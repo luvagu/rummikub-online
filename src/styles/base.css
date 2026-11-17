@@ -11,8 +11,7 @@ body {
 	font-family: var(--font);
 	color: #fff;
 	-webkit-tap-highlight-color: transparent;
-	background: radial-gradient(circle at 50% 22%, var(--felt2), var(--felt) 72%)
-		fixed;
+	background: radial-gradient(circle at 50% 22%, var(--felt2), var(--felt) 72%); /* body is exactly the viewport tall, so 'fixed' only forced repaints */
 }
 body::before {
 	content: '';

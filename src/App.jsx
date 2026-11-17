@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import { hostGame, joinGame, localGame, tutorialGame, TOK } from './net.js'
 import { LangCtx, fmt, guessLang } from './i18n.js'
@@ -14,8 +14,9 @@ import {
 import { Toasts, Modal } from './ui.jsx'
 import { Home, Lobby } from './screens.jsx'
 import Game from './Game.jsx'
-import Rules from './Rules.jsx'
-import Tutorial from './Tutorial.jsx'
+// secondary screens load on first use
+const Rules = lazy(() => import('./Rules.jsx'))
+const Tutorial = lazy(() => import('./Tutorial.jsx'))
 import { useT } from './i18n.js'
 import { unlockAudio } from './notify.js'
 import { local, session } from './store.js'
@@ -395,6 +396,7 @@ export default function App() {
 				s.phase === 'play' &&
 				sess.current &&
 				sess.current.mode === 'tutorial' && (
+					<Suspense fallback={null}>
 					<Tutorial
 						key={'tutorial' + gk} // must differ from Game's key: they are siblings, and equal keys make React mount Game over and over
 						s={s}
@@ -412,8 +414,13 @@ export default function App() {
 						}}
 						onFinish={doLeave}
 					/>
+					</Suspense>
 				)}
-			{rules && <Rules close={() => setRules(false)} />}
+			{rules && (
+				<Suspense fallback={null}>
+					<Rules close={() => setRules(false)} />
+				</Suspense>
+			)}
 			{leaving && (
 				<LeaveDialog
 					mode={sess.current ? sess.current.mode : 'solo'}

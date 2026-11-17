@@ -128,7 +128,6 @@ export default function Game({
     [sm, setSm] = useState(loadSort),
     [bg, setBg] = useState(loadBg);
   const [pf, setPf] = useState(getPrefs),
-    [now, setNow] = useState(Date.now()),
     seatsRef = useRef(null);
   // tell the host how many tiles are in my working rack so IT decides the timeout penalty (1 vs 3 tiles)
   const draftSent = useRef({ seq: -1, n: -1 });
@@ -315,13 +314,21 @@ export default function Game({
   // ---- turn timer: host sends the time left; we count down locally from the moment each state arrives ----
   const dl = useMemo(() => (s.tl == null ? null : Date.now() + s.tl), [s]);
   const timed = dl != null;
+  // Only the whole-second value is React state, so Game re-renders about once a second (not 5x/s). The tick is
+  // scheduled for the moment the displayed second changes. The bar itself is a CSS animation (see .tbar i).
+  const [secsState, setSecs] = useState(() => dl == null ? null : Math.ceil(Math.max(0, dl - Date.now()) / 1000));
   useEffect(() => {
-    if (!timed) return;
-    const iv = setInterval(() => setNow(Date.now()), 200);
-    return () => clearInterval(iv);
-  }, [timed]);
-  const ms = timed ? Math.max(0, dl - now) : null,
-    secs = timed ? Math.ceil(ms / 1000) : null;
+    if (dl == null) return setSecs(null);
+    let id;
+    const tickTo = () => {
+      const left = Math.max(0, dl - Date.now());
+      setSecs(Math.ceil(left / 1000));
+      if (left > 0) id = setTimeout(tickTo, left % 1000 || 1000);
+    };
+    tickTo();
+    return () => clearTimeout(id);
+  }, [dl]);
+  const secs = timed ? secsState : null;
   const tot = s.opts.timer || 60,
     redAt = Math.min(10, Math.max(5, Math.ceil(tot * 0.17))), // warning threshold scales with the turn length
     amberAt = Math.ceil(tot / 3);
@@ -828,7 +835,7 @@ export default function Game({
           aria-valuenow={secs}
           aria-label="Timer"
         >
-          <i style={{ width: ms / (tot * 10) + "%" }} />
+          <i key={dl} style={{ "--p0": s.tl / (tot * 1000), "--dur": s.tl + "ms" }} />
           {hot && (
             <b className={"tnum" + (my ? " mine" : "")} aria-hidden="true">
               {secs}
