@@ -8,10 +8,12 @@ body,
 	height: 100%;
 }
 html {
+	background-color: var(--felt); /* solid felt behind everything, also under the iOS status bar / overscroll area */
 	-webkit-text-size-adjust: 100%; /* iOS must not inflate text in landscape */
 	text-size-adjust: 100%;
 }
 body {
+	position: relative; /* anchors the felt-grain layer below */
 	overscroll-behavior: none; /* no pull-to-refresh / rubber-banding over the table */
 	font-family: var(--font);
 	color: #fff;
@@ -20,7 +22,7 @@ body {
 }
 body::before {
 	content: '';
-	position: fixed;
+	position: absolute; /* not fixed: a viewport-sized fixed layer at the top edge gets a dark scroll-edge shadow in iOS PWAs */
 	inset: 0;
 	pointer-events: none;
 	opacity: 0.2;

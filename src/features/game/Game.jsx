@@ -4,6 +4,7 @@ import {
   useEffectEvent,
   useRef,
   useMemo,
+  useReducer,
   useContext,
 } from "react";
 import {
@@ -136,7 +137,18 @@ export default function Game({
   const t = useT(),
     { lang, setLang } = useContext(LangCtx),
     me = s.me,
-    my = s.phase === "play" && s.turn === me;
+    [dealt, setDealt] = useState(() => (!prefersReducedMotion() && freshDeal() ? 0 : null)), // tiles dealt so far while the dealer animation runs (null = not dealing)
+    // The host holds play (bots included) until the deal is over and says for how long; locally also wait for our own animation.
+    holdEnd = useMemo(() => Date.now() + (s.hold || 0), [s]),
+    [, tickHold] = useReducer((n) => n + 1, 0),
+    dealing = dealt != null || Date.now() < holdEnd,
+    my = s.phase === "play" && s.turn === me && !dealing;
+  useEffect(() => {
+    const ms = holdEnd - Date.now();
+    if (ms <= 0) return;
+    const id = setTimeout(tickHold, ms + 20);
+    return () => clearTimeout(id);
+  }, [holdEnd]);
   const hold = offline && my; // my turn, but nothing can be sent
   // Committing messages (draw, end turn, reaction) say so when they could not be sent, instead of silently vanishing.
   // Drafts and the timeout hint are best-effort and stay quiet.
@@ -182,7 +194,6 @@ export default function Game({
     ptm = useRef(0);
   const flyRef = useRef(null),
     ftimers = useRef([]),
-    [dealt, setDealt] = useState(() => (!prefersReducedMotion() && freshDeal() ? 0 : null)), // tiles dealt so far while the dealer animation runs (null = not dealing)
     [bump, setBump] = useState(0);
   const later = (fn, ms) => ftimers.current.push(setTimeout(fn, ms));
   // A deal is animated once per round: reloading, or a resize that remounts the screen, must not replay it. The
@@ -348,17 +359,18 @@ export default function Game({
   }, [fresh]);
 
   // ---- turn timer: host sends the time left; we count down locally from the moment each state arrives ----
-  const dl = useMemo(() => (s.tl == null ? null : Date.now() + s.tl), [s]);
+  const dl = useMemo(() => (s.tl == null ? null : Date.now() + (s.hold || 0) + s.tl), [s]); // the clock starts when the deal is over
   const timed = dl != null;
   // Only the whole-second value is React state, so Game re-renders about once a second (not 5x/s). The tick is
   // scheduled for the moment the displayed second changes. The bar itself is a CSS animation (see .tbar i).
-  const [secsState, setSecs] = useState(() => dl == null ? null : Math.ceil(Math.max(0, dl - Date.now()) / 1000));
+  const cap = s.opts.timer || 60; // never show more than a full turn while the deal is still running
+  const [secsState, setSecs] = useState(() => dl == null ? null : Math.min(cap, Math.ceil(Math.max(0, dl - Date.now()) / 1000)));
   useEffect(() => {
     if (dl == null) return setSecs(null);
     let id;
     const tickTo = () => {
       const left = Math.max(0, dl - Date.now());
-      setSecs(Math.ceil(left / 1000));
+      setSecs(Math.min(cap, Math.ceil(left / 1000)));
       if (left > 0) id = setTimeout(tickTo, left % 1000 || 1000);
     };
     tickTo();
@@ -966,7 +978,7 @@ export default function Game({
           aria-valuetext={t("secsLeft", { n: secs })}
           aria-label={t("timer")}
         >
-          <i key={dl} style={{ "--p0": s.tl / (tot * 1000), "--dur": s.tl + "ms" }} />
+          <i key={dl} style={{ "--p0": s.tl / (tot * 1000), "--dur": s.tl + "ms", "--hold": (s.hold || 0) + "ms" }} />
           {hot && (
             <b className={"tnum" + (my ? " mine" : "")} aria-hidden="true">
               {secs}
@@ -1039,7 +1051,9 @@ export default function Game({
       <div className="bar">
         <div className="status">
           <b>
-            {my
+            {dealing && s.phase === "play"
+              ? t("dealing")
+              : my
               ? melded
                 ? t("turnMine")
                 : t("turnMeld", { pts })

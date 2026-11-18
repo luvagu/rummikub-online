@@ -11,6 +11,36 @@ const outside = (e, d) => {
 	const r = d.getBoundingClientRect()
 	return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom
 }
+// iOS (notably the installed PWA) lets a drag on the backdrop or on a short dialog scroll whatever lies behind it, whatever
+// overscroll-behavior says. So a touch drag is only let through when it scrolls something inside the dialog that still has
+// room to move in that direction; everything else is swallowed.
+function trapTouchScroll(d) {
+	let y0 = 0
+	const start = e => {
+		y0 = e.touches[0].clientY
+	}
+	const canScroll = (el, dy) => {
+		// dy > 0: finger moves down (content scrolls up); dy < 0: finger moves up
+		const { overflowY } = getComputedStyle(el)
+		if (!/auto|scroll/.test(overflowY) || el.scrollHeight <= el.clientHeight) return false
+		return dy > 0 ? el.scrollTop > 0 : el.scrollTop + el.clientHeight < el.scrollHeight - 1
+	}
+	const move = e => {
+		if (e.touches.length > 1) return // pinch
+		const dy = e.touches[0].clientY - y0
+		for (let el = e.target; el instanceof Element; el = el.parentElement) {
+			if (canScroll(el, dy)) return
+			if (el === d) break
+		}
+		if (e.cancelable) e.preventDefault()
+	}
+	d.addEventListener('touchstart', start, { passive: true })
+	d.addEventListener('touchmove', move, { passive: false })
+	return () => {
+		d.removeEventListener('touchstart', start)
+		d.removeEventListener('touchmove', move)
+	}
+}
 export function Modal({ title, onClose, children, felt }) {
 	const t = useT(),
 		ref = useRef(),
@@ -20,7 +50,11 @@ export function Modal({ title, onClose, children, felt }) {
 		if (!d.open) d.showModal()
 		// the first focusable element (the close button) is focused by default; a dialog can name a safer/primary target
 		d.querySelector('[data-autofocus]')?.focus({ preventScroll: true })
-		return () => d.close() // runs before React removes the node, so the browser returns focus to the opener
+		const untrap = trapTouchScroll(d)
+		return () => {
+			untrap()
+			d.close() // runs before React removes the node, so the browser returns focus to the opener
+		}
 	}, [])
 	return (
 		<dialog

@@ -1,4 +1,5 @@
 // Rummikub rules engine. Runs only on the host; guests send moves and receive views.
+import { dealHold } from './deal.js'
 export const COLORS = ['#1b1b1b', '#d32f2f', '#1565c0', '#d97800']
 export const DECK = []
 {
@@ -161,9 +162,10 @@ export class Game {
 			result: s.result,
 			me,
 			rack: me >= 0 ? s.players[me].rack : [],
+			hold: this.hold(), // ms until the deal is over and play opens (0 = open)
 			tl:
 				s.phase === 'play' && s.opts.timer
-					? Math.max(0, s.opts.timer * 1000 - (Date.now() - (s.t0 || 0)))
+					? Math.max(0, s.opts.timer * 1000 - Math.max(0, Date.now() - (s.t0 || 0)))
 					: null,
 		}
 	}
@@ -291,6 +293,11 @@ export class Game {
 			if (!p.bot) p.on = p.id === hostTok
 		})
 	} // host came back: guests must rejoin
+	// While the dealer animation runs nobody may play (bots included); the clock starts when it is over.
+	hold() {
+		const s = this.s
+		return s.phase === 'play' ? Math.max(0, (s.holdUntil || 0) - Date.now()) : 0
+	}
 	botDue() {
 		const s = this.s
 		return s.phase === 'play' && !!s.players[s.turn].bot
@@ -299,7 +306,7 @@ export class Game {
 		const s = this.s,
 			i = s.turn,
 			p = s.players[i]
-		if (!this.botDue()) return
+		if (!this.botDue() || this.hold()) return
 		const lvl = p.lvl || 3,
 			before = p.rack.length
 		// beginners often just draw, even when they could play
@@ -394,14 +401,18 @@ export class Game {
 		if (m.t === 'start') {
 			if (i !== 0 || s.phase === 'play') return
 			if (s.players.length < 2) return E('e.min2')
-			return this.deal()
+			this.deal()
+			s.holdUntil = Date.now() + dealHold(s.players.length)
+			s.t0 = s.holdUntil // the turn clock starts when the deal is over
+			return
 		}
 		if (m.t === 'skip') {
-			if (i === 0 && s.phase === 'play' && !s.players[s.turn].on)
+			if (i === 0 && s.phase === 'play' && !s.players[s.turn].on && !this.hold())
 				this.draw(s.turn, 1)
 			return
 		}
 		if (s.phase !== 'play' || i !== s.turn) return E('e.notTurn')
+		if (this.hold()) return E('e.dealing')
 		if (m.t === 'draw') return this.draw(i, 1)
 		if (m.t === 'timeout') return this.draw(i, this.dirty(i) ? 3 : 1, true)
 		if (m.t !== 'end') return

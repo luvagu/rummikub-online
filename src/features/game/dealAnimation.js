@@ -1,6 +1,6 @@
 // The dealer / draw animation: face-down tiles flying between the pool, the seats and the rack.
-export const DEAL_FLY = 560; // ms a dealt tile is in the air
-export const dealGap = (np) => Math.max(50, 140 - 20 * np); // ms per tile: 100 (2 players), 80 (3), 60 (4)
+import { DEAL_FLY, dealGap } from "../../engine/deal.js";
+export { DEAL_FLY, dealGap };
 // Fly one face-down tile between two points on a fixed overlay (Web Animations API, self-removing).
 // a, b: centres; w, h: the tile's size when it lands (it starts smaller, like leaving the deck).
 export const flyTile = (layer, a, b, delay, onEnd, w = 28, h = 38) => {

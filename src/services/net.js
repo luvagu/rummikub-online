@@ -117,7 +117,7 @@ const runner = (game, push, react) => {
 					quiet[r.id] = now
 					setTimeout(() => react(r.id, k), 350 + Math.random() * 600)
 				}
-			}, 700 + Math.random() * 1100) // varied "thinking" time
+			}, game.hold() + 700 + Math.random() * 1100) // varied "thinking" time, starting once the deal is over
 		if (s.phase !== 'play' || !s.opts.timer) {
 			clearTimeout(tt)
 			seq = -1
@@ -133,7 +133,7 @@ const runner = (game, push, react) => {
 					game.act(p.id, { t: 'timeout' })
 					push()
 				}
-			}, game.s.opts.timer * 1000 + 3000)
+			}, game.hold() + game.s.opts.timer * 1000 + 3000)
 		}
 	}
 	run.stop = () => {
