@@ -142,3 +142,38 @@ test('a bot-only game deals 14 tiles each and finishes without losing tiles', ()
 	assert.deepEqual(sortNum(all), Array.from({ length: 106 }, (_, i) => i))
 	for (const s of g.s.board) assert.equal(analyze(s).ok, true)
 })
+
+test('a started round is on hold while the tiles are dealt: nobody plays, bots included', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.act('h', { t: 'bot' })
+	g.act('h', { t: 'start' })
+	const s = g.s
+	assert.equal(s.phase, 'play')
+	assert.ok(g.hold() > 0)
+	assert.ok(g.view('h').hold > 0)
+	assert.equal(g.view('h').tl, s.opts.timer * 1000, 'the turn clock has not started yet')
+	// neither a draw nor a bot move gets through
+	const cur = s.players[s.turn]
+	const before = JSON.stringify(s.players.map(p => p.rack))
+	assert.ok(g.act(cur.id, { t: 'draw' }), 'draw is refused')
+	assert.equal(g.botPlay(), undefined)
+	assert.equal(JSON.stringify(s.players.map(p => p.rack)), before)
+	// once the deal is over play opens, and the clock only then starts
+	s.holdUntil = Date.now() - 1
+	assert.equal(g.hold(), 0)
+	assert.equal(g.act(cur.id, { t: 'draw' }), undefined)
+})
+
+test('the hold also applies to the next round', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.act('h', { t: 'bot' })
+	g.act('h', { t: 'start' })
+	g.s.holdUntil = 0
+	g.finish(0)
+	assert.equal(g.s.phase, 'over')
+	assert.equal(g.hold(), 0)
+	g.act('h', { t: 'start' })
+	assert.ok(g.hold() > 0)
+})

@@ -77,6 +77,7 @@ export const es = {
 	empty:
 		'La mesa está vacía. Selecciona fichas de tu estante para formar una combinación.',
 	turnMine: 'Tu turno',
+	dealing: 'Repartiendo las fichas…',
 	turnMeld: p => `Tu turno · primera jugada ${p.pts}/30`,
 	turnOf: p => `Turno de ${p.name}`,
 	toRack: 'Al estante',
@@ -317,6 +318,7 @@ export const es = {
 	'e.notIn': 'No estás en esta partida',
 	'e.min2': 'Se necesitan al menos 2 jugadores',
 	'e.notTurn': 'No es tu turno',
+	'e.dealing': 'Aún se están repartiendo las fichas',
 	'e.bad': 'Jugada no válida',
 	'e.mismatch': 'Las fichas no coinciden. Deshaz e inténtalo de nuevo',
 	'e.noTake': 'No puedes llevarte fichas de la mesa a tu estante',

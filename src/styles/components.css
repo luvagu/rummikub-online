@@ -517,7 +517,7 @@ button.opt.primary small {
 	   instead of re-rendering React and animating width 5x a second. --p0 = fraction left, --dur = ms left. */
 	transform-origin: left;
 	transform: scaleX(var(--p0, 1));
-	animation: drain var(--dur, 1s) linear forwards;
+	animation: drain var(--dur, 1s) linear var(--hold, 0s) forwards; /* --hold: the deal is still running */
 	transition: background-color 0.4s;
 }
 .tbar.amber i {
