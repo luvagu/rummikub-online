@@ -118,11 +118,20 @@ export default function Game({
   tut,
   openRules,
   onLeave,
+  offline = false, // a guest whose connection is down: committing actions are held back (the host's own moves are never lost)
 }) {
   const t = useT(),
     { lang, setLang } = useContext(LangCtx),
     me = s.me,
     my = s.phase === "play" && s.turn === me;
+  const hold = offline && my; // my turn, but nothing can be sent
+  // Committing messages (draw, end turn, reaction) say so when they could not be sent, instead of silently vanishing.
+  // Drafts and the timeout hint are best-effort and stay quiet.
+  const send = (m) => {
+    const ok = net.send(m);
+    if (ok === false) toast({ k: "n.notSent" });
+    return ok;
+  };
   const [d, setD] = useState(() => ({
       b: s.board,
       r: orderRack(s.rack, loadSort()),
@@ -466,8 +475,8 @@ export default function Game({
     };
   }, [reacts]);
   const sendR = (k) => {
-    if (cool) return;
-    net.send({ t: "react", k });
+    if (cool || offline) return;
+    if (send({ t: "react", k }) === false) return;
     hidePopup("react-picker");
     setCool(true);
     setTimeout(() => setCool(false), RCOOL);
@@ -692,6 +701,7 @@ export default function Game({
   const canBack = sel.some((i) => s.rack.includes(i) && !d.r.includes(i)),
     [cd, setCd] = useState(false);
   const doDraw = () => {
+    if (offline) return;
     if (edited && !cd) {
       sfx("drawAsk");
       setCd(true);
@@ -700,7 +710,7 @@ export default function Game({
     } // unsaved edits would be thrown away: ask once
     setCd(false);
     sfx("draw");
-    net.send({ t: "draw" });
+    send({ t: "draw" });
   };
   const cx = !!(s.result && s.result.cancelled),
     hostRoom = me === 0 && !!net.endRoom,
@@ -1008,9 +1018,9 @@ export default function Game({
               <i style={{ width: Math.min(100, (pts / 30) * 100) + "%" }} />
             </span>
           )}
-          {my && edited && why ? (
+          {hold || (my && edited && why) ? (
             <span id="why" className="log why" aria-live="polite">
-              {tr(t, why)}
+              {tr(t, hold ? { k: "waitConn" } : why)}
             </span>
           ) : (
             <span className="log" aria-live="polite">
@@ -1051,6 +1061,8 @@ export default function Game({
               }
               data-tut="draw"
               aria-label={cd ? t("drawConfirm") : undefined}
+              disabled={hold}
+              aria-describedby={hold ? "why" : undefined}
               onClick={doDraw}
             >
               <CopyPlus size={18} />
@@ -1070,12 +1082,12 @@ export default function Game({
                 className="primary"
                 data-tut="end"
                 aria-label={t("end")}
-                disabled={!!why}
-                aria-describedby={edited && why ? "why" : undefined}
-                title={why ? tr(t, why) : undefined}
+                disabled={!!why || hold}
+                aria-describedby={hold || (edited && why) ? "why" : undefined}
+                title={hold ? t("waitConn") : why ? tr(t, why) : undefined}
                 onClick={() => {
                   sfx("end");
-                  net.send({ t: "end", board: d.b, rack: d.r });
+                  send({ t: "end", board: d.b, rack: d.r });
                 }}
               >
                 <Check size={18} />
@@ -1106,7 +1118,8 @@ export default function Game({
           <div className="rwrap">
             <button
               aria-label={t("react")}
-              title={t("react")}
+              title={offline ? t("waitConn") : t("react")}
+              disabled={offline}
               aria-haspopup="menu"
               aria-expanded={pk}
               command="toggle-popover"

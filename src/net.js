@@ -352,12 +352,15 @@ export function joinGame(
 		cid = randomId(8), // identifies this MQTT connection: in the will, and sealed into the hello
 		inbox = Promise.resolve()
 	const rseen = [] // QoS 1 can redeliver: drop reaction ids we already showed
+	// Returns false when the message cannot go out (no channel yet, or the connection is down), so the UI can say so instead
+	// of letting a move vanish. Moves are never queued: a replayed move could land on a different turn.
 	const pub = m => {
-		if (!chan) return
+		if (!chan || !c || !c.connected) return false
 		chan
 			.seal(m)
 			.then(cipher => c && c.connected && c.publish(`${base}/in`, J({ kid: ident.kid, c: cipher }), { qos: 1 }))
 			.catch(() => {})
+		return true
 	}
 	// The hello is the one message sent in the clear: the public key the host needs to derive the same channel key.
 	const hello = () =>

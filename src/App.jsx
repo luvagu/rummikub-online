@@ -13,6 +13,7 @@ import {
 	forgetName,
 } from './session.js'
 import { Toasts, Modal, TopLayer } from './ui.jsx'
+import { useUpdate, applyUpdate, dismissUpdate } from './sw-update.js'
 import { Home, Lobby } from './screens.jsx'
 import Game from './Game.jsx'
 // secondary screens load on first use
@@ -74,6 +75,7 @@ export default function App() {
 	}, [])
 
 	const hash0 = useRef(location.hash.slice(1).toUpperCase())
+	const update = useUpdate()
 	const [net, setNet] = useState(null),
 		[s, setS] = useState(null),
 		[busy, setBusy] = useState(null),
@@ -355,6 +357,16 @@ export default function App() {
 					{t('reconnecting')}
 				</TopLayer>
 			)}
+			{/* a waiting service worker: reloading is the player's call, so a game is never interrupted */}
+			{update && conn && (
+				<TopLayer className='banner update' role='status'>
+					{t('updateReady')}
+					<button className='primary' onClick={applyUpdate}>
+						{t('updateNow')}
+					</button>
+					<button onClick={dismissUpdate}>{t('updateLater')}</button>
+				</TopLayer>
+			)}
 			{!inRoom ? (
 				<Home
 					{...{
@@ -398,6 +410,7 @@ export default function App() {
 					net={net}
 					toast={toast}
 					reacts={reacts}
+					offline={!conn && sess.current?.mode === 'join'}
 					copy={copy}
 					share={share}
 					tut={

@@ -4,6 +4,7 @@ import '@fontsource-variable/outfit'
 import '@fontsource-variable/inter'
 import App from './App.jsx'
 import { local, session } from './store.js'
+import { registerSW } from './sw-update.js'
 import './styles.css'
 
 const wipe = () => {
@@ -52,6 +53,7 @@ class ErrorBoundary extends Component {
 	}
 }
 
+registerSW()
 createRoot(document.getElementById('root')).render(
 	<ErrorBoundary>
 		<App />

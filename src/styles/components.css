@@ -963,6 +963,26 @@ dialog.card::backdrop {
 .banner:popover-open {
 	display: flex;
 }
+.banner.update {
+	background: var(--felt-deep);
+	border-block-end: 2px solid var(--amber);
+	flex-wrap: wrap;
+}
+.banner.update button {
+	min-height: 44px; /* tap target */
+	padding-inline: 16px;
+	font-size: 14px;
+	font-weight: 700;
+	color: #fff;
+	background: #ffffff1f;
+	border: 1px solid #ffffff80;
+	border-radius: 10px;
+}
+.banner.update button.primary {
+	color: #1d1300;
+	background: var(--amber);
+	border-color: var(--amber-edge);
+}
 
 /* ---- motion ---- */
 

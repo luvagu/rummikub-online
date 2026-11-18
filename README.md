@@ -103,6 +103,13 @@ Lessons live in `src/tutorial.js` (positions and steps) and `src/Tutorial.jsx` (
 - A host who refreshes resumes the same room (same code) from a snapshot stored in that browser; guests rejoin automatically.
 - Menu > Leave room: guests mid-game hand their seat to a bot (they can reclaim it by rejoining); the host ends the game for everyone.
 
+While a guest's connection is down, Draw, End turn and reactions are disabled with a "Waiting for connection…" hint (moves are never queued, because a replayed move could land on a different turn); tiles can still be arranged locally. If a move still cannot go out you get a "Not sent" message. The host's own moves are never lost: they change the authoritative state and are re-published when the connection returns.
+
+
+## Offline use and updates
+
+A small service worker (`scripts/sw-template.js`, emitted by a plugin in `vite.config.js`, production builds only) keeps the app shell, so the app opens and solo play, the tutorial and the rules work with no network. Online play needs the network and shows its usual "can't reach the relay" message. Pages are network-first (short timeout, then the cached shell) so deploys propagate; hashed assets are cache-first. A new version installs in the background and a banner offers "Reload"; it never takes over by itself, so a game is not interrupted (saved games resume after the reload). Not cached on purpose: the MQTT library chunk, `og.png` and the fonts for scripts the app does not use. To test: `npm run build && npm run preview`, open it once, reload, then stop the server (browser "Offline" emulation does not stop the worker's own requests).
+
 ## Reactions, drawn tiles and drag & drop
 
 - **Reactions:** the smiley button next to the rack sort buttons sends one of nine fixed emoji (including 😱 Scared and 🔥 On fire) + short messages (translated per player). Each one has its own short synthesized sound (no audio files; follows the sound toggle). They pop up over the sender's seat and are never part of the game state (not saved, not replayed on reconnect). The host validates the key and rate-limits each player. Bots react sporadically (beginners chat more, experts rarely) based on what just happened. Menu > Reactions mutes incoming ones. The set lives in `src/reactions.js`.
