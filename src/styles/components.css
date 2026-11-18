@@ -377,7 +377,7 @@ button.opt.primary small {
 	align-items: center;
 	gap: 8px;
 	padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
-	background: #0000003d;
+	background: var(--felt-edge); /* opaque (was a 24% black veil): iOS samples this bar for the status-bar tint, and a see-through colour made that vary */
 }
 .seats {
 	display: flex;
@@ -1240,8 +1240,10 @@ dialog.card::backdrop {
 }
 
 /* mobile fixes: menu above the table, compact seat cards that no longer clip */
+/* sticky (nothing scrolls here) so WebKit sees a header pinned to the top edge and uses its flat colour for the status bar */
 .top {
-	position: relative;
+	position: sticky;
+	top: 0;
 	z-index: 30;
 }
 .menu {
