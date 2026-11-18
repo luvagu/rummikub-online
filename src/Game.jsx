@@ -51,6 +51,8 @@ import {
 import { REACTIONS, RCOOL } from "./reactions.js";
 import { Tile, Avatar, Modal, Invite, Popup, hidePopup } from "./ui.jsx";
 import { Seats } from "./Seats.jsx";
+import Celebration from "./Celebration.jsx";
+import { celebrationFor } from "./celebrate.js";
 import { local, session } from "./store.js";
 import { cycleTheme, useTheme } from "./theme.js";
 
@@ -547,6 +549,27 @@ export default function Game({
     actions = useRef(),
     suppressClick = useRef(false),
     abortDrag = useRef(null);
+  // Round-winner celebration (confetti + highlighted name) between "the round ended" and the summary dialog. It is decided
+  // while rendering, so the summary never shows for a frame first. A mount that is already "over" (reload, late join) has
+  // prevPhase === s.phase and never celebrates; neither does a repeat of the same state.
+  const [prevPhase, setPrevPhase] = useState(s.phase),
+    [celebrate, setCelebrate] = useState(null);
+  if (prevPhase !== s.phase) {
+    setPrevPhase(s.phase);
+    setCelebrate(celebrationFor(prevPhase, s)); // also clears it when the next round starts while a slow client still celebrates
+  }
+  useEffect(() => {
+    if (!celebrate) return;
+    // heard even if the player skips or reduces motion
+    setSay(
+      celebrate.mine
+        ? `${t("youWin")} ${t(celebrate.blocked ? "celebPool" : "celebRummikub")}`
+        : t(celebrate.blocked ? "winsPool" : "wins", { name: celebrate.name }),
+    );
+    sfx("win"); // silent when Turn sound is off
+    const el = seatsRef.current?.querySelector('[data-pid="' + celebrate.id + '"]');
+    el?.scrollIntoView?.({ block: "nearest", inline: "center", behavior: sb() }); // the seat row scrolls sideways on busy tables
+  }, [celebrate]);
   useEffect(() => {
     const m = matchMedia(DND_MQ),
       f = () => setCanDnd(m.matches);
@@ -732,6 +755,7 @@ export default function Game({
     >
       <div className="sr" role="status">{say}</div>
       <div className="fly-layer" ref={flyRef} aria-hidden="true" />
+      {celebrate && <Celebration c={celebrate} onDone={() => setCelebrate(null)} />}
       {Object.entries(bub).map(([id, b]) => {
         const r = REACTIONS.find((x) => x.k === b.k);
         return (
@@ -775,7 +799,8 @@ export default function Game({
                 "seat" +
                 (i === s.turn && s.phase === "play" ? " act" : "") +
                 (p.on === false ? " off" : "") +
-                (bump === p.id ? " bump" : "")
+                (bump === p.id ? " bump" : "") +
+                (celebrate?.id === p.id ? " win" : "")
               }
             >
               <Avatar
@@ -1212,7 +1237,7 @@ export default function Game({
           </div>
         </Modal>
       )}
-      {s.phase === "over" && (
+      {s.phase === "over" && !celebrate && (
         <Modal
           felt={inRoom}
           title={
@@ -1239,7 +1264,7 @@ export default function Game({
                 const v = cx ? 0 : s.result.delta?.[p.id] || 0,
                   won = !cx && s.players[s.result.winner]?.id === p.id;
                 return (
-                  <li key={p.id}>
+                  <li key={p.id} className={won ? "won" : undefined}>
                     <span className="rk">{rank + 1}</span>
                     <b>
                       {p.name}

@@ -978,6 +978,100 @@ dialog.card::backdrop {
 	border: 1px solid #ffffff80;
 	border-radius: 10px;
 }
+/* ---- round-winner celebration (src/Celebration.jsx): confetti + highlighted name just before the summary dialog ---- */
+.celebrate {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	overflow: hidden;
+	color: #fff;
+	cursor: pointer; /* a tap anywhere skips to the summary */
+}
+.celebrate:popover-open {
+	display: grid;
+	place-items: center;
+}
+.confetti {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	pointer-events: none;
+}
+.cf {
+	position: absolute;
+	display: block;
+	border-radius: 1px;
+	will-change: transform;
+}
+.cf.r {
+	border-radius: 50%;
+}
+.cel-card {
+	position: relative;
+	display: grid;
+	justify-items: center;
+	gap: 6px;
+	max-width: min(92vw, 560px);
+	padding: 20px 28px;
+	border: 2px solid var(--amber);
+	border-radius: 24px;
+	text-align: center;
+	background: color-mix(in srgb, var(--felt-deep) 90%, transparent);
+	box-shadow: 0 12px 40px #0008;
+}
+.cel-card small {
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #ffffffd9;
+}
+.cel-name {
+	max-width: 100%;
+	padding: 0.1em 0.5em;
+	border-radius: 14px;
+	font: 800 clamp(28px, 8vw, 56px) / 1.15 var(--disp);
+	overflow-wrap: anywhere;
+	color: #1d1300; /* dark ink on amber: about 11:1 */
+	background: var(--amber);
+}
+.cel-card span {
+	font-size: 16px;
+	font-weight: 600;
+}
+.cel-skip {
+	position: absolute;
+	inset-block-end: max(20px, env(safe-area-inset-bottom));
+	inset-inline: 0;
+	width: fit-content;
+	min-height: 44px; /* tap target */
+	margin-inline: auto;
+	padding-inline: 20px;
+	font-size: 15px;
+	font-weight: 700;
+	color: #fff;
+	background: #0000008c;
+	border: 1px solid #ffffff80;
+	border-radius: 12px;
+}
+.seat.win {
+	outline: 2px solid var(--amber);
+	outline-offset: 2px;
+}
+.res li.won {
+	/* carries the highlight into the summary. An outline, not a tint: a tint replaces the row background and lowered the
+	   contrast of the green/red score below 4.5:1 on the dark card (found by Lighthouse) */
+	border-radius: 10px;
+	outline: 2px solid light-dark(var(--amber-deep), var(--amber));
+	outline-offset: -2px;
+}
 .banner.update button.primary {
 	color: #1d1300;
 	background: var(--amber);

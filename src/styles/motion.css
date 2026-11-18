@@ -150,6 +150,17 @@
 		outline-color: transparent;
 	}
 }
+@keyframes celpop {
+	from {
+		opacity: 0;
+		scale: 0.6;
+	}
+}
+@keyframes celout {
+	to {
+		opacity: 0;
+	}
+}
 @keyframes seatbump {
 	40% {
 		transform: scale(1.08);
@@ -194,6 +205,14 @@
 	}
 	.seat.bump {
 		animation: seatbump 0.4s ease-out;
+	}
+	.seat.win {
+		animation: seatbump 0.5s ease-out 3;
+	}
+	.cel-card {
+		animation:
+			celpop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both,
+			celout 0.25s ease-in 2.7s forwards;
 	}
 	.menu {
 		animation: slide 0.15s both;
