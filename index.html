@@ -6,14 +6,16 @@
 			name="viewport"
 			content="width=device-width,initial-scale=1,viewport-fit=cover"
 		/>
-		<meta name="theme-color" content="#1b5e20" />
-		<!-- Installed (home-screen) iOS app: draw the page under the status bar, so the felt runs to the top edge instead of a
-		     separate bar (the layout already pads the header with env(safe-area-inset-top)). -->
+		<meta name="theme-color" content="#14471a" />
+		<!-- Installed iOS app. Keep the status bar OPAQUE ("default"): with "black-translucent" the page is drawn under the status
+		     bar and iOS 26 smears its scroll-edge blur over our header, and there is no CSS/meta switch to turn that off. In "default"
+		     the web view starts below the bar and iOS tints the bar from theme-color, which matches the header (--felt-edge).
+		     iOS reads these tags when the icon is added to the home screen: an existing install must be removed and re-added. -->
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 		<!-- Both colour schemes are supported; src/utils/theme.js can pin one. The inline script (kept tiny, not a module) applies a stored
-		     override before first paint so a pinned scheme does not flash the other one. The page top is the green felt in both
+		     override before first paint so a pinned scheme does not flash the other one. The page top is the same dark green in both
 		     schemes, so a single theme-color fits both. -->
 		<meta name="color-scheme" content="light dark" />
 		<script>
