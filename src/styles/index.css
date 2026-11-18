@@ -1,0 +1,8 @@
+/* Cascade order is explicit: later layers win regardless of selector specificity.
+   tokens.css is unlayered (custom properties only). */
+@layer base, components, motion, overrides;
+@import './tokens.css';
+@import './base.css' layer(base);
+@import './components.css' layer(components);
+@import './motion.css' layer(motion);
+@import './overrides.css' layer(overrides);

@@ -1,8 +1,8 @@
 // Winner celebration: the decision (when to celebrate) and the confetti plan. node --test tests/
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { celebrationFor, confettiPieces, pieceCount, CELEBRATE_MS } from '../src/celebrate.js'
-import { Game } from '../src/game.js'
+import { celebrationFor, confettiPieces, pieceCount, CELEBRATE_MS } from '../../../src/features/game/celebrate.js'
+import { Game } from '../../../src/engine/game.js'
 
 const view = (phase, result, players = [{ id: 'a', name: 'Ana' }, { id: 'b', name: 'Beto' }], me = 0) => ({ phase, result, players, me })
 const seeded = seed => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32) // small deterministic generator

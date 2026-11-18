@@ -8,8 +8,8 @@ import {
 	House,
 	ListChecks,
 } from 'lucide-react'
-import { useT } from './i18n.js'
-import { LESSONS, LESSON_ORDER } from './tutorial.js'
+import { useT } from '../../i18n/index.js'
+import { LESSONS, LESSON_ORDER } from '../../engine/tutorial.js'
 
 const sel = ([kind, v]) =>
 	kind === 'tile'

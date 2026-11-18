@@ -978,7 +978,7 @@ dialog.card::backdrop {
 	border: 1px solid #ffffff80;
 	border-radius: 10px;
 }
-/* ---- round-winner celebration (src/Celebration.jsx): confetti + highlighted name just before the summary dialog ---- */
+/* ---- round-winner celebration (src/features/game/Celebration.jsx): confetti + highlighted name just before the summary dialog ---- */
 .celebrate {
 	position: fixed;
 	inset: 0;

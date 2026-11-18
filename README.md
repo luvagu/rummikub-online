@@ -30,12 +30,12 @@ Add up to 3 bots in the lobby or between rounds, or press "Play solo" on the hom
 | Expert       | Rearranges the whole table, may use jokers in runs missing two tiles (groups take at most one joker) and holds jokers back unless they get it out faster (about 300 ms). |
 | Master       | Expert with a much larger search budget (about 900 ms per move).                                                                   |
 
-Levels live in the `BOT` table in `src/game.js`. `node scripts/bot-sim.mjs [games] [maxTurns]` plays bots against each other to compare strength (slow: use few games).
+Levels live in the `BOT` table in `src/engine/game.js`. `node scripts/bot-sim.mjs [games] [maxTurns]` plays bots against each other to compare strength (slow: use few games).
 
 - **Solo:** "Play solo" asks whether to play against the bot or take the tutorial. The bot dialog picks the level and has a selector for the turn timer (off, 15, 30, 45, 60 or 90 s); both choices are remembered.
 - **Lobby and between rounds:** the host picks the level in the dropdown next to "Add bot"; it applies to the next bot added, and each bot keeps its own level (shown next to its name). Any bot, and any offline human player, can be removed with its X (host only, in the lobby or between rounds).
 - A bot that takes over the seat of a player who left mid-game plays at Intermediate level (3).
-- The bot AI lives in `botMove()` in `src/game.js`.
+- The bot AI lives in `botMove()` in `src/engine/game.js`.
 
 ## How online play works
 
@@ -45,7 +45,7 @@ To use your own broker (e.g. a free HiveMQ Cloud cluster), set `VITE_MQTT_URL` (
 
 ### Security of online rooms
 
-Public brokers have no access control, so anyone who knows (or guesses) a room code can subscribe to everything published in it. Each guest therefore talks to the host over its **own end-to-end encrypted, authenticated channel** (`src/secure.js`, WebCrypto only, no dependency):
+Public brokers have no access control, so anyone who knows (or guesses) a room code can subscribe to everything published in it. Each guest therefore talks to the host over its **own end-to-end encrypted, authenticated channel** (`src/utils/secure.js`, WebCrypto only, no dependency):
 
 - Every player has an ECDH P-256 key pair; the player's public id is a hash of its public key, so it is safe to show to everyone.
 - The channel key is derived (HKDF) from the two keys, the host's per-run session id and a per-handshake number, and messages are AES-GCM sealed with a replay counter. Racks, moves and private state never appear in the clear, nobody can impersonate another player, and nothing captured from an earlier handshake or an earlier host run can be replayed.
@@ -56,7 +56,7 @@ Public brokers have no access control, so anyone who knows (or guesses) a room c
 
 ## Languages
 
-English and Latin American Spanish (auto-detected from the browser, switch with the button on every screen). Add a language by copying a block in `src/i18n.js` and `src/Rules.jsx`.
+English and Latin American Spanish (auto-detected from the browser, switch with the button on every screen). Add a language by copying `src/i18n/en.js` to a new file (same keys), registering it in `src/i18n/index.js`, and adding a block in `src/features/rules/Rules.jsx`.
 
 ## Turn alerts
 
@@ -64,10 +64,10 @@ A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibr
 
 ## Sound and animation
 
-- **Dealing:** at the start of a round, face-down tiles fly from the pool counter to each seat, one at a time round-robin, and your 14 tiles land in your rack one by one with a card-flick sound. Pace is 100 ms per tile with 2 players, 80 ms with 3 and 60 ms with 4 (`dealGap()` in `src/Game.jsx`). The seat tile counts and the pool counter update as tiles are dealt.
+- **Dealing:** at the start of a round, face-down tiles fly from the pool counter to each seat, one at a time round-robin, and your 14 tiles land in your rack one by one with a card-flick sound. Pace is 100 ms per tile with 2 players, 80 ms with 3 and 60 ms with 4 (`dealGap()` in `src/features/game/Game.jsx`). The seat tile counts and the pool counter update as tiles are dealt.
 - **Other players drawing:** when someone else draws, tiles fly from the pool to their seat with a swish sound.
-- **Action buttons:** To rack, Undo, Draw (and its confirm step), End turn, Skip, the sort buttons and the reactions button each play their own short cue. Selecting or deselecting a tile, New set and adding to a set (the + on a table set) have cues too. Sounds are synthesized with WebAudio (`src/notify.js`), no audio files.
-- **Round winner:** when a round ends with a winner (rack emptied, or the pool ran out and the lowest rack wins), a confetti burst and a highlighted winner card play for up to 3 s (the winner's own screen says "You win!", everyone else sees the winner's name), then the summary dialog opens. Tap anywhere, press Skip, Escape, Enter or Space to go straight to the summary. It plays once per round: a reload or late join mid-summary does not replay it, and a round the host cancelled has none. With "reduce motion" there is no confetti, just a still card for 2 s. A short fanfare plays unless Turn sound is off; the winner is also announced to screen readers. The decision and the confetti plan are pure functions in `src/celebrate.js` (tested); `src/Celebration.jsx` draws them with the Web Animations API (transform and opacity only).
+- **Action buttons:** To rack, Undo, Draw (and its confirm step), End turn, Skip, the sort buttons and the reactions button each play their own short cue. Selecting or deselecting a tile, New set and adding to a set (the + on a table set) have cues too. Sounds are synthesized with WebAudio (`src/utils/notify.js`), no audio files.
+- **Round winner:** when a round ends with a winner (rack emptied, or the pool ran out and the lowest rack wins), a confetti burst and a highlighted winner card play for up to 3 s (the winner's own screen says "You win!", everyone else sees the winner's name), then the summary dialog opens. Tap anywhere, press Skip, Escape, Enter or Space to go straight to the summary. It plays once per round: a reload or late join mid-summary does not replay it, and a round the host cancelled has none. With "reduce motion" there is no confetti, just a still card for 2 s. A short fanfare plays unless Turn sound is off; the winner is also announced to screen readers. The decision and the confetti plan are pure functions in `src/features/game/celebrate.js` (tested); `src/features/game/Celebration.jsx` draws them with the Web Animations API (transform and opacity only).
 - The menu's turn sound switch mutes all of these. With "reduce motion" enabled in the OS, tiles don't fly but the sounds still play. A reload or rejoin mid-round does not replay the deal.
 
 ## Light and dark theme
@@ -95,7 +95,7 @@ When a round ends in a hosted room, the dialog has the same layout as the lobby:
 4. **Invalid sets:** see how a bad set is flagged and use Undo.
 5. **Smart play tips:** extend sets, keep your jokers, watch the table.
 
-Lessons live in `src/tutorial.js` (positions and steps) and `src/Tutorial.jsx` (the overlay); text is in `src/i18n.js` under `tut.*` / `les.*`. Nothing from the tutorial is saved.
+Lessons live in `src/engine/tutorial.js` (positions and steps) and `src/features/tutorial/Tutorial.jsx` (the overlay); text is in `src/i18n/en.js` and `es.js` under `tut.*` / `les.*`. Nothing from the tutorial is saved.
 
 ## Reconnecting, leaving and resuming
 
@@ -113,7 +113,7 @@ A small service worker (`scripts/sw-template.js`, emitted by a plugin in `vite.c
 
 ## Reactions, drawn tiles and drag & drop
 
-- **Reactions:** the smiley button next to the rack sort buttons sends one of nine fixed emoji (including 😱 Scared and 🔥 On fire) + short messages (translated per player). Each one has its own short synthesized sound (no audio files; follows the sound toggle). They pop up over the sender's seat and are never part of the game state (not saved, not replayed on reconnect). The host validates the key and rate-limits each player. Bots react sporadically (beginners chat more, experts rarely) based on what just happened. Menu > Reactions mutes incoming ones. The set lives in `src/reactions.js`.
+- **Reactions:** the smiley button next to the rack sort buttons sends one of nine fixed emoji (including 😱 Scared and 🔥 On fire) + short messages (translated per player). Each one has its own short synthesized sound (no audio files; follows the sound toggle). They pop up over the sender's seat and are never part of the game state (not saved, not replayed on reconnect). The host validates the key and rate-limits each player. Bots react sporadically (beginners chat more, experts rarely) based on what just happened. Menu > Reactions mutes incoming ones. The set lives in `src/engine/reactions.js`.
 - **Drawn tiles:** a tile you just drew (including the 3-tile timeout penalty) glows with a "+" tag and scrolls into view in a busy rack.
 - **Drag & drop:** on wide screens with a mouse/trackpad (`hover: hover`, `pointer: fine`, min-width 900px) tiles can be dragged onto a set, an empty board area (new set) or the rack. On phones/tablets drag is off and tap-to-select is used (it always works too).
 
@@ -123,7 +123,7 @@ Optional, in seconds: Off, 15, 30, 45, 60 or 90 (45 by default, remembered per b
 
 ## Robustness and fairness
 
-- The deck is shuffled with a Fisher-Yates shuffle driven by `crypto.getRandomValues` (`shuffle` in `src/game.js`).
+- The deck is shuffled with a Fisher-Yates shuffle driven by `crypto.getRandomValues` (`shuffle` in `src/engine/game.js`).
 - Removing a player or bot between rounds re-indexes the turn and winner (`removeSeat`), saved games are sanitized on resume, and an error boundary in `src/main.jsx` clears a corrupt saved game instead of leaving a blank page.
 - The host's browser holds the full game state, so a determined host can cheat; this is inherent to the serverless design. Likewise a modified guest client could withhold its working-state updates and so dodge the 3-tile timeout penalty.
 
@@ -142,13 +142,37 @@ Scores and wins add up across games in the same room (the round-end dialog shows
 - Recently used names appear as chips under the name field (tap to reuse, × to forget).
 - Opening an invite link shows a minimal join screen (name + Join room, plus "Back to start").
 
+## Project structure
+
+```
+src/
+  main.jsx            entry: styles, service worker registration, error boundary
+  App.jsx             root: session lifecycle, which screen is showing, toasts and global dialogs
+  components/         shared UI building blocks (Modal, Popup, TopLayer, Toasts, Tile, Avatar, Seats, Invite, ...)
+  features/           one folder per screen or feature
+    home/             start screen (name, solo / create / join) and its form pieces
+    lobby/            waiting room before a round
+    game/             the table: Game, RoundSummary, EndRoundDialog, Celebration + their helpers (rack, deal animation, ...)
+    rules/            rules screen (lazy loaded)
+    tutorial/         guided lessons overlay (lazy loaded)
+  engine/             framework-free game logic: rules engine and bots (game.js), reactions, tutorial lessons. No DOM, no React
+  services/           I/O and persistence: net.js (MQTT / local transports), identity, saved sessions, service worker registration
+  i18n/               en.js, es.js (messages), index.js (fmt, useT, language detection)
+  utils/              small helpers with no UI of their own: store (guarded storage), notify (sound / vibration), theme, motion, secure (crypto)
+  styles/             index.css (cascade order) + tokens, base, components, motion, overrides
+tests/                node:test suites, mirroring src/ (engine, utils, features/game)
+scripts/              dev tools (bot simulation, icon generation, sniffing, service worker template)
+```
+
+Dependencies point one way: `features` and `components` may use `services`, `engine`, `i18n` and `utils`; `services` use `engine`, `utils` (never `components` or `features`); `engine` imports nothing from the app. Each component file exports one component, and a feature keeps its own helpers next to it.
+
 ## Development
 
 - **Node 22:** `.nvmrc` pins the Node version (`nvm use` / `fnm use`); CI reads the same file, and `package.json` declares `engines`. Vite 8 needs Node 20.19+ / 22.12+.
-- `npm run dev` / `npm run build` / `npm test`. The tests (`tests/game.test.mjs`, Node's built-in runner, no dependencies) cover the rules engine and the bots.
+- `npm run dev` / `npm run build` / `npm test`. The tests (`tests/**/*.test.mjs`, Node's built-in runner, no dependencies) cover the rules engine and the bots.
 - **Browser support:** the app targets Baseline "newly available" web features (native `<dialog>`, Popover API with anchor positioning, `@layer`, `color-mix()`, `toSorted()`, `Promise.withResolvers()`), with no polyfills. `closedby` on dialogs is progressive enhancement; a pointer-position fallback covers Safari.
-- **CSS** is an entry file (`src/styles.css`) that imports `src/styles/*.css` into an explicit cascade: `tokens` (custom properties), then the layers `base`, `components`, `motion`, `overrides`. Later layers win regardless of specificity, so there is no `!important`. Decorative motion is opt-in (`prefers-reduced-motion: no-preference`) and lives in `motion.css`.
-- **Modals** use `<dialog>` (`Modal` in `src/ui.jsx`); menus and pickers use the Popover API (`Popup`); toasts and the offline banner are top-layer popovers (`TopLayer`) so they stay above open dialogs.
+- **CSS** is an entry file (`src/styles/index.css`) that imports the other files in `src/styles/` into an explicit cascade: `tokens` (custom properties), then the layers `base`, `components`, `motion`, `overrides`. Later layers win regardless of specificity, so there is no `!important`. Decorative motion is opt-in (`prefers-reduced-motion: no-preference`) and lives in `motion.css`.
+- **Modals** use `<dialog>` (`Modal` in `src/components/Modal.jsx`); menus and pickers use the Popover API (`Popup`); toasts and the offline banner are top-layer popovers (`TopLayer`) so they stay above open dialogs.
 - **Drag and drop** (mouse/pen on large screens) uses Pointer Events with delegation from the game root; touch uses tap-to-select. Each tile group is a single tab stop with arrow-key navigation.
-- Browser storage goes through `src/store.js` (guarded, same keys as before).
+- Browser storage goes through `src/utils/store.js` (guarded, same keys as before).
 - **Icons and share image:** `npm run icons` (`scripts/make-icons.mjs`, uses the dev dependency `@resvg/resvg-js` and system Arial fonts) renders `apple-touch-icon.png`, `icons/*.png` and `og.png` into `public/`. The PNGs are committed; re-run only when the artwork changes. `og:image` and `og:url` must be absolute, so `.env` sets `VITE_SITE_URL` (the public URL with a trailing slash): change it for a custom domain. Social previews can only be checked after deploying.

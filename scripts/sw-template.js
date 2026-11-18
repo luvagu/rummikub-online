@@ -1,6 +1,6 @@
 // Service worker template. The Vite plugin in vite.config.js fills in the version and the precache list (the two
 // placeholders below, which must each appear exactly once) and writes dist/sw.js.
-// Plain JS with no dependencies. It is only registered in production builds (src/sw-update.js).
+// Plain JS with no dependencies. It is only registered in production builds (src/services/sw-update.js).
 //
 // What it does: keeps the app shell (HTML, hashed JS/CSS, icons, the latin fonts, the lazy Rules/Tutorial chunks) so the
 // app opens and solo play, the tutorial and the rules work with no network. Online play needs the network anyway: the MQTT

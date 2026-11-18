@@ -1,8 +1,8 @@
 // The player's online identity: an ECDH key pair, created once per browser tab (so two tabs of one browser can still be
 // two different players) and kept in sessionStorage. A saved session also keeps a copy in localStorage (see session.js),
 // so a game resumed after the browser was closed keeps its seat. The public id (`kid`) is what everyone sees.
-import { newIdentity, importIdentity, secureOK } from './secure.js'
-import { session } from './store.js'
+import { newIdentity, importIdentity, secureOK } from '../utils/secure.js'
+import { session } from '../utils/store.js'
 
 let cached
 export const getIdentity = saved =>

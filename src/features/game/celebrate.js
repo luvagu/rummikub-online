@@ -1,4 +1,4 @@
-// Round-winner celebration: the pure parts (no DOM), so they can be unit-tested. src/Celebration.jsx draws them.
+// Round-winner celebration: the pure parts (no DOM), so they can be unit-tested. src/features/game/Celebration.jsx draws them.
 
 export const CELEBRATE_MS = 3000 // confetti + winner card, then the summary dialog opens
 export const REDUCED_MS = 2000 // with reduced motion: a still winner card, no confetti

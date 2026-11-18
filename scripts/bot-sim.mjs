@@ -1,6 +1,6 @@
 // Bot-vs-bot simulation: node scripts/bot-sim.mjs [games=30] [maxTurns=150]
 // Seats levels against each other and prints win rates + avg move time per level.
-import { Game, shuffle } from '../src/game.js'
+import { Game, shuffle } from '../src/engine/game.js'
 
 const games = +process.argv[2] || 30,
 	maxTurns = +process.argv[3] || 150,

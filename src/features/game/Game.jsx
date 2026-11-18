@@ -1,4 +1,11 @@
-import { useState, useEffect, useEffectEvent, useRef, useMemo, useContext } from "react";
+import {
+  useState,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useMemo,
+  useContext,
+} from "react";
 import {
   EllipsisVertical,
   BookOpen,
@@ -18,7 +25,6 @@ import {
   ArrowDownToLine,
   CopyPlus,
   Check,
-  Crown,
   Bot,
   WifiOff,
   ArrowDown01,
@@ -29,8 +35,15 @@ import {
   SmilePlus,
   Flag,
 } from "lucide-react";
-import { T, analyze, key } from "./game.js";
-import { LangCtx, useT, tr } from "./i18n.js";
+import {
+  analyze,
+  key,
+} from "../../engine/game.js";
+import {
+  LangCtx,
+  useT,
+  tr,
+} from "../../i18n/index.js";
 import {
   getPrefs,
   setPref,
@@ -47,68 +60,66 @@ import {
   drawSlide,
   sfx,
   reactPop,
-} from "./notify.js";
-import { REACTIONS, RCOOL } from "./reactions.js";
-import { Tile, Avatar, Modal, Invite, Popup, hidePopup } from "./ui.jsx";
-import { Seats } from "./Seats.jsx";
+} from "../../utils/notify.js";
+import {
+  REACTIONS,
+  RCOOL,
+} from "../../engine/reactions.js";
+import {
+  Tile,
+} from "../../components/Tile.jsx";
+import {
+  Avatar,
+} from "../../components/Avatar.jsx";
+import {
+  Modal,
+} from "../../components/Modal.jsx";
+import {
+  Invite,
+} from "../../components/Invite.jsx";
+import {
+  Popup,
+  hidePopup,
+} from "../../components/Popup.jsx";
+import {
+  Seats,
+} from "../../components/Seats.jsx";
 import Celebration from "./Celebration.jsx";
-import { celebrationFor } from "./celebrate.js";
-import { local, session } from "./store.js";
-import { cycleTheme, useTheme } from "./theme.js";
-
-const CMP = {
-  num: (x, y) => x.n - y.n || x.c - y.c,
-  col: (x, y) => x.c - y.c || x.n - y.n,
-};
-const orderRack = (r, m) =>
-  m
-    ? r.toSorted((a, b) => {
-        const x = T(a),
-          y = T(b);
-        return (x.j ? 1 : 0) - (y.j ? 1 : 0) || CMP[m](x, y);
-      })
-    : r; // jokers last
-// One live MediaQueryList (its .matches always reflects the current preference) instead of a new one per call.
-const REDUCED_MQ = matchMedia("(prefers-reduced-motion: reduce)");
-const reduced = () => REDUCED_MQ.matches;
-const sb = () => (reduced() ? "auto" : "smooth");
-const DEAL_FLY = 560; // ms a dealt tile is in the air
-const dealGap = (np) => Math.max(50, 140 - 20 * np); // ms per tile: 100 (2 players), 80 (3), 60 (4)
-// Fly one face-down tile between two points on a fixed overlay (Web Animations API, self-removing).
-// a, b: centres; w, h: the tile's size when it lands (it starts smaller, like leaving the deck).
-const flyTile = (layer, a, b, delay, onEnd, w = 28, h = 38) => {
-  if (!layer) return;
-  const el = document.createElement("div");
-  el.className = "fly-tile";
-  el.style.width = w + "px";
-  el.style.height = h + "px";
-  el.style.left = a.x - w / 2 + "px";
-  el.style.top = a.y - h / 2 + "px";
-  layer.appendChild(el);
-  const rot = (Math.random() * 16 - 8).toFixed(1),
-    dx = b.x - a.x,
-    dy = b.y - a.y;
-  const an = el.animate(
-    [
-      { transform: "translate(0,0) rotate(-14deg) scale(.55)", opacity: 0 },
-      { opacity: 1, offset: 0.1 },
-      { transform: `translate(${dx * 0.55}px,${dy * 0.55 - 26}px) rotate(${rot}deg) scale(.95)`, opacity: 1, offset: 0.55 },
-      { transform: `translate(${dx}px,${dy}px) rotate(0deg) scale(1)`, opacity: 1, offset: 0.96 },
-      { transform: `translate(${dx}px,${dy}px) rotate(0deg) scale(1)`, opacity: 0 },
-    ],
-    { duration: DEAL_FLY, delay, easing: "cubic-bezier(.3,.6,.35,1)", fill: "both" },
-  );
-  an.onfinish = () => {
-    el.remove();
-    onEnd && onEnd();
-  };
-};
-const SIGNED = new Intl.NumberFormat("en", { signDisplay: "exceptZero", useGrouping: false }); // +12 / -5 / 0
-const DND_MQ = "(hover: hover) and (pointer: fine) and (min-width: 900px)";
-const BGS = 10; // table patterns (CSS classes bg0..bg9)
-const loadBg = () =>
-  Math.min(BGS - 1, Math.max(0, parseInt(local.get("rmkBg")) || 0));
-const loadSort = () => local.get("rmkSort") || null;
+import {
+  RoundSummary,
+} from "./RoundSummary.jsx";
+import {
+  EndRoundDialog,
+} from "./EndRoundDialog.jsx";
+import {
+  celebrationFor,
+} from "./celebrate.js";
+import {
+  local,
+  session,
+} from "../../utils/store.js";
+import {
+  cycleTheme,
+  useTheme,
+} from "../../utils/theme.js";
+import {
+  orderRack,
+  loadSort,
+} from "./rack.js";
+import {
+  DEAL_FLY,
+  dealGap,
+  flyTile,
+} from "./dealAnimation.js";
+import {
+  DND_MQ,
+  BGS,
+  loadBg,
+} from "./display.js";
+import {
+  prefersReducedMotion,
+  scrollBehavior,
+} from "../../utils/motion.js";
 
 export default function Game({
   s,
@@ -171,7 +182,7 @@ export default function Game({
     ptm = useRef(0);
   const flyRef = useRef(null),
     ftimers = useRef([]),
-    [dealt, setDealt] = useState(() => (!reduced() && freshDeal() ? 0 : null)), // tiles dealt so far while the dealer animation runs (null = not dealing)
+    [dealt, setDealt] = useState(() => (!prefersReducedMotion() && freshDeal() ? 0 : null)), // tiles dealt so far while the dealer animation runs (null = not dealing)
     [bump, setBump] = useState(0);
   const later = (fn, ms) => ftimers.current.push(setTimeout(fn, ms));
   // A deal is animated once per round: reloading, or a resize that remounts the screen, must not replay it. The
@@ -203,7 +214,7 @@ export default function Game({
     const np = players.length,
       N = 14 * np,
       gap = dealGap(np);
-    if (reduced()) {
+    if (prefersReducedMotion()) {
       setDealt(null);
       dealRound(N, gap / 1000, DEAL_FLY / 1000);
       return;
@@ -243,7 +254,7 @@ export default function Game({
   // Someone else drew: tiles fly from the pool to their seat.
   const drawFly = (pid, n) => {
     drawSlide(n);
-    if (reduced()) return;
+    if (prefersReducedMotion()) return;
     const from = poolPt(),
       to = seatPt(pid);
     for (let k = 0; k < Math.min(n, 3); k++)
@@ -282,7 +293,7 @@ export default function Game({
       clearTimeout(etm.current);
       etm.current = setTimeout(() => setEnter(false), 500);
       if (s.phase === "play") {
-        if (!reduced()) setDealt(0);
+        if (!prefersReducedMotion()) setDealt(0);
         later(() => deal(s.players), 120);
       }
     } // deal / new round: tiles pop in
@@ -320,7 +331,7 @@ export default function Game({
       el.scrollIntoView({
         block: "nearest",
         inline: "nearest",
-        behavior: sb(),
+        behavior: scrollBehavior(),
       });
   }, [placed]);
   useEffect(() => {
@@ -332,7 +343,7 @@ export default function Game({
       el.scrollIntoView({
         block: "nearest",
         inline: "nearest",
-        behavior: sb(),
+        behavior: scrollBehavior(),
       });
   }, [fresh]);
 
@@ -388,7 +399,7 @@ export default function Game({
       el.scrollIntoView({
         inline: "nearest",
         block: "nearest",
-        behavior: sb(),
+        behavior: scrollBehavior(),
       });
   }, [s.turn, s.phase]);
 
@@ -568,7 +579,7 @@ export default function Game({
     );
     sfx("win"); // silent when Turn sound is off
     const el = seatsRef.current?.querySelector('[data-pid="' + celebrate.id + '"]');
-    el?.scrollIntoView?.({ block: "nearest", inline: "center", behavior: sb() }); // the seat row scrolls sideways on busy tables
+    el?.scrollIntoView?.({ block: "nearest", inline: "center", behavior: scrollBehavior() }); // the seat row scrolls sideways on busy tables
   }, [celebrate]);
   useEffect(() => {
     const m = matchMedia(DND_MQ),
@@ -735,15 +746,11 @@ export default function Game({
     sfx("draw");
     send({ t: "draw" });
   };
-  const cx = !!(s.result && s.result.cancelled),
-    hostRoom = me === 0 && !!net.endRoom,
+  const hostRoom = me === 0 && !!net.endRoom,
     inRoom =
       !!net.endRoom ||
       (!!net.code && net.code !== "SOLO" && net.code !== "TUTORIAL"),
-    [endAsk, setEndAsk] = useState(false); // cx: the host ended the round early (no winner, no score change)
-  const ranked = s.result
-    ? s.players.toSorted((a, b) => s.scores[b.id] - s.scores[a.id])
-    : [];
+    [endAsk, setEndAsk] = useState(false); // confirm ending the round early (host only)
 
   return (
     <div
@@ -1218,107 +1225,16 @@ export default function Game({
         </div>
       </div>
       {endAsk && s.phase === "play" && (
-        <Modal title={t("endRound")} onClose={() => setEndAsk(false)}>
-          <h2>{t("endRound")}</h2>
-          <p>{t("endRoundQ")}</p>
-          <div className="row">
-            <button data-autofocus onClick={() => setEndAsk(false)}>
-              {t("stay")}
-            </button>
-            <button
-              className="primary danger"
-              onClick={() => {
-                setEndAsk(false);
-                net.send({ t: "forfeit" });
-              }}
-            >
-              {t("endRoundYes")}
-            </button>
-          </div>
-        </Modal>
+        <EndRoundDialog
+          onClose={() => setEndAsk(false)}
+          onConfirm={() => {
+            setEndAsk(false);
+            net.send({ t: "forfeit" });
+          }}
+        />
       )}
       {s.phase === "over" && !celebrate && (
-        <Modal
-          felt={inRoom}
-          title={
-            cx
-              ? t("roundEnded")
-              : t(s.result.blocked ? "winsPool" : "wins", {
-                  name: s.players[s.result.winner]?.name || "",
-                })
-          }
-        >
-          <div className="center">
-            <Trophy size={40} className="gold" />
-            <h2>
-              {cx
-                ? t("roundEnded")
-                : t(s.result.blocked ? "winsPool" : "wins", {
-                    name: s.players[s.result.winner]?.name || "",
-                  })}
-            </h2>
-            {cx && <p>{t("roundEndedD")}</p>}
-            <p className="sub">{t("roundN", { n: s.games })}</p>
-            <ul className="res">
-              {ranked.map((p, rank) => {
-                const v = cx ? 0 : s.result.delta?.[p.id] || 0,
-                  won = !cx && s.players[s.result.winner]?.id === p.id;
-                return (
-                  <li key={p.id} className={won ? "won" : undefined}>
-                    <span className="rk">{rank + 1}</span>
-                    <b>
-                      {p.name}
-                      {won && <Crown size={14} aria-label={t("roundWinner")} />}
-                    </b>
-                    {!cx && (
-                      <span className={v > 0 ? "pos" : "neg"}>
-                        {SIGNED.format(v)}
-                      </span>
-                    )}
-                    <span className="meta">
-                      <span className="tot">
-                        {t("total")} <b>{s.scores[p.id]}</b>
-                      </span>
-                      <span>
-                        <Trophy size={12} /> {s.wins[p.id]} {t("winsLbl")}
-                      </span>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-            {inRoom && (
-              <>
-                <p className="sub">{t("room")}</p>
-                {hostRoom && s.players.length < 4 && (
-                  <Invite net={net} copy={copy} share={share} />
-                )}
-                <Seats s={s} net={net} host={hostRoom} />
-              </>
-            )}
-            <div className="endact">
-              {me === 0 ? (
-                <button
-                  className="primary big"
-                  data-autofocus
-                  disabled={s.players.length < 2}
-                  onClick={() => net.send({ t: "start" })}
-                >
-                  {t("next")}
-                </button>
-              ) : (
-                <p>{t("waitNext")}</p>
-              )}
-              {me === 0 && s.players.length < 2 && (
-                <p className="sub">{t("need2")}</p>
-              )}
-              <button className="link" onClick={onLeave}>
-                <LogOut size={16} />
-                {t("leave")}
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <RoundSummary s={s} net={net} copy={copy} share={share} inRoom={inRoom} hostRoom={hostRoom} onLeave={onLeave} />
       )}
     </div>
   );

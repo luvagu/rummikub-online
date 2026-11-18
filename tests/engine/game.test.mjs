@@ -1,7 +1,7 @@
 // Rules-engine safety net: node --test tests/
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { DECK, T, val, key, shuffle, analyze, Game, botMove } from '../src/game.js'
+import { DECK, T, val, key, shuffle, analyze, Game, botMove } from '../../src/engine/game.js'
 
 // Tile id helper: colour c (0-3), number n (1-13), copy r (0-1). Jokers are 104 and 105.
 const id = (c, n, r = 0) => r * 52 + c * 13 + (n - 1)

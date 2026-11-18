@@ -1,7 +1,8 @@
 import { useState, useId } from 'react'
 import { Bot, ChevronDown, Check, Crown, WifiOff, X, Plus } from 'lucide-react'
-import { useT } from './i18n.js'
-import { Avatar, Popup, hidePopup } from './ui.jsx'
+import { useT } from '../i18n/index.js'
+import { Avatar } from './Avatar.jsx'
+import { Popup, hidePopup } from './Popup.jsx'
 
 export function LevelMenu({ value, onChange, label, className = '' }) {
 	const t = useT(),

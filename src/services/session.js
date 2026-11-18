@@ -1,4 +1,4 @@
-import { local, session } from './store.js'
+import { local, session } from '../utils/store.js'
 
 // Remembers the current room so a refreshed/closed tab (or a restarted browser) can rejoin it.
 // sessionStorage = this tab; localStorage = survives closing the browser. Host/solo games also keep a snapshot.

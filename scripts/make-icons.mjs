@@ -13,7 +13,7 @@ import { Resvg } from '@resvg/resvg-js'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
 const FELT = '#1b5e20'
-const COLORS = ['#1b1b1b', '#d32f2f', '#1565c0', '#d97800'] // keep in sync with COLORS in src/game.js
+const COLORS = ['#1b1b1b', '#d32f2f', '#1565c0', '#d97800'] // keep in sync with COLORS in src/engine/game.js
 const pub = new URL('../public/', import.meta.url)
 mkdirSync(new URL('icons/', pub), { recursive: true })
 

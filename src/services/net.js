@@ -1,11 +1,11 @@
 // Online play through a free public MQTT relay (over WebSockets). No WebRTC, so no NAT/firewall
 // trouble. The host's browser is the authoritative game server; guests talk to it via the relay.
 // Room code = 1 letter (which relay) + 4 random characters.
-import { Game } from './game.js'
-import { RKEYS, RLEGACY, RCOOL, botReact } from './reactions.js'
-import { setupTutorial } from './tutorial.js'
-import { local, session } from './store.js'
-import { HelloBook, kidOf, makeHello, randomId } from './secure.js'
+import { Game } from '../engine/game.js'
+import { RKEYS, RLEGACY, RCOOL, botReact } from '../engine/reactions.js'
+import { setupTutorial } from '../engine/tutorial.js'
+import { local, session } from '../utils/store.js'
+import { HelloBook, kidOf, makeHello, randomId } from '../utils/secure.js'
 const env = import.meta.env || {}
 // Id for offline games only (solo / tutorial). Online play uses the public id of the player's key pair (identity.js).
 let tok0 = session.get('rmkTok')

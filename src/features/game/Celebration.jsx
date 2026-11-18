@@ -1,7 +1,8 @@
 import { useState, useEffect, useEffectEvent, useRef } from 'react'
 import { Trophy } from 'lucide-react'
-import { TopLayer } from './ui.jsx'
-import { useT } from './i18n.js'
+import { TopLayer } from '../../components/TopLayer.jsx'
+import { prefersReducedMotion } from '../../utils/motion.js'
+import { useT } from '../../i18n/index.js'
 import { CELEBRATE_MS, REDUCED_MS, confettiPieces } from './celebrate.js'
 
 // Winner celebration shown for up to 3 s right before the round summary opens: confetti plus the winner's name on a highlighted
@@ -10,7 +11,7 @@ import { CELEBRATE_MS, REDUCED_MS, confettiPieces } from './celebrate.js'
 export default function Celebration({ c, onDone }) {
 	const t = useT(),
 		layer = useRef(),
-		[still] = useState(() => matchMedia('(prefers-reduced-motion: reduce)').matches)
+		[still] = useState(prefersReducedMotion)
 	const finish = useEffectEvent(onDone) // for the timer and the key listener (effects); click handlers call onDone directly
 
 	useEffect(() => {

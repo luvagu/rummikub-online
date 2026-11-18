@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { LoaderCircle } from 'lucide-react'
-import { hostGame, joinGame, localGame, tutorialGame, TOK } from './net.js'
-import { getIdentity } from './identity.js'
-import { LangCtx, fmt, guessLang } from './i18n.js'
+import { hostGame, joinGame, localGame, tutorialGame, TOK } from './services/net.js'
+import { getIdentity } from './services/identity.js'
+import { LangCtx, fmt, guessLang } from './i18n/index.js'
 import {
 	saveSess,
 	loadSess,
@@ -11,48 +11,21 @@ import {
 	loadNames,
 	rememberName,
 	forgetName,
-} from './session.js'
-import { Toasts, Modal, TopLayer } from './ui.jsx'
-import { useUpdate, applyUpdate, dismissUpdate } from './sw-update.js'
-import { Home, Lobby } from './screens.jsx'
-import Game from './Game.jsx'
-// secondary screens load on first use
-const Rules = lazy(() => import('./Rules.jsx'))
-const Tutorial = lazy(() => import('./Tutorial.jsx'))
-import { useT } from './i18n.js'
-import { unlockAudio } from './notify.js'
-import { local, session } from './store.js'
+} from './services/session.js'
+import { Toasts } from './components/Toasts.jsx'
+import { Modal } from './components/Modal.jsx'
+import { TopLayer } from './components/TopLayer.jsx'
+import { LeaveDialog } from './components/LeaveDialog.jsx'
+import { UpdateBanner } from './components/UpdateBanner.jsx'
+import { Home } from './features/home/Home.jsx'
+import { Lobby } from './features/lobby/Lobby.jsx'
+import Game from './features/game/Game.jsx'
+import { unlockAudio } from './utils/notify.js'
+import { local, session } from './utils/store.js'
 
-function LeaveDialog({ mode, phase, onYes, onNo }) {
-	const t = useT(),
-		lobby = phase === 'lobby'
-	const msg =
-		mode === 'tutorial'
-			? 'lv.tutorial'
-			: mode === 'solo'
-				? 'lv.solo'
-				: mode === 'host'
-					? lobby
-						? 'lv.hostLobby'
-						: 'lv.hostPlay'
-					: lobby
-						? 'lv.guestLobby'
-						: 'lv.guestPlay'
-	return (
-		<Modal title={t('leaveT')} onClose={onNo}>
-			<h2>{t('leaveT')}</h2>
-			<p>{t(msg)}</p>
-			<div className='row'>
-				<button data-autofocus onClick={onNo}>
-					{t('stay')}
-				</button>
-				<button className='primary danger' onClick={onYes}>
-					{mode === 'host' ? t('endAll') : t('confirmLeave')}
-				</button>
-			</div>
-		</Modal>
-	)
-}
+// secondary screens load on first use
+const Rules = lazy(() => import('./features/rules/Rules.jsx'))
+const Tutorial = lazy(() => import('./features/tutorial/Tutorial.jsx'))
 
 const isCode = c => /^[A-Z0-9]{5}$/.test(c) // room code in an invite link (#ABCDE)
 
@@ -75,7 +48,6 @@ export default function App() {
 	}, [])
 
 	const hash0 = useRef(location.hash.slice(1).toUpperCase())
-	const update = useUpdate()
 	const [net, setNet] = useState(null),
 		[s, setS] = useState(null),
 		[busy, setBusy] = useState(null),
@@ -357,16 +329,7 @@ export default function App() {
 					{t('reconnecting')}
 				</TopLayer>
 			)}
-			{/* a waiting service worker: reloading is the player's call, so a game is never interrupted */}
-			{update && conn && (
-				<TopLayer className='banner update' role='status'>
-					{t('updateReady')}
-					<button className='primary' onClick={applyUpdate}>
-						{t('updateNow')}
-					</button>
-					<button onClick={dismissUpdate}>{t('updateLater')}</button>
-				</TopLayer>
-			)}
+			<UpdateBanner hidden={!conn} />
 			{!inRoom ? (
 				<Home
 					{...{

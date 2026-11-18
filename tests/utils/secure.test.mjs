@@ -1,7 +1,7 @@
 // Crypto core of the encrypted online channel: node --test tests/*.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { newIdentity, importIdentity, kidOf, kidMatches, deriveKey, Channel, randomId, makeHello, HelloBook } from '../src/secure.js'
+import { newIdentity, importIdentity, kidOf, kidMatches, deriveKey, Channel, randomId, makeHello, HelloBook } from '../../src/utils/secure.js'
 
 // Two parties plus the host's per-run session id, as net.js sets them up.
 async function pair(sid = randomId()) {

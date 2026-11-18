@@ -60,7 +60,7 @@
 	--xbtn-ink: light-dark(#333, #fff);
 	--font: 'Inter Variable', system-ui, -apple-system, sans-serif;
 	--disp: 'Outfit Variable', 'Inter Variable', system-ui, sans-serif;
-	color-scheme: light dark; /* the page supports both; the <meta name="color-scheme"> below can pin one (src/theme.js) */
+	color-scheme: light dark; /* the page supports both; the <meta name="color-scheme"> below can pin one (src/utils/theme.js) */
 	accent-color: var(--amber);
 	&:has(> head > meta[name='color-scheme'][content='dark']) {
 		color-scheme: dark;
