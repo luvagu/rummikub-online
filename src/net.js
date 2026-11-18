@@ -5,10 +5,13 @@ import { Game } from './game.js'
 import { RKEYS, RLEGACY, RCOOL, botReact } from './reactions.js'
 import { setupTutorial } from './tutorial.js'
 import { local, session } from './store.js'
+import { HelloBook, kidOf, makeHello, randomId } from './secure.js'
 const env = import.meta.env || {}
+// Id for offline games only (solo / tutorial). Online play uses the public id of the player's key pair (identity.js).
 let tok0 = session.get('rmkTok')
-if (!tok0) session.set('rmkTok', (tok0 = Math.random().toString(36).slice(2)))
+if (!tok0) session.set('rmkTok', (tok0 = randomId(12)))
 export const TOK = tok0
+const PROTO = 8 // v8 = end-to-end encrypted channel; the topic root below changes with it, so old clients cannot join
 const BROKERS = [
 	...(env.VITE_MQTT_URL ? [env.VITE_MQTT_URL] : []),
 	...(globalThis.__RMKB_BROKERS || [
@@ -19,7 +22,7 @@ const BROKERS = [
 ]
 const LET = 'ABCDEFGH',
 	AL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
-	ROOT = 'rmkb7/'
+	ROOT = 'rmkb' + PROTO + '/'
 const NOBROKER = { k: 'e.nobroker' },
 	J = JSON.stringify
 
@@ -141,20 +144,32 @@ const runner = (game, push, react) => {
 	return run
 }
 
+// Host: the authoritative game server. Every guest has its own encrypted channel (see secure.js): the host derives it
+// from the guest's public key in its hello, and only ever acts on messages that decrypt with that channel's key.
 export function hostGame(
 	name,
 	{ onState, onErr, onReact = () => {}, onConn = () => {} },
-	tok = TOK,
+	identP,
 	resume,
 ) {
 	const game = new Game(resume && resume.s),
-		api = { code: '' }
+		api = { code: '' },
+		sid = randomId(), // new for every run: keys are bound to it, so anything captured from an earlier run is useless
+		chans = new Map() // guest id -> Channel
 	let c,
 		base,
-		dead = 0
-	if (resume) game.resume(tok)
-	const out = (t, o) =>
-		c && c.connected && c.publish(`${base}/to/${t}`, J(o), { qos: 1 })
+		dead = 0,
+		ident,
+		book, // remembers each guest's newest accepted handshake (HelloBook)
+		tok = '',
+		inbox = Promise.resolve() // inbound messages decrypt asynchronously but must be applied in arrival order
+	const out = (kid, o) => {
+		const ch = chans.get(kid)
+		if (!ch) return
+		ch.seal(o)
+			.then(cipher => c && c.connected && c.publish(`${base}/to/${kid}`, J({ c: cipher }), { qos: 1 }))
+			.catch(() => {})
+	}
 	const react = reactor(game, r => {
 		game.s.players.forEach(p => {
 			if (!p.bot && p.id !== tok) out(p.id, r)
@@ -164,7 +179,7 @@ export function hostGame(
 	const sched = runner(game, () => push(), react)
 	const save = () => {
 		if (dead) return
-		local.setJSON('rmkHost', { code: api.code, s: game.s })
+		local.setJSON('rmkHost', { code: api.code, proto: PROTO, s: game.s })
 	}
 	const push = () => {
 		if (dead) return
@@ -175,8 +190,9 @@ export function hostGame(
 		onState(game.view(tok))
 		sched()
 	}
+	// The retained "host is up" message carries the host's public key and this run's session id; guests derive their key from them.
 	const status = up =>
-		c.publish(`${base}/host`, J({ up }), { qos: 1, retain: true })
+		c.publish(`${base}/host`, J(up ? { up: true, v: PROTO, hpub: ident.pub, sid } : { up: false }), { qos: 1, retain: true })
 	api.send = m => {
 		if (m.t === 'react') return react(tok, m.k)
 		if (m.t === 'draft') return game.draft(tok, m.n)
@@ -199,23 +215,77 @@ export function hostGame(
 		local.remove('rmkHost')
 		if (c) {
 			game.s.players.forEach(p => {
-				if (!p.bot && p.id !== tok)
-					out(p.id, { t: 'err', msg: { k: 'e.closed' }, fatal: true })
+				if (!p.bot && p.id !== tok) out(p.id, { t: 'err', msg: { k: 'e.closed' }, fatal: true })
 			})
 			status(false)
 			setTimeout(() => c.end(true), 300)
 		}
 	}
+	// One inbound packet. The only unencrypted ones are a guest's hello (public data) and the broker's last-will hint.
+	const handle = async d => {
+		if (dead || !d || typeof d !== 'object' || typeof d.kid !== 'string') return
+		const kid = d.kid
+		if (d.pub) {
+			// hello: the tag inside it only opens under the guest's own key, and its handshake number must be newer than
+			// the last one accepted, so a forged or replayed hello changes nothing (see HelloBook)
+			if (d.v !== PROTO) return
+			const r = await book.accept(d)
+			if (!r) return
+			if (r.channel) chans.set(r.kid, r.channel) // null = a repeat of the current handshake: keep the channel and its replay counter
+			if (!game.join(r.kid, r.name)) {
+				out(r.kid, { t: 'err', msg: { k: 'e.full' }, fatal: true })
+				chans.delete(r.kid) // out() has already taken the channel it needs
+				book.gns.delete(r.kid)
+				return
+			}
+			game.online(r.kid, true)
+			push()
+			return
+		}
+		if (d.bye) {
+			// The broker publishes this when a guest's connection drops. The will is fixed before any key exists, so it carries
+			// the connection id that the guest also sealed into its hello: only the CURRENT connection's will is believed
+			// (a late will from before a reload, or one forged by an outsider, does not match).
+			if (book.isCurrentCid(kid, d.bye)) {
+				game.online(kid, false)
+				push()
+			}
+			return
+		}
+		const ch = chans.get(kid)
+		if (!ch || typeof d.c !== 'string') return
+		const m = await ch.open(d.c)
+		if (!m) return // forged, corrupted, replayed or from another handshake / run
+		const p = game.s.players.find(x => x.id === kid)
+		if (p && p.on === false && m.t !== 'bye') {
+			game.online(kid, true) // a valid message proves the guest is here
+			push()
+		}
+		if (m.t === 'bye') {
+			game.online(kid, false)
+			push()
+			return
+		}
+		if (m.t === 'react') return react(kid, m.k)
+		if (m.t === 'draft') return game.draft(kid, m.n)
+		const e = game.act(kid, m)
+		if (e) out(kid, { t: 'err', msg: e })
+		push()
+	}
 	;(async () => {
+		try {
+			ident = await identP
+		} catch {
+			return onErr({ k: 'e.insecure' }, true) // WebCrypto exists only on https / localhost
+		}
+		tok = ident.kid
+		book = new HelloBook(ident, sid)
+		if (resume) game.resume(tok)
 		const tries = resume
 			? [[LET.indexOf(resume.code[0]), resume.code]]
 			: BROKERS.map((_, i) => [
 					i,
-					LET[i] +
-						Array.from(
-							{ length: 4 },
-							() => AL[(Math.random() * AL.length) | 0],
-						).join(''),
+					LET[i] + Array.from({ length: 4 }, () => AL[(Math.random() * AL.length) | 0]).join(''),
 				])
 		for (const [i, code] of tries) {
 			if (c || !BROKERS[i]) continue
@@ -250,27 +320,7 @@ export function hostGame(
 			} catch (e) {
 				return
 			}
-			const { tok: t, m } = d || {}
-			if (!t || !m) return
-			if (m.t === 'join') {
-				if (!game.join(t, String(m.name || 'Player').slice(0, 16))) {
-					out(t, { t: 'err', msg: { k: 'e.full' }, fatal: true })
-					return
-				}
-				game.online(t, true)
-				push()
-				return
-			}
-			if (m.t === 'bye') {
-				game.online(t, false)
-				push()
-				return
-			}
-			if (m.t === 'react') return react(t, m.k)
-			if (m.t === 'draft') return game.draft(t, m.n)
-			const e = game.act(t, m)
-			if (e) out(t, { t: 'err', msg: e })
-			push()
+			inbox = inbox.then(() => handle(d)).catch(() => {})
 		})
 		c.subscribe(`${base}/in`, { qos: 1 })
 		status(true)
@@ -284,7 +334,7 @@ export function joinGame(
 	code,
 	name,
 	{ onState, onErr, onReact = () => {}, onConn = () => {} },
-	tok = TOK,
+	identP,
 ) {
 	code = code.trim().toUpperCase()
 	const idx = LET.indexOf(code[0]),
@@ -294,10 +344,24 @@ export function joinGame(
 		got = 0,
 		dead = 0,
 		t,
-		seen = 0
+		seen = 0,
+		ident,
+		chan, // our encrypted channel to the host; replaced when the host restarts (new session id)
+		helloMsg, // the matching hello (its tag proves it came from our key)
+		sid,
+		cid = randomId(8), // identifies this MQTT connection: in the will, and sealed into the hello
+		inbox = Promise.resolve()
 	const rseen = [] // QoS 1 can redeliver: drop reaction ids we already showed
-	const pub = m =>
-		c && c.connected && c.publish(`${base}/in`, J({ tok, m }), { qos: 1 })
+	const pub = m => {
+		if (!chan) return
+		chan
+			.seal(m)
+			.then(cipher => c && c.connected && c.publish(`${base}/in`, J({ kid: ident.kid, c: cipher }), { qos: 1 }))
+			.catch(() => {})
+	}
+	// The hello is the one message sent in the clear: the public key the host needs to derive the same channel key.
+	const hello = () =>
+		!dead && chan && helloMsg && c && c.connected && c.publish(`${base}/in`, J({ v: PROTO, ...helloMsg }), { qos: 1 })
 	const fail = m => {
 		if (dead) return
 		dead = 1
@@ -312,7 +376,7 @@ export function joinGame(
 		clearTimeout(t)
 		if (c) {
 			pub({ t: 'bye' })
-			setTimeout(() => c.end(true), 200)
+			setTimeout(() => c.end(true), 300)
 		}
 	}
 	if (code.length !== 5 || idx < 0 || idx >= BROKERS.length) {
@@ -320,59 +384,97 @@ export function joinGame(
 		return api
 	}
 	t = setTimeout(() => fail({ k: 'e.noAnswer' }), 10000)
-	open(BROKERS[idx], {
-		topic: `${base}/in`,
-		payload: J({ tok, m: { t: 'bye' } }),
-		qos: 1,
-	})
-		.then(cl => {
-			c = cl
-			if (dead) {
-				c.end(true)
+	// A guest message, already decrypted (state / reaction / error from the host).
+	const onHost = d => {
+		if (d.t === 'state') {
+			got = 1
+			clearTimeout(t)
+			onState(d.s)
+		} else if (d.t === 'react') {
+			d.k = RLEGACY[d.k] || d.k
+			if (got && RKEYS.has(d.k) && !rseen.includes(d.id)) {
+				rseen.push(d.id)
+				if (rseen.length > 30) rseen.shift()
+				onReact(d)
+			}
+		} else if (d.t === 'err') {
+			d.fatal ? fail(d.msg) : onErr(d.msg)
+		}
+	}
+	const onPacket = async (topic, d) => {
+		if (dead || !d || typeof d !== 'object') return
+		if (topic.endsWith('/host')) {
+			seen = 1
+			if (d.up === false) return got ? onErr({ k: 'e.hostOff' }) : fail({ k: 'e.noRoom' })
+			if (d.v !== PROTO || !d.hpub || typeof d.sid !== 'string') return fail({ k: 'e.noRoom' }) // not a host of this protocol
+			let fp
+			try {
+				fp = await kidOf(d.hpub)
+			} catch {
+				return fail({ k: 'e.noRoom' })
+			}
+			// Trust on first use: once this tab has seen a host key for the room, a different one is refused, so a
+			// forged retained message cannot silently put someone else in the host's place.
+			const pin = 'rmkHpub:' + code,
+				pinned = session.get(pin)
+			if (pinned && pinned !== fp) return fail({ k: 'e.hostKey' })
+			session.set(pin, fp)
+			if (!chan || sid !== d.sid) {
+				// A new handshake (page load, or the host restarted). Its number only ever increases, even if the clock
+				// moved back, and it salts the key: nothing from an earlier handshake decrypts under this one.
+				const mark = 'rmkGn:' + code,
+					gn = Math.max((+session.get(mark) || 0) + 1, Date.now())
+				session.set(mark, gn)
+				try {
+					;({ channel: chan, hello: helloMsg } = await makeHello(ident, d.hpub, d.sid, name, gn, cid))
+					sid = d.sid
+				} catch {
+					return fail({ k: 'e.noRoom' })
+				}
+			}
+			hello() // first time, after the host restarted, or after it reconnected: (re)take the seat
+			return
+		}
+		if (!chan || typeof d.c !== 'string') return
+		const m = await chan.open(d.c)
+		if (m) onHost(m)
+	}
+	;(async () => {
+		try {
+			ident = await identP
+		} catch {
+			return fail({ k: 'e.insecure' })
+		}
+		let cl
+		try {
+			cl = await open(BROKERS[idx], { topic: `${base}/in`, payload: J({ kid: ident.kid, bye: cid }), qos: 1 })
+		} catch {
+			return fail(NOBROKER)
+		}
+		c = cl
+		if (dead) {
+			c.end(true)
+			return
+		}
+		c.on('connect', hello) // after an automatic reconnect: take the seat back
+		watch(c, onConn, () => dead)
+		c.on('message', (topic, buf) => {
+			if (dead) return
+			let d
+			try {
+				d = JSON.parse(buf.toString())
+			} catch (e) {
 				return
 			}
-			const hello = () => !dead && pub({ t: 'join', name })
-			c.on('connect', hello) // after an automatic reconnect: take the seat back
-			watch(c, onConn, () => dead)
-			c.on('message', (topic, buf) => {
-				if (dead) return
-				let d
-				try {
-					d = JSON.parse(buf.toString())
-				} catch (e) {
-					return
-				}
-				if (topic.endsWith('/host')) {
-					seen = 1
-					if (d.up === false)
-						return got ? onErr({ k: 'e.hostOff' }) : fail({ k: 'e.noRoom' })
-					if (got) hello()
-					return
-				}
-				if (d.t === 'state') {
-					got = 1
-					clearTimeout(t)
-					onState(d.s)
-				} else if (d.t === 'react') {
-					d.k = RLEGACY[d.k] || d.k
-					if (got && RKEYS.has(d.k) && !rseen.includes(d.id)) {
-						rseen.push(d.id)
-						if (rseen.length > 30) rseen.shift()
-						onReact(d)
-					}
-				} else if (d.t === 'err') {
-					d.fatal ? fail(d.msg) : onErr(d.msg)
-				}
-			})
-			c.subscribe([`${base}/host`, `${base}/to/${tok}`], { qos: 1 }, e => {
-				if (e) return fail({ k: 'e.refused' })
-				hello()
-				setTimeout(() => {
-					if (!seen) fail({ k: 'e.noRoom' })
-				}, 3000)
-			})
+			inbox = inbox.then(() => onPacket(topic, d)).catch(() => {})
 		})
-		.catch(() => fail(NOBROKER))
+		c.subscribe([`${base}/host`, `${base}/to/${ident.kid}`], { qos: 1 }, e => {
+			if (e) return fail({ k: 'e.refused' })
+			setTimeout(() => {
+				if (!seen) fail({ k: 'e.noRoom' })
+			}, 3000)
+		})
+	})()
 	return api
 }
 

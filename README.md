@@ -41,8 +41,18 @@ Levels live in the `BOT` table in `src/game.js`. `node scripts/bot-sim.mjs [game
 
 Moves are relayed through free public MQTT brokers over WebSockets (EMQX, HiveMQ, Mosquitto: no accounts, no WebRTC, no firewall/NAT issues).
 The host's browser runs the game rules; the room code's first letter says which broker the room lives on.
-Caveats: public brokers are shared, so anyone who guessed your room code could watch it (fine for casual games). To use your own broker
-(e.g. a free HiveMQ Cloud cluster), set `VITE_MQTT_URL` (a `wss://` URL) at build time.
+To use your own broker (e.g. a free HiveMQ Cloud cluster), set `VITE_MQTT_URL` (a `wss://` URL) at build time.
+
+### Security of online rooms
+
+Public brokers have no access control, so anyone who knows (or guesses) a room code can subscribe to everything published in it. Each guest therefore talks to the host over its **own end-to-end encrypted, authenticated channel** (`src/secure.js`, WebCrypto only, no dependency):
+
+- Every player has an ECDH P-256 key pair; the player's public id is a hash of its public key, so it is safe to show to everyone.
+- The channel key is derived (HKDF) from the two keys, the host's per-run session id and a per-handshake number, and messages are AES-GCM sealed with a replay counter. Racks, moves and private state never appear in the clear, nobody can impersonate another player, and nothing captured from an earlier handshake or an earlier host run can be replayed.
+- The guest pins the host's key the first time it sees it, so a forged retained message cannot silently put someone else in the host's place. A broker last-will ("this guest disconnected") is only honoured when it carries the sealed id of the guest's current connection.
+- `node scripts/sniff.mjs` is a dev-only check: it joins the real relay as an outsider, reports whether any game data is readable, and replays/forges messages against a running host.
+
+**What it does not protect against:** the host is trusted (it runs the rules and sees every rack); anyone who has the room code can still join an *empty seat*; and a determined attacker who is already in the middle when a guest first connects could still substitute the host key (there is no out-of-band verification of the host). Online play needs a secure context (https or localhost) because WebCrypto only exists there. Old and new versions cannot play together (the topic root is `rmkb8/`).
 
 ## Languages
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import { hostGame, joinGame, localGame, tutorialGame, TOK } from './net.js'
+import { getIdentity } from './identity.js'
 import { LangCtx, fmt, guessLang } from './i18n.js'
 import {
 	saveSess,
@@ -132,14 +133,18 @@ export default function App() {
 		setNameErr(false)
 		rememberName(nm)
 		setNames(loadNames())
-		const tok = o.tok || TOK,
+		// Online rooms use a key pair whose hash is the public player id (identity.js); offline games just need a random id.
+		const online = mode === 'host' || mode === 'join',
+			identP = online ? getIdentity(o.ident) : null,
+			tok = o.tok || TOK,
 			cd = mode === 'join' ? o.code || code : ''
 		session.set('rmkName', nm)
 		local.set('rmkName', nm)
 		let snap
 		if (o.resume && mode !== 'join') {
 			snap = loadSnap(mode === 'host' ? 'rmkHost' : 'rmkSolo')
-			if (!snap || (mode === 'host' && snap.code !== o.code)) {
+			// a host snapshot from before the encrypted protocol has other ids and unreachable guests: drop it
+			if (!snap || (mode === 'host' && (snap.code !== o.code || snap.proto !== 8))) {
 				forget(mode)
 				return
 			}
@@ -153,6 +158,15 @@ export default function App() {
 		setGk(k => k + 1)
 		sess.current = { mode, name: nm, code: cd, tok, lesson: o.lesson }
 		if (mode !== 'tutorial') saveSess(sess.current) // the tutorial is never resumed
+		// once the key pair exists, remember it (and the public id) with the session, so a closed browser can resume the seat
+		if (online)
+			identP
+				.then(id => {
+					if (!sess.current || sess.current.mode !== mode) return
+					sess.current = { ...sess.current, tok: id.kid, ident: id.exported }
+					saveSess(sess.current)
+				})
+				.catch(() => {}) // no WebCrypto: hostGame/joinGame report it
 		setBusy(
 			o.resume
 				? 'resume'
@@ -204,7 +218,7 @@ export default function App() {
 					: mode === 'tutorial'
 						? (nm2, c2, tk) => tutorialGame(nm2, c2, tk, t('tutBot'), o.lesson)
 						: (nm2, c2, tk) => joinGame(cd, nm2, c2, tk)
-		)(nm, cb, tok, snap || undefined)
+		)(nm, cb, online ? identP : tok, snap || undefined)
 		netRef.current = n
 		setNet(n)
 	}
@@ -222,6 +236,7 @@ export default function App() {
 			resume: true,
 			name: saved.name,
 			tok: saved.tok,
+			ident: saved.ident,
 			code: saved.code,
 		})
 
