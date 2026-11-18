@@ -69,6 +69,10 @@ A chime plays and the phone vibrates (Android/Chrome; iOS Safari has no web vibr
 - **Action buttons:** To rack, Undo, Draw (and its confirm step), End turn, Skip, the sort buttons and the reactions button each play their own short cue. Selecting or deselecting a tile, New set and adding to a set (the + on a table set) have cues too. Sounds are synthesized with WebAudio (`src/notify.js`), no audio files.
 - The menu's turn sound switch mutes all of these. With "reduce motion" enabled in the OS, tiles don't fly but the sounds still play. A reload or rejoin mid-round does not replay the deal.
 
+## Light and dark theme
+
+The dialogs, text fields, coach and menus follow the system theme (`color-scheme: light dark`, `light-dark()` tokens in `src/styles/tokens.css`). The green table, rack and tiles look the same in both schemes. Menu > Theme cycles System, Light and Dark; "System" removes the saved choice, so the page follows the OS again. A small inline script in `index.html` applies a saved choice before first paint, so there is no flash of the wrong theme. Every dark text/UI colour pair is at least 4.5:1 (text) or 3:1 (borders and controls).
+
 ## Table patterns
 
 Menu > Table pattern cycles the table background through ten patterns (Felt, Diamonds, Dots, Stripes, Weave, Grid, Plaid, Scales, Crosses, Rings). The choice is remembered in the browser. Patterns are pure CSS (`.board.bg0` to `.bg9` in `src/styles/components.css`).

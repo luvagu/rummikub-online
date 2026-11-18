@@ -162,8 +162,12 @@ button.link:hover:not(:disabled) {
 	border: 2px solid transparent;
 	font: inherit;
 	font-weight: 500;
-	background: #fff;
-	color: #1b1b1b;
+	background: var(--field-bg);
+	color: var(--field-ink);
+}
+.field input::placeholder,
+.codein::placeholder {
+	color: var(--field-placeholder);
 }
 .field input.err {
 	border-color: #ff5252;
@@ -778,8 +782,8 @@ button.pulse {
 .card {
 	/* the <dialog> itself: fixed and centred in the top layer by the UA, so no position/inset here */
 	overscroll-behavior: contain;
-	background: #fbfaf3;
-	color: #1d2b1e;
+	background: var(--card-bg);
+	color: var(--card-ink);
 	border: 0;
 	border-radius: 20px;
 	padding: 22px;
@@ -803,8 +807,8 @@ dialog.card::backdrop {
 	margin: 14px 0 6px;
 }
 .card button {
-	background: var(--felt);
-	border-color: var(--felt-edge);
+	background: var(--card-btn-bg);
+	border-color: var(--card-btn-edge);
 }
 .card button.primary {
 	background: linear-gradient(var(--amber-hi), var(--amber));
@@ -818,14 +822,14 @@ dialog.card::backdrop {
 }
 .card button.link {
 	background: none;
-	color: var(--felt);
+	color: var(--card-link);
 	border: 0;
 }
 .card .row {
 	margin-top: 14px;
 }
 .card a {
-	color: var(--felt);
+	color: var(--card-link);
 }
 
 .res {
@@ -842,7 +846,7 @@ dialog.card::backdrop {
 	gap: 10px;
 	padding: 8px 12px;
 	border-radius: 12px;
-	background: #0000000a;
+	background: var(--card-row);
 }
 .res li b {
 	flex: 1;
@@ -886,11 +890,11 @@ dialog.card::backdrop {
 	font-size: 15px;
 }
 .res .pos {
-	color: #1b7a24;
+	color: var(--card-pos);
 	font-weight: 800;
 }
 .res .neg {
-	color: #c62828;
+	color: var(--card-neg);
 	font-weight: 800;
 }
 .toasts {
@@ -1289,27 +1293,27 @@ dialog.card::backdrop {
 	text-align: start;
 	padding: 16px 18px;
 	border-radius: 14px;
-	background: #fff;
-	color: #1d2b1e;
-	border: 2px solid #d5e0d3;
+	background: var(--card-opt-bg);
+	color: var(--card-ink);
+	border: 2px solid var(--card-opt-edge);
 	box-shadow: 0 1px 0 #0000000d;
 }
 @media (hover: hover) {
 .card .lvlopts button:hover:not(:disabled) {
-	background: #eaf4e6;
-	border-color: var(--felt);
+	background: var(--card-opt-hover);
+	border-color: var(--card-opt-hover-edge);
 }
 }
 .card .lvlopts button:active:not(:disabled) {
-	background: #dcecd6;
+	background: var(--card-opt-active);
 }
 .card .lvlopts button.sel {
-	background: #fff7de;
+	background: var(--card-opt-sel);
 	border-color: var(--amber-edge);
 }
 @media (hover: hover) {
 .card .lvlopts button.sel:hover:not(:disabled) {
-	background: #ffefbd;
+	background: var(--card-opt-sel-hover);
 }
 }
 .lvlopts button > span {
@@ -1325,12 +1329,12 @@ dialog.card::backdrop {
 	font-size: 14px;
 	line-height: 1.4;
 	font-weight: 400;
-	color: #4a5b4b;
+	color: var(--card-sub-ink);
 	opacity: 1;
 }
 .lvlopts svg {
 	flex: none;
-	color: var(--felt);
+	color: var(--card-link);
 }
 
 /* ---- audit fixes ---- */
@@ -1346,7 +1350,7 @@ dialog.card::backdrop {
 		0 3px 0 var(--tile-edge);
 }
 .card :focus-visible {
-	outline-color: var(--felt);
+	outline-color: var(--card-focus);
 }
 .menu {
 	max-height: calc(100dvh - 84px);
@@ -1572,8 +1576,8 @@ button.primary:disabled {
 	box-sizing: border-box;
 	padding: 12px 14px;
 	border-radius: 14px;
-	background: var(--paper);
-	color: #222;
+	background: var(--coach-bg);
+	color: var(--coach-ink);
 	border: 2px solid var(--amber);
 	box-shadow: 0 10px 28px #0006;
 	display: grid;
@@ -1609,15 +1613,15 @@ button.primary:disabled {
 
 /* switch on the light dialog card: the default translucent-white track is invisible there */
 .card .switch .tr {
-	background: #8a948a;
-	box-shadow: inset 0 0 0 1px #5b665c;
+	background: var(--card-switch-off);
+	box-shadow: inset 0 0 0 1px var(--card-switch-ring);
 }
 .card .switch input:checked + .tr {
-	background: var(--felt);
+	background: var(--card-switch-on);
 	box-shadow: none;
 }
 .card .switch input:focus-visible + .tr {
-	outline-color: var(--felt);
+	outline-color: var(--card-focus);
 	outline-offset: 2px;
 }
 
@@ -1626,11 +1630,11 @@ button.primary:disabled {
    turned every dialog button white-on-white when hovered) */
 @media (hover: hover) {
 .card button:hover:not(:disabled) {
-	background: var(--felt2);
+	background: var(--card-btn-hover);
 }
 }
 .card button:active:not(:disabled) {
-	background: var(--felt-edge);
+	background: var(--card-btn-active);
 }
 @media (hover: hover) {
 .card button.primary:hover:not(:disabled) {
@@ -1647,32 +1651,32 @@ button.primary:disabled {
 }
 .card button.link:active:not(:disabled) {
 	background: none;
-	color: #0d3a12;
+	color: var(--card-link-hover);
 }
 @media (hover: hover) {
 .card button.link:hover:not(:disabled) {
 	background: none;
-	color: #0d3a12;
+	color: var(--card-link-hover);
 }
 }
 .card button:focus-visible {
-	outline: 3px solid var(--felt);
+	outline: 3px solid var(--card-focus);
 	outline-offset: 2px;
 }
 .card button.primary:focus-visible {
 	outline-color: var(--ink);
 }
 .card .codechip {
-	background: var(--felt);
-	border-color: var(--felt-edge);
+	background: var(--card-chip-bg);
+	border-color: var(--card-chip-edge);
 }
 .card .codechip button.icon {
-	background: var(--felt2);
-	border-color: #4a9a4e;
+	background: var(--card-chip-btn);
+	border-color: var(--card-chip-btn-edge);
 }
 @media (hover: hover) {
 .card .codechip button.icon:hover:not(:disabled) {
-	background: #3d8b40;
+	background: var(--card-chip-btn-hover);
 }
 }
 .card .codechip button:focus-visible {
@@ -1998,7 +2002,7 @@ button.draw:disabled {
 		background: linear-gradient(#0000, var(--felt) 30%);
 	}
 	.card:not(.felt) .endact {
-		background: linear-gradient(#fbfaf300, #fbfaf3 30%);
+		background: linear-gradient(var(--card-bg-clear), var(--card-bg) 30%);
 	}
 	.res li {
 		padding: 6px 10px;
@@ -2046,7 +2050,7 @@ button.draw:disabled {
 .timerpick {
 	margin-bottom: 14px;
 	padding-bottom: 14px;
-	border-bottom: 1px solid #0000001f;
+	border-bottom: 1px solid var(--card-rule);
 }
 @media (width <= 520px) {
 	.bar button .lg {

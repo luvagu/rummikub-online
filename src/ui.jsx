@@ -35,7 +35,7 @@ export const Tile = memo(function Tile({ id, sel, num, fresh, placed, ghost, ent
 			style={{ '--tc': x.j ? '#7b1fa2' : COLORS[x.c] }}
 			tabIndex={rove ? 0 : -1}
 			aria-pressed={!!sel}
-			aria-label={x.j ? t('joker') : `${x.n} ${t('c' + x.c)}`}
+			aria-label={x.j ? (num ? `${t('joker')} ${num}` : t('joker')) : `${x.n} ${t('c' + x.c)}`}
 		>
 			<span className='n'>{x.j ? '☺' : x.n}</span>
 			{x.j ? num ? <small>{num}</small> : null : <i className='mk' />}

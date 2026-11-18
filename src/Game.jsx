@@ -8,6 +8,9 @@ import {
   VibrateOff,
   Timer,
   Languages,
+  Monitor,
+  Moon,
+  Sun,
   Grid3x3,
   LogOut,
   Layers,
@@ -49,6 +52,7 @@ import { REACTIONS, RCOOL } from "./reactions.js";
 import { Tile, Avatar, Modal, Invite, Popup, hidePopup } from "./ui.jsx";
 import { Seats } from "./Seats.jsx";
 import { local, session } from "./store.js";
+import { cycleTheme, useTheme } from "./theme.js";
 
 const CMP = {
   num: (x, y) => x.n - y.n || x.c - y.c,
@@ -127,6 +131,7 @@ export default function Game({
     [menu, setMenu] = useState(false),
     [sm, setSm] = useState(loadSort),
     [bg, setBg] = useState(loadBg);
+  const { theme, shown } = useTheme();
   const [pf, setPf] = useState(getPrefs),
     seatsRef = useRef(null);
   // tell the host how many tiles are in my working rack so IT decides the timeout penalty (1 vs 3 tiles)
@@ -872,6 +877,16 @@ export default function Game({
                 <Languages size={18} />
                 {t("lang")}
                 <span className="sw">{lang === "en" ? "EN" : "ES"}</span>
+              </button>
+              {/* three explicit states: this menu is a settings surface (System shows what it currently resolves to) */}
+              <button role="menuitem" onClick={cycleTheme}>
+                {theme === "system" ? <Monitor size={18} /> : theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
+                {t("theme")}
+                <span className="sw">
+                  {theme === "system"
+                    ? `${t("themeSys")} (${t(shown === "dark" ? "themeDark" : "themeLight")})`
+                    : t(theme === "dark" ? "themeDark" : "themeLight")}
+                </span>
               </button>
               <hr />
               {hostRoom && s.phase === "play" && (
