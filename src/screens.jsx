@@ -43,10 +43,11 @@ function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
 			<label htmlFor='rmk-name'>{t('name')}</label>
 			<input
 				id='rmk-name'
+				name='nickname'
 				className={nameErr ? 'err' : ''}
 				value={name}
 				maxLength={16}
-				autoComplete='nickname'
+				autoComplete='off'
 				autoCapitalize='words'
 				spellCheck={false}
 				enterKeyHint='go'
@@ -324,6 +325,8 @@ export function Home({
 					<div className='joinrow'>
 						<input
 							className='codein'
+							id='rmk-code'
+							name='room-code'
 							value={code}
 							maxLength={5}
 							placeholder={t('codePh')}
