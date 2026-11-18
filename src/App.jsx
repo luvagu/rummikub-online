@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { LoaderCircle } from 'lucide-react'
-import { hostGame, joinGame, localGame, tutorialGame, TOK } from './net.js'
-import { LangCtx, fmt, guessLang } from './i18n.js'
+import { hostGame, joinGame, localGame, tutorialGame, TOK } from './services/net.js'
+import { getIdentity } from './services/identity.js'
+import { LangCtx, fmt, guessLang } from './i18n/index.js'
 import {
 	saveSess,
 	loadSess,
@@ -10,53 +11,29 @@ import {
 	loadNames,
 	rememberName,
 	forgetName,
-} from './session.js'
-import { Toasts, Modal } from './ui.jsx'
-import { Home, Lobby } from './screens.jsx'
-import Game from './Game.jsx'
-import Rules from './Rules.jsx'
-import Tutorial from './Tutorial.jsx'
-import { useT } from './i18n.js'
-import { unlockAudio } from './notify.js'
+} from './services/session.js'
+import { Toasts } from './components/Toasts.jsx'
+import { Modal } from './components/Modal.jsx'
+import { TopLayer } from './components/TopLayer.jsx'
+import { LeaveDialog } from './components/LeaveDialog.jsx'
+import { UpdateBanner } from './components/UpdateBanner.jsx'
+import { Home } from './features/home/Home.jsx'
+import { Lobby } from './features/lobby/Lobby.jsx'
+import Game from './features/game/Game.jsx'
+import { unlockAudio } from './utils/notify.js'
+import { local, session } from './utils/store.js'
 
-function LeaveDialog({ mode, phase, onYes, onNo }) {
-	const t = useT(),
-		lobby = phase === 'lobby'
-	const msg =
-		mode === 'tutorial'
-			? 'lv.tutorial'
-			: mode === 'solo'
-				? 'lv.solo'
-				: mode === 'host'
-					? lobby
-						? 'lv.hostLobby'
-						: 'lv.hostPlay'
-					: lobby
-						? 'lv.guestLobby'
-						: 'lv.guestPlay'
-	return (
-		<Modal title={t('leaveT')} onClose={onNo}>
-			<h2>{t('leaveT')}</h2>
-			<p>{t(msg)}</p>
-			<div className='row'>
-				<button data-autofocus onClick={onNo}>
-					{t('stay')}
-				</button>
-				<button className='primary danger' onClick={onYes}>
-					{mode === 'host' ? t('endAll') : t('confirmLeave')}
-				</button>
-			</div>
-		</Modal>
-	)
-}
+// secondary screens load on first use
+const Rules = lazy(() => import('./features/rules/Rules.jsx'))
+const Tutorial = lazy(() => import('./features/tutorial/Tutorial.jsx'))
+
+const isCode = c => /^[A-Z0-9]{5}$/.test(c) // room code in an invite link (#ABCDE)
 
 export default function App() {
 	const [lang, setLangState] = useState(guessLang)
 	const setLang = l => {
 		setLangState(l)
-		try {
-			localStorage.rmkLang = l
-		} catch (e) {}
+		local.set('rmkLang', l)
 	}
 	const t = (k, p) => fmt(lang, k, p)
 	useEffect(() => {
@@ -64,10 +41,10 @@ export default function App() {
 	}, [lang])
 	useEffect(() => {
 		// browsers only allow sound after a user gesture: unlock on the first tap/click/key
-		const u = () => unlockAudio(),
-			ev = ['click', 'touchend', 'keydown']
-		ev.forEach(e => window.addEventListener(e, u, { passive: true }))
-		return () => ev.forEach(e => window.removeEventListener(e, u))
+		const ac = new AbortController()
+		for (const e of ['click', 'touchend', 'keydown'])
+			addEventListener(e, () => unlockAudio(), { passive: true, signal: ac.signal })
+		return () => ac.abort()
 	}, [])
 
 	const hash0 = useRef(location.hash.slice(1).toUpperCase())
@@ -90,22 +67,18 @@ export default function App() {
 		[rules, setRules] = useState(false),
 		[leaving, setLeaving] = useState(false)
 	const [saved, setSaved] = useState(() => loadSess(true))
-	const [name, setName] = useState(() => {
-		try {
-			return sessionStorage.rmkName || localStorage.rmkName || ''
-		} catch (e) {
-			return ''
-		}
-	})
+	const [name, setName] = useState(
+		() => session.get('rmkName') || local.get('rmkName') || '',
+	)
 	const [code, setCode] = useState(() =>
-		/^[A-Z0-9]{5}$/.test(hash0.current) ? hash0.current : '',
+		isCode(hash0.current) ? hash0.current : '',
 	)
 	const [nameErr, setNameErr] = useState(false),
 		[names, setNames] = useState(loadNames)
 	// Arrived through an invite link (and not auto-resuming that same room): show the minimal join screen
 	const [invite, setInvite] = useState(
 		() =>
-			/^[A-Z0-9]{5}$/.test(hash0.current) &&
+			isCode(hash0.current) &&
 			!(saved && saved.code === hash0.current),
 	)
 	const sess = useRef(null),
@@ -134,16 +107,18 @@ export default function App() {
 		setNameErr(false)
 		rememberName(nm)
 		setNames(loadNames())
-		const tok = o.tok || TOK,
+		// Online rooms use a key pair whose hash is the public player id (identity.js); offline games just need a random id.
+		const online = mode === 'host' || mode === 'join',
+			identP = online ? getIdentity(o.ident) : null,
+			tok = o.tok || TOK,
 			cd = mode === 'join' ? o.code || code : ''
-		try {
-			sessionStorage.rmkName = nm
-			localStorage.rmkName = nm
-		} catch (e) {}
+		session.set('rmkName', nm)
+		local.set('rmkName', nm)
 		let snap
 		if (o.resume && mode !== 'join') {
 			snap = loadSnap(mode === 'host' ? 'rmkHost' : 'rmkSolo')
-			if (!snap || (mode === 'host' && snap.code !== o.code)) {
+			// a host snapshot from before the encrypted protocol has other ids and unreachable guests: drop it
+			if (!snap || (mode === 'host' && (snap.code !== o.code || snap.proto !== 8))) {
 				forget(mode)
 				return
 			}
@@ -157,6 +132,15 @@ export default function App() {
 		setGk(k => k + 1)
 		sess.current = { mode, name: nm, code: cd, tok, lesson: o.lesson }
 		if (mode !== 'tutorial') saveSess(sess.current) // the tutorial is never resumed
+		// once the key pair exists, remember it (and the public id) with the session, so a closed browser can resume the seat
+		if (online)
+			identP
+				.then(id => {
+					if (!sess.current || sess.current.mode !== mode) return
+					sess.current = { ...sess.current, tok: id.kid, ident: id.exported }
+					saveSess(sess.current)
+				})
+				.catch(() => {}) // no WebCrypto: hostGame/joinGame report it
 		setBusy(
 			o.resume
 				? 'resume'
@@ -208,7 +192,7 @@ export default function App() {
 					: mode === 'tutorial'
 						? (nm2, c2, tk) => tutorialGame(nm2, c2, tk, t('tutBot'), o.lesson)
 						: (nm2, c2, tk) => joinGame(cd, nm2, c2, tk)
-		)(nm, cb, tok, snap || undefined)
+		)(nm, cb, online ? identP : tok, snap || undefined)
 		netRef.current = n
 		setNet(n)
 	}
@@ -226,6 +210,7 @@ export default function App() {
 			resume: true,
 			name: saved.name,
 			tok: saved.tok,
+			ident: saved.ident,
 			code: saved.code,
 		})
 
@@ -339,16 +324,20 @@ export default function App() {
 	return (
 		<LangCtx.Provider value={{ lang, setLang }}>
 			{!conn && inRoom && (
-				<div className='banner' role='status'>
+				<TopLayer className='banner' role='status'>
 					<LoaderCircle className='spin' size={16} />
 					{t('reconnecting')}
-				</div>
+				</TopLayer>
 			)}
+			<UpdateBanner hidden={!conn} />
 			{!inRoom ? (
 				<Home
 					{...{
 						name,
-						setName,
+						setName: v => {
+							setName(v)
+							setNameErr(false) // the error is about an empty name: it goes as soon as the player types
+						},
 						nameErr,
 						names,
 						code,
@@ -384,6 +373,7 @@ export default function App() {
 					net={net}
 					toast={toast}
 					reacts={reacts}
+					offline={!conn && sess.current?.mode === 'join'}
 					copy={copy}
 					share={share}
 					tut={
@@ -400,6 +390,7 @@ export default function App() {
 				s.phase === 'play' &&
 				sess.current &&
 				sess.current.mode === 'tutorial' && (
+					<Suspense fallback={null}>
 					<Tutorial
 						key={'tutorial' + gk} // must differ from Game's key: they are siblings, and equal keys make React mount Game over and over
 						s={s}
@@ -417,8 +408,13 @@ export default function App() {
 						}}
 						onFinish={doLeave}
 					/>
+					</Suspense>
 				)}
-			{rules && <Rules close={() => setRules(false)} />}
+			{rules && (
+				<Suspense fallback={null}>
+					<Rules close={() => setRules(false)} />
+				</Suspense>
+			)}
 			{leaving && (
 				<LeaveDialog
 					mode={sess.current ? sess.current.mode : 'solo'}

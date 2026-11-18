@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, useMemo, useContext } from "react";
+import {
+  useState,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useMemo,
+  useContext,
+} from "react";
 import {
   EllipsisVertical,
   BookOpen,
@@ -8,6 +15,9 @@ import {
   VibrateOff,
   Timer,
   Languages,
+  Monitor,
+  Moon,
+  Sun,
   Grid3x3,
   LogOut,
   Layers,
@@ -15,7 +25,6 @@ import {
   ArrowDownToLine,
   CopyPlus,
   Check,
-  Crown,
   Bot,
   WifiOff,
   ArrowDown01,
@@ -26,8 +35,15 @@ import {
   SmilePlus,
   Flag,
 } from "lucide-react";
-import { T, analyze, key } from "./game.js";
-import { LangCtx, useT, tr } from "./i18n.js";
+import {
+  analyze,
+  key,
+} from "../../engine/game.js";
+import {
+  LangCtx,
+  useT,
+  tr,
+} from "../../i18n/index.js";
 import {
   getPrefs,
   setPref,
@@ -44,73 +60,66 @@ import {
   drawSlide,
   sfx,
   reactPop,
-} from "./notify.js";
-import { REACTIONS, RCOOL } from "./reactions.js";
-import { Tile, Avatar, Modal, Invite } from "./ui.jsx";
-import { Seats } from "./Seats.jsx";
-
-const CMP = {
-  num: (x, y) => x.n - y.n || x.c - y.c,
-  col: (x, y) => x.c - y.c || x.n - y.n,
-};
-const orderRack = (r, m) =>
-  m
-    ? [...r].sort((a, b) => {
-        const x = T(a),
-          y = T(b);
-        return (x.j ? 1 : 0) - (y.j ? 1 : 0) || CMP[m](x, y);
-      })
-    : r; // jokers last
-const sb = () =>
-  matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-const DEAL_FLY = 560; // ms a dealt tile is in the air
-const dealGap = (np) => Math.max(50, 140 - 20 * np); // ms per tile: 100 (2 players), 80 (3), 60 (4)
-// Fly one face-down tile between two points on a fixed overlay (Web Animations API, self-removing).
-// a, b: centres; w, h: the tile's size when it lands (it starts smaller, like leaving the deck).
-const flyTile = (layer, a, b, delay, onEnd, w = 28, h = 38) => {
-  if (!layer) return;
-  const el = document.createElement("div");
-  el.className = "fly-tile";
-  el.style.width = w + "px";
-  el.style.height = h + "px";
-  el.style.left = a.x - w / 2 + "px";
-  el.style.top = a.y - h / 2 + "px";
-  layer.appendChild(el);
-  const rot = (Math.random() * 16 - 8).toFixed(1),
-    dx = b.x - a.x,
-    dy = b.y - a.y;
-  const an = el.animate(
-    [
-      { transform: "translate(0,0) rotate(-14deg) scale(.55)", opacity: 0 },
-      { opacity: 1, offset: 0.1 },
-      { transform: `translate(${dx * 0.55}px,${dy * 0.55 - 26}px) rotate(${rot}deg) scale(.95)`, opacity: 1, offset: 0.55 },
-      { transform: `translate(${dx}px,${dy}px) rotate(0deg) scale(1)`, opacity: 1, offset: 0.96 },
-      { transform: `translate(${dx}px,${dy}px) rotate(0deg) scale(1)`, opacity: 0 },
-    ],
-    { duration: DEAL_FLY, delay, easing: "cubic-bezier(.3,.6,.35,1)", fill: "both" },
-  );
-  an.onfinish = () => {
-    el.remove();
-    onEnd && onEnd();
-  };
-};
-const DND_MQ = "(hover: hover) and (pointer: fine) and (min-width: 900px)";
-const BGS = 10; // table patterns (CSS classes bg0..bg9)
-const loadBg = () => {
-  try {
-    return Math.min(BGS - 1, Math.max(0, parseInt(localStorage.rmkBg) || 0));
-  } catch (e) {
-    return 0;
-  }
-};
-const loadSort = () => {
-  try {
-    return localStorage.rmkSort || null;
-  } catch (e) {
-    return null;
-  }
-};
+} from "../../utils/notify.js";
+import {
+  REACTIONS,
+  RCOOL,
+} from "../../engine/reactions.js";
+import {
+  Tile,
+} from "../../components/Tile.jsx";
+import {
+  Avatar,
+} from "../../components/Avatar.jsx";
+import {
+  Modal,
+} from "../../components/Modal.jsx";
+import {
+  Invite,
+} from "../../components/Invite.jsx";
+import {
+  Popup,
+  hidePopup,
+} from "../../components/Popup.jsx";
+import {
+  Seats,
+} from "../../components/Seats.jsx";
+import Celebration from "./Celebration.jsx";
+import {
+  RoundSummary,
+} from "./RoundSummary.jsx";
+import {
+  EndRoundDialog,
+} from "./EndRoundDialog.jsx";
+import {
+  celebrationFor,
+} from "./celebrate.js";
+import {
+  local,
+  session,
+} from "../../utils/store.js";
+import {
+  cycleTheme,
+  useTheme,
+} from "../../utils/theme.js";
+import {
+  orderRack,
+  loadSort,
+} from "./rack.js";
+import {
+  DEAL_FLY,
+  dealGap,
+  flyTile,
+} from "./dealAnimation.js";
+import {
+  DND_MQ,
+  BGS,
+  loadBg,
+} from "./display.js";
+import {
+  prefersReducedMotion,
+  scrollBehavior,
+} from "../../utils/motion.js";
 
 export default function Game({
   s,
@@ -122,11 +131,20 @@ export default function Game({
   tut,
   openRules,
   onLeave,
+  offline = false, // a guest whose connection is down: committing actions are held back (the host's own moves are never lost)
 }) {
   const t = useT(),
     { lang, setLang } = useContext(LangCtx),
     me = s.me,
     my = s.phase === "play" && s.turn === me;
+  const hold = offline && my; // my turn, but nothing can be sent
+  // Committing messages (draw, end turn, reaction) say so when they could not be sent, instead of silently vanishing.
+  // Drafts and the timeout hint are best-effort and stay quiet.
+  const send = (m) => {
+    const ok = net.send(m);
+    if (ok === false) toast({ k: "n.notSent" });
+    return ok;
+  };
   const [d, setD] = useState(() => ({
       b: s.board,
       r: orderRack(s.rack, loadSort()),
@@ -135,8 +153,8 @@ export default function Game({
     [menu, setMenu] = useState(false),
     [sm, setSm] = useState(loadSort),
     [bg, setBg] = useState(loadBg);
+  const { theme, shown } = useTheme();
   const [pf, setPf] = useState(getPrefs),
-    [now, setNow] = useState(Date.now()),
     seatsRef = useRef(null);
   // tell the host how many tiles are in my working rack so IT decides the timeout penalty (1 vs 3 tiles)
   const draftSent = useRef({ seq: -1, n: -1 });
@@ -164,11 +182,17 @@ export default function Game({
     ptm = useRef(0);
   const flyRef = useRef(null),
     ftimers = useRef([]),
-    [dealt, setDealt] = useState(() =>
-      !reduced() && s.phase === "play" && s.players.every((p) => p.n === 14) ? 0 : null,
-    ), // tiles dealt so far while the dealer animation runs (null = not dealing)
+    [dealt, setDealt] = useState(() => (!prefersReducedMotion() && freshDeal() ? 0 : null)), // tiles dealt so far while the dealer animation runs (null = not dealing)
     [bump, setBump] = useState(0);
   const later = (fn, ms) => ftimers.current.push(setTimeout(fn, ms));
+  // A deal is animated once per round: reloading, or a resize that remounts the screen, must not replay it. The
+  // round is identified by room + round number + move counter, remembered for this tab.
+  function dealMark(st) {
+    return `${net.code}:${st.games ?? 0}:${st.seq}`;
+  }
+  function freshDeal() {
+    return s.phase === "play" && s.players.every((p) => p.n === 14) && session.get("rmkDealt") !== dealMark(s);
+  }
   const pt = (el, fallback) => {
     // centre of an element (clamped into the visible seat row if it is scrolled out)
     if (!el) return fallback;
@@ -186,10 +210,11 @@ export default function Game({
     pt(document.querySelector(".rack"), { x: window.innerWidth / 2, y: window.innerHeight - 60 });
   // Dealer: round-robin, one tile at a time from the pool to every seat; ours land in the rack slot by slot.
   const deal = (players) => {
+    session.set("rmkDealt", dealMark(s));
     const np = players.length,
       N = 14 * np,
       gap = dealGap(np);
-    if (reduced()) {
+    if (prefersReducedMotion()) {
       setDealt(null);
       dealRound(N, gap / 1000, DEAL_FLY / 1000);
       return;
@@ -197,37 +222,39 @@ export default function Game({
     setDealt(0);
     setEnter(false);
     clearTimeout(etm.current);
+    // Read phase: measure everything first. Reading geometry inside the loop below would force a layout per tile
+    // (the fly tiles it appends invalidate layout), so the write phase must not touch layout at all.
     const from = poolPt(),
-      slots = [...document.querySelectorAll(".rack .tile")];
-    for (let j = 0; j < N; j++) {
+      slots = [...document.querySelectorAll(".rack .tile")].map((el) => el.getBoundingClientRect()),
+      seatPts = players.map((p) => seatPt(p.id)); // once per player, not once per tile
+    const targets = Array.from({ length: N }, (_, j) => {
       const r = Math.floor(j / np),
         i = j % np,
-        mine = i === me,
-        sl = mine && slots[r] && slots[r].getBoundingClientRect(),
-        to = sl
-          ? {
+        sl = i === me && slots[r];
+      return sl
+        ? {
+            to: {
               x: Math.min(Math.max(sl.left + sl.width / 2, 16), window.innerWidth - 16),
               y: sl.top + sl.height / 2,
-            }
-          : seatPt(players[i].id);
-      flyTile(
-        flyRef.current,
-        from,
-        to,
-        j * gap,
-        undefined,
-        sl ? sl.width : 24,
-        sl ? sl.height : 32,
-      );
-      dealCard(j * gap + DEAL_FLY, mine);
+            },
+            w: sl.width,
+            h: sl.height,
+            mine: true,
+          }
+        : { to: seatPts[i], w: 24, h: 32, mine: i === me };
+    });
+    // Write phase: create the flying tiles and schedule the sounds / counters.
+    targets.forEach((t, j) => {
+      flyTile(flyRef.current, from, t.to, j * gap, undefined, t.w, t.h);
+      dealCard(j * gap + DEAL_FLY, t.mine);
       later(() => setDealt(j + 1), j * gap + DEAL_FLY);
-    }
+    });
     later(() => setDealt(null), N * gap + DEAL_FLY + 80);
   };
   // Someone else drew: tiles fly from the pool to their seat.
   const drawFly = (pid, n) => {
     drawSlide(n);
-    if (reduced()) return;
+    if (prefersReducedMotion()) return;
     const from = poolPt(),
       to = seatPt(pid);
     for (let k = 0; k < Math.min(n, 3); k++)
@@ -238,7 +265,7 @@ export default function Game({
   };
   useEffect(() => {
     // first render: a freshly dealt round (everyone on 14 tiles) gets the dealer animation; a rejoin mid-game does not
-    if (s.phase === "play" && s.players.every((p) => p.n === 14)) later(() => deal(s.players), 150);
+    if (freshDeal()) later(() => deal(s.players), 150);
     return () => ftimers.current.forEach(clearTimeout);
   }, []);
   useEffect(() => {
@@ -266,7 +293,7 @@ export default function Game({
       clearTimeout(etm.current);
       etm.current = setTimeout(() => setEnter(false), 500);
       if (s.phase === "play") {
-        if (!reduced()) setDealt(0);
+        if (!prefersReducedMotion()) setDealt(0);
         later(() => deal(s.players), 120);
       }
     } // deal / new round: tiles pop in
@@ -304,7 +331,7 @@ export default function Game({
       el.scrollIntoView({
         block: "nearest",
         inline: "nearest",
-        behavior: sb(),
+        behavior: scrollBehavior(),
       });
   }, [placed]);
   useEffect(() => {
@@ -316,27 +343,37 @@ export default function Game({
       el.scrollIntoView({
         block: "nearest",
         inline: "nearest",
-        behavior: sb(),
+        behavior: scrollBehavior(),
       });
   }, [fresh]);
 
   // ---- turn timer: host sends the time left; we count down locally from the moment each state arrives ----
   const dl = useMemo(() => (s.tl == null ? null : Date.now() + s.tl), [s]);
   const timed = dl != null;
+  // Only the whole-second value is React state, so Game re-renders about once a second (not 5x/s). The tick is
+  // scheduled for the moment the displayed second changes. The bar itself is a CSS animation (see .tbar i).
+  const [secsState, setSecs] = useState(() => dl == null ? null : Math.ceil(Math.max(0, dl - Date.now()) / 1000));
   useEffect(() => {
-    if (!timed) return;
-    const iv = setInterval(() => setNow(Date.now()), 200);
-    return () => clearInterval(iv);
-  }, [timed]);
-  const ms = timed ? Math.max(0, dl - now) : null,
-    secs = timed ? Math.ceil(ms / 1000) : null;
+    if (dl == null) return setSecs(null);
+    let id;
+    const tickTo = () => {
+      const left = Math.max(0, dl - Date.now());
+      setSecs(Math.ceil(left / 1000));
+      if (left > 0) id = setTimeout(tickTo, left % 1000 || 1000);
+    };
+    tickTo();
+    return () => clearTimeout(id);
+  }, [dl]);
+  const secs = timed ? secsState : null;
   const tot = s.opts.timer || 60,
     redAt = Math.min(10, Math.max(5, Math.ceil(tot * 0.17))), // warning threshold scales with the turn length
     amberAt = Math.ceil(tot / 3);
   const hot = timed && secs <= redAt,
     cls = !timed ? "" : secs > amberAt ? "ok" : secs > redAt ? "amber" : "red";
   const ev = useRef({ seq: -1, warn: 0, sent: 0 });
-  useEffect(() => {
+  // An Effect Event always sees the latest my/redAt/net, while the effect below re-runs only when the countdown
+  // second or the turn changes (the explicit intent that the old, incomplete dependency list only implied).
+  const onCountdown = useEffectEvent(() => {
     if (!timed) return;
     if (ev.current.seq !== s.seq) ev.current = { seq: s.seq, warn: 0, sent: 0 };
     const e = ev.current;
@@ -349,6 +386,9 @@ export default function Game({
       e.sent = 1;
       net.send({ t: "timeout" });
     }
+  });
+  useEffect(() => {
+    onCountdown();
   }, [secs, s.seq]);
 
   useEffect(() => {
@@ -359,7 +399,7 @@ export default function Game({
       el.scrollIntoView({
         inline: "nearest",
         block: "nearest",
-        behavior: sb(),
+        behavior: scrollBehavior(),
       });
   }, [s.turn, s.phase]);
 
@@ -397,19 +437,6 @@ export default function Game({
       document.title = base;
     };
   }, [my, s.seq, secs]);
-  useEffect(() => {
-    if (!menu) return;
-    const h = (e) => {
-        if (!e.target.closest(".menuwrap")) setMenu(false);
-      },
-      k = (e) => e.key === "Escape" && setMenu(false);
-    document.addEventListener("pointerdown", h);
-    document.addEventListener("keydown", k);
-    return () => {
-      document.removeEventListener("pointerdown", h);
-      document.removeEventListener("keydown", k);
-    };
-  }, [menu]);
   useEffect(() => {
     tut && tut(sel, d);
   }, [tut, sel, d]); // tutorial: tell the coach what the player has selected / placed so far
@@ -460,23 +487,10 @@ export default function Game({
       Object.values(to).forEach(clearTimeout);
     };
   }, [reacts]);
-  useEffect(() => {
-    if (!pk) return;
-    const h = (e) => {
-        if (!e.target.closest(".rwrap")) setPk(false);
-      },
-      k = (e) => e.key === "Escape" && setPk(false);
-    document.addEventListener("pointerdown", h);
-    document.addEventListener("keydown", k);
-    return () => {
-      document.removeEventListener("pointerdown", h);
-      document.removeEventListener("keydown", k);
-    };
-  }, [pk]);
   const sendR = (k) => {
-    if (cool) return;
-    net.send({ t: "react", k });
-    setPk(false);
+    if (cool || offline) return;
+    if (send({ t: "react", k }) === false) return;
+    hidePopup("react-picker");
     setCool(true);
     setTimeout(() => setCool(false), RCOOL);
   };
@@ -503,11 +517,13 @@ export default function Game({
   const fromRack = (r, ids) => r.filter((i) => !ids.includes(i));
   const newSet = (ids = sel) => {
     if (my) sfx("newSet");
+    setSay(t("a.new", { n: ids.length }));
     setD({ b: norm([...strip(d.b, ids), ids]), r: fromRack(d.r, ids) });
     setSel([]);
   };
   const addTo = (k, ids = sel) => {
     if (my) sfx("addTo");
+    setSay(t("a.set", { n: ids.length, k: k + 1 }));
     const b = strip(d.b, ids);
     b[k] = [...b[k], ...ids];
     setD({ b: norm(b), r: fromRack(d.r, ids) });
@@ -516,6 +532,7 @@ export default function Game({
   const back = (ids = sel) => {
     const bk = ids.filter((i) => s.rack.includes(i) && !d.r.includes(i));
     if (!bk.length) return setSel([]);
+    setSay(t("a.rack", { n: bk.length }));
     setD({
       b: norm(d.b.map((x) => x.filter((i) => !bk.includes(i)))),
       r: orderRack([...d.r, ...bk], sm),
@@ -529,86 +546,181 @@ export default function Game({
   const setSort = (m) => {
     const v = sm === m ? null : m;
     setSm(v); // tap the active option again to go back to manual order
-    try {
-      v ? (localStorage.rmkSort = v) : localStorage.removeItem("rmkSort");
-    } catch (e) {}
+    if (v) local.set("rmkSort", v);
+    else local.remove("rmkSort");
     setD((x) => ({ ...x, r: orderRack(x.r, v) }));
   };
 
-  // ---- drag & drop (mouse on large screens only; tap-to-select stays available everywhere) ----
+  // ---- drag & drop with Pointer Events (mouse/pen on large screens; tap-to-select works everywhere) ----
+  // Tiles carry no handlers (so React.memo can skip them): everything is delegated from the game root.
   const [canDnd, setCanDnd] = useState(() => matchMedia(DND_MQ).matches),
-    [over, setOver] = useState(null),
-    [gh, setGh] = useState([]),
-    drag = useRef(null);
+    [over, setOver] = useState(null), // zone under the pointer while dragging: "n" (new set), "r" (rack) or a set index
+    [gh, setGh] = useState([]), // tiles being dragged (dimmed in place)
+    [say, setSay] = useState(""), // polite announcement of the last move, for screen readers
+    actions = useRef(),
+    suppressClick = useRef(false),
+    abortDrag = useRef(null);
+  // Round-winner celebration (confetti + highlighted name) between "the round ended" and the summary dialog. It is decided
+  // while rendering, so the summary never shows for a frame first. A mount that is already "over" (reload, late join) has
+  // prevPhase === s.phase and never celebrates; neither does a repeat of the same state.
+  const [prevPhase, setPrevPhase] = useState(s.phase),
+    [celebrate, setCelebrate] = useState(null);
+  if (prevPhase !== s.phase) {
+    setPrevPhase(s.phase);
+    setCelebrate(celebrationFor(prevPhase, s)); // also clears it when the next round starts while a slow client still celebrates
+  }
+  useEffect(() => {
+    if (!celebrate) return;
+    // heard even if the player skips or reduces motion
+    setSay(
+      celebrate.mine
+        ? `${t("youWin")} ${t(celebrate.blocked ? "celebPool" : "celebRummikub")}`
+        : t(celebrate.blocked ? "winsPool" : "wins", { name: celebrate.name }),
+    );
+    sfx("win"); // silent when Turn sound is off
+    const el = seatsRef.current?.querySelector('[data-pid="' + celebrate.id + '"]');
+    el?.scrollIntoView?.({ block: "nearest", inline: "center", behavior: scrollBehavior() }); // the seat row scrolls sideways on busy tables
+  }, [celebrate]);
   useEffect(() => {
     const m = matchMedia(DND_MQ),
       f = () => setCanDnd(m.matches);
     m.addEventListener("change", f);
-    return () => m.removeEventListener("change", f);
+    return () => {
+      m.removeEventListener("change", f);
+      abortDrag.current?.();
+    };
   }, []);
   const dnd = my && canDnd;
-  // Off-turn we still hand Tile an (inert) object on drag-capable devices: Tile picks div vs button from it, and
-  // flipping the element type on every turn change would remount every tile and replay its placed/fresh animation.
-  const tdrag = (id) =>
-    !dnd
-      ? canDnd
-        ? { draggable: false }
-        : null
-      : {
-          draggable: true,
-          onDragStart: (e) => {
-            const ids = sel.includes(id) ? sel : [id];
-            drag.current = ids;
-            setGh(ids);
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("text/plain", ids.join(","));
-          },
-          onDragEnd: () => {
-            drag.current = null;
-            setGh([]);
-            setOver(null);
-          },
-        };
-  const dz = (key, fn) =>
-    dnd
-      ? {
-          onDragOver: (e) => {
-            if (!drag.current) return;
-            e.preventDefault();
-            e.stopPropagation();
-            if (over !== key) setOver(key);
-          },
-          onDragLeave: (e) => {
-            if (!e.currentTarget.contains(e.relatedTarget) && over === key)
-              setOver(null);
-          },
-          onDrop: (e) => {
-            if (!drag.current) return;
-            e.preventDefault();
-            e.stopPropagation();
-            const ids = drag.current;
-            drag.current = null;
-            setGh([]);
-            setOver(null);
-            fn(ids);
-          },
+  actions.current = { newSet, addTo, back }; // the latest closures: the drop outlives the render that started the drag
+  const onTilePointerDown = (e) => {
+    if (!dnd || e.button !== 0 || e.pointerType === "touch") return;
+    const tile = e.target.closest(".tile");
+    if (!tile) return;
+    const id = +tile.dataset.id,
+      pid = e.pointerId, // follow exactly one pointer: a second one can neither start nor end this drag
+      x0 = e.clientX,
+      y0 = e.clientY,
+      ac = new AbortController(),
+      sig = { signal: ac.signal };
+    let drag = null,
+      raf = 0,
+      last = { x: x0, y: y0 };
+    const zoneAt = (x, y) => document.elementFromPoint(x, y)?.closest("[data-zone]")?.dataset.zone ?? null,
+      track = () => {
+        drag.pv.style.translate = `${last.x - drag.w / 2}px ${last.y - drag.h / 2}px`;
+        setOver(zoneAt(last.x, last.y));
+      },
+      // auto-scroll the rack/board while the pointer is near its top or bottom edge
+      autoscroll = () => {
+        const sc = document.elementFromPoint(last.x, last.y)?.closest(".board, .rack");
+        if (sc && sc.scrollHeight > sc.clientHeight) {
+          const r = sc.getBoundingClientRect(),
+            edge = 36,
+            v = last.y < r.top + edge ? last.y - (r.top + edge) : last.y > r.bottom - edge ? last.y - (r.bottom - edge) : 0;
+          if (v) {
+            sc.scrollTop += Math.sign(v) * Math.min(18, Math.abs(v) / 2 + 2);
+            track();
+          }
         }
-      : {};
+        raf = requestAnimationFrame(autoscroll);
+      },
+      end = (drop) => {
+        ac.abort();
+        cancelAnimationFrame(raf);
+        abortDrag.current = null;
+        if (!drag) return; // never moved far enough: it was a plain click, which proceeds normally
+        const z = drop ? zoneAt(last.x, last.y) : null;
+        drag.pv.remove();
+        document.documentElement.classList.remove("dragging");
+        setGh([]);
+        setOver(null);
+        suppressClick.current = true; // the click that follows a drag must not also toggle a tile
+        setTimeout(() => (suppressClick.current = false), 0);
+        const a = actions.current;
+        if (z === "n") a.newSet(drag.ids);
+        else if (z === "r") a.back(drag.ids);
+        else if (z != null) a.addTo(+z, drag.ids);
+      };
+    window.addEventListener(
+      "pointermove",
+      (ev) => {
+        if (ev.pointerId !== pid) return;
+        last = { x: ev.clientX, y: ev.clientY };
+        if (!drag) {
+          if (Math.hypot(last.x - x0, last.y - y0) < 5) return;
+          const r = tile.getBoundingClientRect(),
+            pv = tile.cloneNode(true),
+            ids = sel.includes(id) ? sel : [id];
+          pv.className = "tile drag-preview";
+          for (const a of ["data-id", "aria-label", "aria-pressed"]) pv.removeAttribute(a);
+          pv.setAttribute("aria-hidden", "true");
+          pv.tabIndex = -1;
+          pv.style.setProperty("--tw", r.width + "px"); // the preview lives outside the board, which may override --tw
+          pv.style.width = r.width + "px";
+          if (ids.length > 1) pv.dataset.count = ids.length;
+          document.body.append(pv);
+          document.documentElement.classList.add("dragging");
+          drag = { ids, pv, w: r.width, h: r.height };
+          setGh(ids);
+          tile.setPointerCapture?.(pid); // keep receiving moves/up even if the pointer leaves the window
+          raf = requestAnimationFrame(autoscroll);
+        }
+        track();
+      },
+      sig,
+    );
+    window.addEventListener("pointerup", (ev) => ev.pointerId === pid && end(true), sig);
+    window.addEventListener("pointercancel", (ev) => ev.pointerId === pid && end(false), sig);
+    window.addEventListener("keydown", (ev) => ev.key === "Escape" && end(false), sig); // Escape cancels the drag
+    abortDrag.current = () => end(false);
+  };
+  const onTileClick = (e) => {
+    const tile = e.target.closest(".tile");
+    if (tile && !suppressClick.current) toggle(+tile.dataset.id);
+  };
 
-  const info = d.b.map(analyze),
-    oldK = new Set(s.board.map(key));
-  const pts = d.b.reduce(
-    (a, x, j) => a + (oldK.has(key(x)) ? 0 : info[j].val),
-    0,
-  );
+  // ---- keyboard: each tile group (rack, table) is a single tab stop; arrow keys move between its tiles ----
+  const [rk, setRk] = useState(null),
+    [bk, setBk] = useState(null);
+  const onTileFocus = (e) => {
+    const tile = e.target.closest?.(".tile");
+    if (tile) (tile.closest(".rack") ? setRk : setBk)(+tile.dataset.id);
+  };
+  const onTileKeys = (e) => {
+    const tile = e.target.closest?.(".tile");
+    if (!tile) return;
+    const list = [...tile.closest(".rack, .board").querySelectorAll(".tile")],
+      i = list.indexOf(tile),
+      n =
+        e.key === "ArrowRight" || e.key === "ArrowDown" ? i + 1
+        : e.key === "ArrowLeft" || e.key === "ArrowUp" ? i - 1
+        : e.key === "Home" ? 0
+        : e.key === "End" ? list.length - 1
+        : -1;
+    if (n < 0) return;
+    e.preventDefault();
+    list[Math.min(list.length - 1, Math.max(0, n))].focus();
+  };
+
+  // Only recomputed when the working table (d.b) or the server's table (s.board) changes, not on every tick/render.
+  const { info, pts, boardEdited } = useMemo(() => {
+    const info = d.b.map(analyze),
+      oldK = new Set(s.board.map(key));
+    return {
+      info,
+      pts: d.b.reduce((a, x, j) => a + (oldK.has(key(x)) ? 0 : info[j].val), 0),
+      boardEdited: JSON.stringify(d.b) !== JSON.stringify(s.board),
+    };
+  }, [d.b, s.board]);
+  const boardOrder = useMemo(() => info.flatMap((x) => x.order), [info]),
+    boardRove = boardOrder.includes(bk) ? bk : boardOrder[0], // the one tabbable tile of each group
+    rackRove = d.r.includes(rk) ? rk : d.r[0];
   const allOk = info.every((x) => x.ok),
     cur = s.players[s.turn] || s.players[0] || {},
     showAdd = my && sel.length > 0;
   const melded = s.players[me] && s.players[me].melded;
   // why End is unavailable: same checks, same order and same messages as the host's act() so the player never hits a silent disabled button
-  const edited =
-    d.r.length !== s.rack.length ||
-    JSON.stringify(d.b) !== JSON.stringify(s.board);
+  const edited = d.r.length !== s.rack.length || boardEdited;
   const why = !my
     ? null
     : d.r.length === s.rack.length
@@ -623,6 +735,7 @@ export default function Game({
   const canBack = sel.some((i) => s.rack.includes(i) && !d.r.includes(i)),
     [cd, setCd] = useState(false);
   const doDraw = () => {
+    if (offline) return;
     if (edited && !cd) {
       sfx("drawAsk");
       setCd(true);
@@ -631,21 +744,25 @@ export default function Game({
     } // unsaved edits would be thrown away: ask once
     setCd(false);
     sfx("draw");
-    net.send({ t: "draw" });
+    send({ t: "draw" });
   };
-  const cx = !!(s.result && s.result.cancelled),
-    hostRoom = me === 0 && !!net.endRoom,
+  const hostRoom = me === 0 && !!net.endRoom,
     inRoom =
       !!net.endRoom ||
       (!!net.code && net.code !== "SOLO" && net.code !== "TUTORIAL"),
-    [endAsk, setEndAsk] = useState(false); // cx: the host ended the round early (no winner, no score change)
-  const ranked = s.result
-    ? [...s.players].sort((a, b) => s.scores[b.id] - s.scores[a.id])
-    : [];
+    [endAsk, setEndAsk] = useState(false); // confirm ending the round early (host only)
 
   return (
-    <div className={"game" + (dnd ? " dnd" : "")}>
+    <div
+      className={"game" + (dnd ? " dnd" : "")}
+      onPointerDown={onTilePointerDown}
+      onClick={onTileClick}
+      onFocus={onTileFocus}
+      onKeyDown={onTileKeys}
+    >
+      <div className="sr" role="status">{say}</div>
       <div className="fly-layer" ref={flyRef} aria-hidden="true" />
+      {celebrate && <Celebration c={celebrate} onDone={() => setCelebrate(null)} />}
       {Object.entries(bub).map(([id, b]) => {
         const r = REACTIONS.find((x) => x.k === b.k);
         return (
@@ -680,7 +797,7 @@ export default function Game({
           .join(". ")}
       </div>
       <header className="top">
-        <div className="seats" ref={seatsRef}>
+        <div className="seats" ref={seatsRef} data-many={s.players.length > 2 || undefined}>
           {s.players.map((p, i) => (
             <div
               key={p.id}
@@ -689,7 +806,8 @@ export default function Game({
                 "seat" +
                 (i === s.turn && s.phase === "play" ? " act" : "") +
                 (p.on === false ? " off" : "") +
-                (bump === p.id ? " bump" : "")
+                (bump === p.id ? " bump" : "") +
+                (celebrate?.id === p.id ? " win" : "")
               }
             >
               <Avatar
@@ -712,7 +830,7 @@ export default function Game({
                     w: s.wins[p.id],
                   })}
                 >
-                  {s.scores[p.id]} pts
+                  {t("pts", { n: s.scores[p.id] })}
                   <span className="wn">
                     {" "}· <Trophy size={11} />
                     {s.wins[p.id]}
@@ -739,45 +857,46 @@ export default function Game({
           <button
             className="icon"
             aria-label={t("menu")}
+            aria-haspopup="menu"
             aria-expanded={menu}
-            onClick={() => setMenu((v) => !v)}
+            command="toggle-popover"
+            commandfor="game-menu"
           >
             <EllipsisVertical size={20} />
           </button>
-          {menu && (
-            <div className="menu" role="menu">
+          <Popup id="game-menu" className="menu" label={t("menu")} onOpenChange={setMenu}>
               <button
                 role="menuitem"
                 onClick={() => {
-                  setMenu(false);
+                  hidePopup("game-menu");
                   openRules();
                 }}
               >
                 <BookOpen size={18} />
                 {t("rules")}
               </button>
-              <button role="menuitem" onClick={() => flip("sound")}>
+              <button role="menuitemcheckbox" aria-checked={pf.sound} onClick={() => flip("sound")}>
                 {pf.sound ? <Bell size={18} /> : <BellOff size={18} />}
                 {t("snd")}
-                <span className="sw">{pf.sound ? "ON" : "OFF"}</span>
+                <span className="sw">{pf.sound ? t("sw.on") : t("sw.off")}</span>
               </button>
               {canVibrate() && (
-                <button role="menuitem" onClick={() => flip("vibe")}>
+                <button role="menuitemcheckbox" aria-checked={pf.vibe} onClick={() => flip("vibe")}>
                   {pf.vibe ? <Vibrate size={18} /> : <VibrateOff size={18} />}
                   {t("vib")}
-                  <span className="sw">{pf.vibe ? "ON" : "OFF"}</span>
+                  <span className="sw">{pf.vibe ? t("sw.on") : t("sw.off")}</span>
                 </button>
               )}
-              <button role="menuitem" onClick={() => flip("reacts")}>
+              <button role="menuitemcheckbox" aria-checked={pf.reacts} onClick={() => flip("reacts")}>
                 <Smile size={18} />
                 {t("reactsT")}
-                <span className="sw">{pf.reacts ? "ON" : "OFF"}</span>
+                <span className="sw">{pf.reacts ? t("sw.on") : t("sw.off")}</span>
               </button>
               {s.opts.timer > 0 && (
-                <button role="menuitem" onClick={() => flip("ticks")}>
+                <button role="menuitemcheckbox" aria-checked={pf.ticks} onClick={() => flip("ticks")}>
                   <Timer size={18} />
                   {t("ticks")}
-                  <span className="sw">{pf.ticks ? "ON" : "OFF"}</span>
+                  <span className="sw">{pf.ticks ? t("sw.on") : t("sw.off")}</span>
                 </button>
               )}
               <button
@@ -786,9 +905,7 @@ export default function Game({
                   const v = (bg + 1) % BGS;
                   sfx("click");
                   setBg(v);
-                  try {
-                    localStorage.rmkBg = v;
-                  } catch (e) {}
+                  local.set("rmkBg", v);
                 }}
               >
                 <Grid3x3 size={18} />
@@ -803,12 +920,22 @@ export default function Game({
                 {t("lang")}
                 <span className="sw">{lang === "en" ? "EN" : "ES"}</span>
               </button>
+              {/* three explicit states: this menu is a settings surface (System shows what it currently resolves to) */}
+              <button role="menuitem" onClick={cycleTheme}>
+                {theme === "system" ? <Monitor size={18} /> : theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
+                {t("theme")}
+                <span className="sw">
+                  {theme === "system"
+                    ? `${t("themeSys")} (${t(shown === "dark" ? "themeDark" : "themeLight")})`
+                    : t(theme === "dark" ? "themeDark" : "themeLight")}
+                </span>
+              </button>
               <hr />
               {hostRoom && s.phase === "play" && (
                 <button
                   role="menuitem"
                   onClick={() => {
-                    setMenu(false);
+                    hidePopup("game-menu");
                     setEndAsk(true);
                   }}
                 >
@@ -819,15 +946,14 @@ export default function Game({
               <button
                 role="menuitem"
                 onClick={() => {
-                  setMenu(false);
+                  hidePopup("game-menu");
                   onLeave();
                 }}
               >
                 <LogOut size={18} />
                 {t("leave")}
               </button>
-            </div>
-          )}
+          </Popup>
         </div>
       </header>
       {timed && (
@@ -837,9 +963,10 @@ export default function Game({
           aria-valuemin={0}
           aria-valuemax={tot}
           aria-valuenow={secs}
-          aria-label="Timer"
+          aria-valuetext={t("secsLeft", { n: secs })}
+          aria-label={t("timer")}
         >
-          <i style={{ width: ms / (tot * 10) + "%" }} />
+          <i key={dl} style={{ "--p0": s.tl / (tot * 1000), "--dur": s.tl + "ms" }} />
           {hot && (
             <b className={"tnum" + (my ? " mine" : "")} aria-hidden="true">
               {secs}
@@ -857,7 +984,7 @@ export default function Game({
             (over === "n" ? " dropping" : "") +
             (showAdd ? " adding" : "")
           }
-          {...dz("n", newSet)}
+          data-zone="n"
         >
           {d.b.map((b, k) => (
             <div
@@ -865,9 +992,12 @@ export default function Game({
               className={
                 "set" +
                 (info[k].ok ? "" : " bad") +
-                (over === k ? " dropping" : "")
+                (over === String(k) ? " dropping" : "")
               }
-              {...dz(k, (ids) => addTo(k, ids))}
+              role="group"
+              aria-label={t("setN", { k: k + 1 }) + (info[k].ok ? "" : " " + t("setBad"))}
+              aria-invalid={info[k].ok ? undefined : true}
+              data-zone={k}
             >
               {info[k].order.map((id, j) => (
                 <Tile
@@ -878,8 +1008,7 @@ export default function Game({
                   placed={placed.includes(id)}
                   enter={enter}
                   ghost={gh.includes(id)}
-                  dnd={tdrag(id)}
-                  onClick={() => toggle(id)}
+                  rove={id === boardRove}
                 />
               ))}
               {showAdd && (
@@ -921,9 +1050,9 @@ export default function Game({
               <i style={{ width: Math.min(100, (pts / 30) * 100) + "%" }} />
             </span>
           )}
-          {my && edited && why ? (
+          {hold || (my && edited && why) ? (
             <span id="why" className="log why" aria-live="polite">
-              {tr(t, why)}
+              {tr(t, hold ? { k: "waitConn" } : why)}
             </span>
           ) : (
             <span className="log" aria-live="polite">
@@ -934,6 +1063,7 @@ export default function Game({
         {my && (
           <>
             <button
+              aria-label={t("toRack")}
               disabled={!canBack}
               onClick={() => {
                 sfx("toRack");
@@ -944,6 +1074,7 @@ export default function Game({
               <span className="lbl">{t("toRack")}</span>
             </button>
             <button
+              aria-label={t("undo")}
               disabled={!edited}
               data-tut="undo"
               onClick={() => {
@@ -962,6 +1093,8 @@ export default function Game({
               }
               data-tut="draw"
               aria-label={cd ? t("drawConfirm") : undefined}
+              disabled={hold}
+              aria-describedby={hold ? "why" : undefined}
               onClick={doDraw}
             >
               <CopyPlus size={18} />
@@ -981,12 +1114,12 @@ export default function Game({
                 className="primary"
                 data-tut="end"
                 aria-label={t("end")}
-                disabled={!!why}
-                aria-describedby={edited && why ? "why" : undefined}
-                title={why ? tr(t, why) : undefined}
+                disabled={!!why || hold}
+                aria-describedby={hold || (edited && why) ? "why" : undefined}
+                title={hold ? t("waitConn") : why ? tr(t, why) : undefined}
                 onClick={() => {
                   sfx("end");
-                  net.send({ t: "end", board: d.b, rack: d.r });
+                  send({ t: "end", board: d.b, rack: d.r });
                 }}
               >
                 <Check size={18} />
@@ -1017,17 +1150,17 @@ export default function Game({
           <div className="rwrap">
             <button
               aria-label={t("react")}
-              title={t("react")}
+              title={offline ? t("waitConn") : t("react")}
+              disabled={offline}
+              aria-haspopup="menu"
               aria-expanded={pk}
-              onClick={() => {
-                sfx("click");
-                setPk((v) => !v);
-              }}
+              command="toggle-popover"
+              commandfor="react-picker"
+              onClick={() => sfx("click")}
             >
               <SmilePlus size={18} />
             </button>
-            {pk && (
-              <div className="rpick" role="menu">
+            <Popup id="react-picker" className="rpick" label={t("react")} onOpenChange={setPk}>
                 {REACTIONS.map((r) => (
                   <button
                     key={r.k}
@@ -1039,8 +1172,7 @@ export default function Game({
                     <small>{t("r." + r.k)}</small>
                   </button>
                 ))}
-              </div>
-            )}
+            </Popup>
           </div>
           <div className="seg">
             <button
@@ -1071,7 +1203,7 @@ export default function Game({
           className={
             "rack" + (over === "r" ? " dropping" : "")
           }
-          {...dz("r", back)}
+          data-zone="r"
         >
           {d.r.map((id, ix) => {
             const hid =
@@ -1086,116 +1218,23 @@ export default function Game({
               fresh={fresh.includes(id)}
               enter={dealt != null ? !hid : enter}
               ghost={gh.includes(id)}
-              dnd={tdrag(id)}
-              onClick={() => toggle(id)}
+              rove={id === rackRove}
             />
             );
           })}
         </div>
       </div>
       {endAsk && s.phase === "play" && (
-        <Modal title={t("endRound")} onClose={() => setEndAsk(false)}>
-          <h2>{t("endRound")}</h2>
-          <p>{t("endRoundQ")}</p>
-          <div className="row">
-            <button data-autofocus onClick={() => setEndAsk(false)}>
-              {t("stay")}
-            </button>
-            <button
-              className="primary danger"
-              onClick={() => {
-                setEndAsk(false);
-                net.send({ t: "forfeit" });
-              }}
-            >
-              {t("endRoundYes")}
-            </button>
-          </div>
-        </Modal>
+        <EndRoundDialog
+          onClose={() => setEndAsk(false)}
+          onConfirm={() => {
+            setEndAsk(false);
+            net.send({ t: "forfeit" });
+          }}
+        />
       )}
-      {s.phase === "over" && (
-        <Modal
-          felt={inRoom}
-          title={
-            cx
-              ? t("roundEnded")
-              : t(s.result.blocked ? "winsPool" : "wins", {
-                  name: s.players[s.result.winner]?.name || "",
-                })
-          }
-        >
-          <div className="center">
-            <Trophy size={40} className="gold" />
-            <h2>
-              {cx
-                ? t("roundEnded")
-                : t(s.result.blocked ? "winsPool" : "wins", {
-                    name: s.players[s.result.winner]?.name || "",
-                  })}
-            </h2>
-            {cx && <p>{t("roundEndedD")}</p>}
-            <p className="sub">{t("roundN", { n: s.games })}</p>
-            <ul className="res">
-              {ranked.map((p, rank) => {
-                const v = cx ? 0 : s.result.delta?.[p.id] || 0,
-                  won = !cx && s.players[s.result.winner]?.id === p.id;
-                return (
-                  <li key={p.id}>
-                    <span className="rk">{rank + 1}</span>
-                    <b>
-                      {p.name}
-                      {won && <Crown size={14} aria-label={t("roundWinner")} />}
-                    </b>
-                    {!cx && (
-                      <span className={v > 0 ? "pos" : "neg"}>
-                        {v > 0 ? "+" : ""}
-                        {v}
-                      </span>
-                    )}
-                    <span className="meta">
-                      <span className="tot">
-                        {t("total")} <b>{s.scores[p.id]}</b>
-                      </span>
-                      <span>
-                        <Trophy size={12} /> {s.wins[p.id]} {t("winsLbl")}
-                      </span>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-            {inRoom && (
-              <>
-                <p className="sub">{t("room")}</p>
-                {hostRoom && s.players.length < 4 && (
-                  <Invite net={net} copy={copy} share={share} />
-                )}
-                <Seats s={s} net={net} host={hostRoom} />
-              </>
-            )}
-            <div className="endact">
-              {me === 0 ? (
-                <button
-                  className="primary big"
-                  data-autofocus
-                  disabled={s.players.length < 2}
-                  onClick={() => net.send({ t: "start" })}
-                >
-                  {t("next")}
-                </button>
-              ) : (
-                <p>{t("waitNext")}</p>
-              )}
-              {me === 0 && s.players.length < 2 && (
-                <p className="sub">{t("need2")}</p>
-              )}
-              <button className="link" onClick={onLeave}>
-                <LogOut size={16} />
-                {t("leave")}
-              </button>
-            </div>
-          </div>
-        </Modal>
+      {s.phase === "over" && !celebrate && (
+        <RoundSummary s={s} net={net} copy={copy} share={share} inRoom={inRoom} hostRoom={hostRoom} onLeave={onLeave} />
       )}
     </div>
   );

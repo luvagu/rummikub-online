@@ -1,0 +1,96 @@
+/* Design tokens. The --tw (tile width) ladder keeps the original cascade order: later rules win. */
+:root {
+	--felt: #1b5e20;
+	--felt2: #2e7d32;
+	--amber: #ffb300;
+	--amber-hi: #ffc233;
+	--amber-edge: #e69f00;
+	--amber-deep: #b07800;
+	--ink: #2a1d00;
+	--felt-deep: #12361a;
+	--felt-edge: #14471a;
+	--sky: #4fc3f7;
+	--sky-deep: #01579b;
+	--paper: #fffdf6;
+	--paper-2: #f1e7c4;
+	--paper-edge: #d6c690;
+	--tile-edge: #b9a77a;
+	--tw: 40px;
+	/* ---- colour scheme ----
+	   The table, rack, tiles, menus and toasts are game objects: they look the same in both schemes. What follows the scheme
+	   is the "chrome" that sits on top: dialog cards, text fields, the tutorial coach and native controls.
+	   The first value of every light-dark() is exactly what the app has always used, so the light scheme is unchanged;
+	   the second reuses the felt palette that the lobby and round-end dialogs already have. */
+	--card-bg: light-dark(#fbfaf3, #1f5f24);
+	--card-bg-clear: light-dark(#fbfaf300, #1f5f2400);
+	--card-ink: light-dark(#1d2b1e, #fff);
+	--card-sub-ink: light-dark(#4a5b4b, #ffffffcc);
+	--card-rule: light-dark(#0000001f, #ffffff30);
+	--card-btn-bg: light-dark(var(--felt), #0000005c);
+	--card-btn-edge: light-dark(var(--felt-edge), #ffffffb3);
+	--card-btn-hover: light-dark(var(--felt2), #00000080);
+	--card-btn-active: light-dark(var(--felt-edge), #000000a6);
+	--card-link: light-dark(var(--felt), #fff);
+	--card-link-hover: light-dark(#0d3a12, #fff);
+	--card-focus: light-dark(var(--felt), var(--amber));
+	--card-chip-bg: light-dark(var(--felt), #00000066);
+	--card-chip-edge: light-dark(var(--felt-edge), #ffffffb3);
+	--card-chip-btn: light-dark(var(--felt2), #ffffff2e);
+	--card-chip-btn-edge: light-dark(#4a9a4e, #ffffffb3);
+	--card-chip-btn-hover: light-dark(#3d8b40, #ffffff47);
+	--card-opt-bg: light-dark(#fff, #00000040);
+	--card-opt-edge: light-dark(#d5e0d3, #ffffff80);
+	--card-opt-hover: light-dark(#eaf4e6, #00000066);
+	--card-opt-hover-edge: light-dark(var(--felt), var(--amber));
+	--card-opt-active: light-dark(#dcecd6, #00000080);
+	--card-opt-sel: light-dark(#fff7de, color-mix(in srgb, var(--amber) 22%, transparent));
+	--card-opt-sel-hover: light-dark(#ffefbd, color-mix(in srgb, var(--amber) 32%, transparent));
+	--card-switch-off: light-dark(#8a948a, #0000005c);
+	--card-switch-ring: light-dark(#5b665c, #ffffffb3);
+	--card-switch-on: light-dark(var(--felt), var(--amber));
+	--card-row: light-dark(#0000000a, #00000040);
+	--card-pos: light-dark(#1b7a24, #9be7a0);
+	--card-neg: light-dark(#c62828, #ffb3ab);
+	--field-bg: light-dark(#fff, #0d2a12);
+	--field-ink: light-dark(#1b1b1b, #f1f5ef);
+	--field-placeholder: light-dark(#757575, #9db3a0);
+	--coach-bg: light-dark(var(--paper), #14301a);
+	--coach-ink: light-dark(#222, #f1f5ef);
+	--xbtn-bg: light-dark(#0000000f, #00000059);
+	--xbtn-ink: light-dark(#333, #fff);
+	--font: 'Inter Variable', system-ui, -apple-system, sans-serif;
+	--disp: 'Outfit Variable', 'Inter Variable', system-ui, sans-serif;
+	color-scheme: light dark; /* the page supports both; the <meta name="color-scheme"> below can pin one (src/utils/theme.js) */
+	accent-color: var(--amber);
+	&:has(> head > meta[name='color-scheme'][content='dark']) {
+		color-scheme: dark;
+	}
+	&:has(> head > meta[name='color-scheme'][content='light']) {
+		color-scheme: light;
+	}
+}
+@media (width <= 520px) {
+	:root {
+		--tw: 31px;
+	}
+}
+@media (height <= 480px) and (orientation: landscape) {
+	:root {
+		--tw: 28px;
+	}
+}
+@media (width >= 1200px) {
+	:root {
+		--tw: 48px;
+	}
+}
+@media (width >= 1800px) {
+	:root {
+		--tw: 58px;
+	}
+}
+@media (width <= 380px) {
+	:root {
+		--tw: 29px;
+	}
+}

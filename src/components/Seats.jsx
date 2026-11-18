@@ -1,59 +1,47 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useId } from 'react'
 import { Bot, ChevronDown, Check, Crown, WifiOff, X, Plus } from 'lucide-react'
-import { useT } from './i18n.js'
-import { Avatar } from './ui.jsx'
+import { useT } from '../i18n/index.js'
+import { Avatar } from './Avatar.jsx'
+import { Popup, hidePopup } from './Popup.jsx'
 
 export function LevelMenu({ value, onChange, label, className = '' }) {
 	const t = useT(),
-		[open, setOpen] = useState(false),
-		ref = useRef(null)
-	useEffect(() => {
-		if (!open) return
-		const down = e =>
-				ref.current && !ref.current.contains(e.target) && setOpen(false),
-			key = e => e.key === 'Escape' && setOpen(false)
-		document.addEventListener('pointerdown', down)
-		document.addEventListener('keydown', key)
-		return () => {
-			document.removeEventListener('pointerdown', down)
-			document.removeEventListener('keydown', key)
-		}
-	}, [open])
+		id = useId(),
+		[open, setOpen] = useState(false)
 	return (
-		<div className={'menuwrap lvlmenu ' + className} ref={ref}>
+		<div className={'menuwrap lvlmenu ' + className}>
 			<button
 				className='lvlbtn'
 				aria-haspopup='listbox'
 				aria-expanded={open}
 				aria-label={label}
 				title={label}
-				onClick={() => setOpen(v => !v)}
+				command='toggle-popover'
+				commandfor={id}
 			>
 				<Bot size={16} />
 				<span>{t('lvl' + value)}</span>
 				<ChevronDown size={16} />
 			</button>
-			{open && (
-				<div className='menu lvlpop' role='listbox' aria-label={label}>
-					{[1, 2, 3, 4, 5].map(n => (
-						<button
-							key={n}
-							role='option'
-							aria-selected={value === n}
-							onClick={() => {
-								onChange(n)
-								setOpen(false)
-							}}
-						>
-							<span>
-								<b>{t('lvl' + n)}</b>
-								<small>{t('lvlD' + n)}</small>
-							</span>
-							{value === n && <Check size={16} />}
-						</button>
-					))}
-				</div>
-			)}
+			<Popup id={id} className='menu lvlpop' role='listbox' label={label} onOpenChange={setOpen}>
+				{[1, 2, 3, 4, 5].map(n => (
+					<button
+						key={n}
+						role='option'
+						aria-selected={value === n}
+						onClick={() => {
+							onChange(n)
+							hidePopup(id)
+						}}
+					>
+						<span>
+							<b>{t('lvl' + n)}</b>
+							<small>{t('lvlD' + n)}</small>
+						</span>
+						{value === n && <Check size={16} />}
+					</button>
+				))}
+			</Popup>
 		</div>
 	)
 }

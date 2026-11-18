@@ -1,33 +1,34 @@
 // "It's your turn" alerts: a short two-note chime (generated with WebAudio, no files) and device
 // vibration where supported (Android browsers; iOS Safari has no web vibration API).
+import { local } from './store.js'
+
 let ctx
-const read = () => {
-	try {
-		return JSON.parse(localStorage.rmkNotify || '{}')
-	} catch (e) {
-		return {}
-	}
-}
-export const getPrefs = () => ({
-	sound: true,
-	vibe: true,
-	ticks: true,
-	reacts: true,
-	...read(),
-})
+// Prefs are read on every tone (including each card of the 56-tile deal), so keep them in memory and
+// only re-read storage when another tab changes them.
+const DEFAULTS = { sound: true, vibe: true, ticks: true, reacts: true }
+let prefs
+export const getPrefs = () => (prefs ??= { ...DEFAULTS, ...local.getJSON('rmkNotify', {}) })
 export const setPref = (k, v) => {
-	try {
-		localStorage.rmkNotify = JSON.stringify({ ...getPrefs(), [k]: v })
-	} catch (e) {}
+	prefs = { ...getPrefs(), [k]: v }
+	local.setJSON('rmkNotify', prefs)
+}
+if (typeof addEventListener === 'function') {
+	addEventListener('storage', e => {
+		if (e.key === 'rmkNotify' || e.key === null) prefs = undefined
+	})
+	// iOS suspends/interrupts audio when the tab is backgrounded; bring it back when the player returns
+	document.addEventListener('visibilitychange', () => {
+		if (!document.hidden && ctx && ctx.state !== 'running') ctx.resume().catch(() => {})
+	})
 }
 export const canVibrate = () =>
 	typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
 // Browsers only allow audio after a user gesture, so this is called on the first tap/click/key press.
 export function unlockAudio() {
 	try {
-		const AC = window.AudioContext || window.webkitAudioContext
+		const AC = window.AudioContext
 		if (!AC) return
-		ctx = ctx || new AC()
+		ctx ??= new AC()
 		if (ctx.state === 'suspended') ctx.resume()
 	} catch (e) {}
 }
@@ -53,9 +54,12 @@ export const chime = () => {
 	tone(880, 0.16, 0.3, 0.25)
 }
 export const buzz = (p = [200, 100, 200]) => {
+	// Browsers block vibration until the player has tapped the page (and log an intervention error), e.g. when a saved
+	// game resumes on load, so skip it until then.
+	if (navigator.userActivation?.hasBeenActive === false) return
 	try {
 		if (canVibrate()) navigator.vibrate(p)
-	} catch (e) {}
+	} catch {}
 }
 // One short synthesized cue per reaction key (see REACTIONS in reactions.js). Steps are [freq, at, dur, gain, type].
 const RSND = {
@@ -175,6 +179,7 @@ const SFX = {
 	deselect: [[560, 0, 0.03, 0.05, 'triangle']],
 	newSet: [[330, 0, 0.04, 0.08, 'square'], [494, 0.04, 0.07, 0.08, 'triangle']],
 	addTo: [[440, 0, 0.04, 0.07, 'triangle'], [587, 0.04, 0.06, 0.07, 'triangle']],
+	win: [[523, 0, 0.1, 0.1], [659, 0.09, 0.1, 0.1], [784, 0.18, 0.1, 0.1], [1047, 0.27, 0.18, 0.11], [784, 0.45, 0.08, 0.08, 'triangle'], [1047, 0.52, 0.08, 0.08, 'triangle'], [1319, 0.6, 0.4, 0.1]],
 }
 export function sfx(k) {
 	if (!getPrefs().sound) return

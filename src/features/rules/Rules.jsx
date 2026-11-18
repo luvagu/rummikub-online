@@ -1,6 +1,6 @@
 import { useContext } from 'react'
-import { LangCtx, useT } from './i18n.js'
-import { Modal } from './ui.jsx'
+import { LangCtx, useT } from '../../i18n/index.js'
+import { Modal } from '../../components/Modal.jsx'
 const R = {
 	en: {
 		h: 'Rummikub rules',

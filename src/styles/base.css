@@ -1,0 +1,43 @@
+* {
+	box-sizing: border-box;
+}
+html,
+body,
+#root {
+	margin: 0;
+	height: 100%;
+}
+html {
+	-webkit-text-size-adjust: 100%; /* iOS must not inflate text in landscape */
+	text-size-adjust: 100%;
+}
+body {
+	overscroll-behavior: none; /* no pull-to-refresh / rubber-banding over the table */
+	font-family: var(--font);
+	color: #fff;
+	-webkit-tap-highlight-color: transparent;
+	background: radial-gradient(circle at 50% 22%, var(--felt2), var(--felt) 72%); /* body is exactly the viewport tall, so 'fixed' only forced repaints */
+}
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	opacity: 0.2;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+#root {
+	position: relative;
+	z-index: 1;
+}
+h1,
+h2,
+h3 {
+	font-family: var(--disp);
+	margin: 0;
+	text-wrap: balance;
+}
+p {
+	line-height: 1.45;
+	text-wrap: pretty;
+}

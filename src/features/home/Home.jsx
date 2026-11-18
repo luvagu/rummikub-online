@@ -5,111 +5,20 @@ import {
 	KeyRound,
 	ChevronRight,
 	BookOpen,
-	LogOut,
 	LoaderCircle,
 	X,
 	History,
 	ArrowLeft,
 } from 'lucide-react'
-import { COLORS, TIMES } from './game.js'
-import { LESSON_ORDER } from './tutorial.js'
-import { useT } from './i18n.js'
-import { LangBtn, Modal, Invite } from './ui.jsx'
-import { Seats } from './Seats.jsx'
-
-const Logo = () => (
-	<div className='logo' aria-label='Rummikub'>
-		{'RUMMIKUB'.split('').map((c, i) => (
-			<span
-				key={i}
-				className='ltile'
-				style={{ color: COLORS[i % 4], '--i': i }}
-			>
-				{c}
-			</span>
-		))}
-	</div>
-)
-
-function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
-	const t = useT(),
-		recent = names.filter(n => n !== name.trim())
-	return (
-		<div className='field'>
-			<label htmlFor='rmk-name'>{t('name')}</label>
-			<input
-				id='rmk-name'
-				className={nameErr ? 'err' : ''}
-				value={name}
-				maxLength={16}
-				autoComplete='nickname'
-				aria-invalid={nameErr}
-				onChange={e => setName(e.target.value)}
-				onKeyDown={e => e.key === 'Enter' && onEnter && onEnter()}
-			/>
-			{nameErr && <small className='errtxt'>{t('needName')}</small>}
-			{recent.length > 0 && (
-				<div className='chips' role='group' aria-label={t('recent')}>
-					{recent.map(n => (
-						<span key={n} className='nchip'>
-							<button onClick={() => setName(n)}>{n}</button>
-							<button
-								aria-label={t('rmName', { name: n })}
-								title={t('rmName', { name: n })}
-								onClick={() => onForgetName(n)}
-							>
-								<X size={12} />
-							</button>
-						</span>
-					))}
-				</div>
-			)}
-		</div>
-	)
-}
-
-export const getTimer = () => {
-	try {
-		const v = localStorage.rmkTimer
-		if (v == null) return 45
-		const n = +v
-		return n === 1 ? 60 : TIMES.includes(n) ? n : 0
-	} catch (e) {
-		return 45
-	}
-}
-export function TimerPick({ value, onChange }) {
-	const t = useT()
-	return (
-		<div className='timerpick'>
-			<span>
-				<b>{t('timer')}</b>
-				<small>{t('timerD')}</small>
-			</span>
-			<div className='seg' role='radiogroup' aria-label={t('timer')}>
-				{TIMES.map(n => (
-					<button
-						key={n}
-						role='radio'
-						aria-checked={n === value}
-						className={n === value ? 'primary' : ''}
-						onClick={() => onChange(n)}
-					>
-						{n ? n + 's' : t('timerOff')}
-					</button>
-				))}
-			</div>
-		</div>
-	)
-}
-export const getLvl = () => {
-	try {
-		const n = +localStorage.rmkLvl5
-		return [1, 2, 3, 4, 5].includes(n) ? n : 3
-	} catch (e) {
-		return 3
-	}
-}
+import { LESSON_ORDER } from '../../engine/tutorial.js'
+import { useT } from '../../i18n/index.js'
+import { LangButton } from '../../components/LangButton.jsx'
+import { Modal } from '../../components/Modal.jsx'
+import { local } from '../../utils/store.js'
+import { Logo } from './Logo.jsx'
+import { NameField } from './NameField.jsx'
+import { TimerPick } from '../../components/TimerPick.jsx'
+import { getTimer, getLvl } from './preferences.js'
 
 export function Home({
 	name,
@@ -136,9 +45,7 @@ export function Home({
 		[mode, setMode] = useState(false),
 		[lessons, setLessons] = useState(false) // solo: choose between a bot game and the tutorial
 	const playSolo = n => {
-		try {
-			localStorage.rmkLvl5 = n
-		} catch (e) {}
+		local.set('rmkLvl5', n)
 		setPick(false)
 		start('solo')
 	}
@@ -208,9 +115,7 @@ export function Home({
 				value={timed}
 				onChange={n => {
 					setTimed(n)
-					try {
-						localStorage.rmkTimer = n
-					} catch (err) {}
+					local.set('rmkTimer', n)
 				}}
 			/>
 			<div className='lvlopts'>
@@ -245,7 +150,7 @@ export function Home({
 	if (invite)
 		return (
 			<main className='home'>
-				<LangBtn />
+				<LangButton />
 				<Logo />
 				<p className='sub'>{t('invited', { code })}</p>
 				<div className='codechip small'>
@@ -272,7 +177,7 @@ export function Home({
 		)
 	return (
 		<main className='home'>
-			<LangBtn />
+			<LangButton />
 			<Logo />
 			<p className='sub'>{t('sub')}</p>
 			{saved && (
@@ -324,12 +229,26 @@ export function Home({
 					<div className='joinrow'>
 						<input
 							className='codein'
+							id='rmk-code'
+							name='room-code'
 							value={code}
 							maxLength={5}
 							placeholder={t('codePh')}
 							aria-label={t('code')}
 							autoCapitalize='characters'
 							autoComplete='off'
+							autoCorrect='off'
+							spellCheck={false}
+							enterKeyHint='go'
+							onPaste={e => {
+								// a pasted invite link (…/#ABCDE) or a code inside other text: take the code, not the first 5 characters
+								const txt = e.clipboardData.getData('text'),
+									m = /#([A-Za-z0-9]{5})\b/.exec(txt) || /\b([A-Za-z0-9]{5})\b/.exec(txt)
+								if (m) {
+									e.preventDefault()
+									setCode(m[1].toUpperCase())
+								}
+							}}
 							onChange={e =>
 								setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))
 							}
@@ -355,50 +274,6 @@ export function Home({
 			{lvlModal}
 			{modeModal}
 			{lessonsModal}
-		</main>
-	)
-}
-
-export function Lobby({ s, net, copy, share, leave, openRules }) {
-	const t = useT(),
-		host = s.me === 0
-	return (
-		<main className='home lobby'>
-			<LangBtn />
-			<p className='sub'>{t('room')}</p>
-			<Invite net={net} copy={copy} share={share} />
-			<Seats s={s} net={net} host={host} />
-			{host ? (
-				<>
-					<TimerPick
-						value={s.opts.timer}
-						onChange={n => net.send({ t: 'opts', timer: n })}
-					/>
-					<button
-						className='primary big'
-						disabled={s.players.length < 2}
-						onClick={() => net.send({ t: 'start' })}
-					>
-						{t('start', { n: s.players.length })}
-					</button>
-					<p className='sub'>{s.players.length < 2 ? t('need2') : t('keep')}</p>
-				</>
-			) : (
-				<p className='waitp'>
-					<LoaderCircle className='spin' size={18} />
-					{t('waitHost')}
-				</p>
-			)}
-			<div className='row'>
-				<button className='link' onClick={openRules}>
-					<BookOpen size={16} />
-					{t('readRules')}
-				</button>
-				<button className='link' onClick={leave}>
-					<LogOut size={16} />
-					{t('leave')}
-				</button>
-			</div>
 		</main>
 	)
 }

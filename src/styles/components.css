@@ -1,58 +1,3 @@
-:root {
-	--felt: #1b5e20;
-	--felt2: #2e7d32;
-	--amber: #ffb300;
-	--tw: 40px;
-	--font: 'Inter Variable', system-ui, -apple-system, sans-serif;
-	--disp: 'Outfit Variable', 'Inter Variable', system-ui, sans-serif;
-}
-@media (max-width: 520px) {
-	:root {
-		--tw: 31px;
-	}
-}
-@media (max-height: 480px) and (orientation: landscape) {
-	:root {
-		--tw: 28px;
-	}
-}
-* {
-	box-sizing: border-box;
-}
-html,
-body,
-#root {
-	margin: 0;
-	height: 100%;
-}
-body {
-	font-family: var(--font);
-	color: #fff;
-	-webkit-tap-highlight-color: transparent;
-	background: radial-gradient(circle at 50% 22%, var(--felt2), var(--felt) 72%)
-		fixed;
-}
-body::before {
-	content: '';
-	position: fixed;
-	inset: 0;
-	pointer-events: none;
-	opacity: 0.2;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-#root {
-	position: relative;
-	z-index: 1;
-}
-h1,
-h2,
-h3 {
-	font-family: var(--disp);
-	margin: 0;
-}
-p {
-	line-height: 1.45;
-}
 button {
 	font: inherit;
 	display: inline-flex;
@@ -70,8 +15,10 @@ button {
 		transform 0.1s,
 		box-shadow 0.15s;
 }
+@media (hover: hover) {
 button:hover:not(:disabled) {
 	background: #ffffff33;
+}
 }
 button:active:not(:disabled) {
 	transform: scale(0.97);
@@ -85,14 +32,16 @@ button:disabled {
 	outline-offset: 2px;
 }
 button.primary {
-	background: linear-gradient(#ffc233, #ffb300);
-	color: #2a1d00;
-	border-color: #e69f00;
+	background: linear-gradient(var(--amber-hi), var(--amber));
+	color: var(--ink);
+	border-color: var(--amber-edge);
 	font-weight: 700;
-	box-shadow: 0 2px 0 #b07800;
+	box-shadow: 0 2px 0 var(--amber-deep);
 }
+@media (hover: hover) {
 button.primary:hover:not(:disabled) {
 	background: linear-gradient(#ffcb52, #ffbb1a);
+}
 }
 button.primary.danger {
 	background: linear-gradient(#ef6c5f, #e53935);
@@ -116,9 +65,11 @@ button.link {
 	text-underline-offset: 3px;
 	opacity: 0.9;
 }
+@media (hover: hover) {
 button.link:hover:not(:disabled) {
 	background: none;
 	opacity: 1;
+}
 }
 .row {
 	display: flex;
@@ -128,8 +79,9 @@ button.link:hover:not(:disabled) {
 	align-items: center;
 }
 .sub {
-	opacity: 0.8;
+	opacity: 0.85;
 	margin: 0;
+	text-wrap: balance;
 }
 .center {
 	text-align: center;
@@ -137,16 +89,15 @@ button.link:hover:not(:disabled) {
 	flex-direction: column;
 	align-items: center;
 	gap: 12px;
+	text-wrap: balance;
 }
 .sr {
 	position: absolute;
 	width: 1px;
 	height: 1px;
 	overflow: hidden;
-	clip: rect(0 0 0 0);
-}
-.spin {
-	animation: spin 1s linear infinite;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 .gold {
 	color: var(--amber);
@@ -166,7 +117,7 @@ button.link:hover:not(:disabled) {
 .lang {
 	position: fixed;
 	top: calc(10px + env(safe-area-inset-top));
-	right: 10px;
+	inset-inline-end: 10px;
 	z-index: 5;
 	padding: 6px 12px;
 }
@@ -179,17 +130,15 @@ button.link:hover:not(:disabled) {
 	display: grid;
 	place-items: center;
 	width: clamp(30px, 9vw, 42px);
-	height: clamp(40px, 12vw, 56px);
+	aspect-ratio: 3 / 4;
 	border-radius: 8px;
 	font: 800 clamp(20px, 6vw, 30px) var(--disp);
-	background: linear-gradient(#fffdf6, #f1e7c4);
-	border: 1px solid #d6c690;
+	background: linear-gradient(var(--paper), var(--paper-2));
+	border: 1px solid var(--paper-edge);
 	box-shadow:
 		inset 0 1px 0 #fff,
-		0 3px 0 #b9a77a,
+		0 3px 0 var(--tile-edge),
 		0 8px 14px #0005;
-	animation: pop 0.5s both;
-	animation-delay: calc(var(--i) * 60ms);
 }
 .panel {
 	width: 100%;
@@ -197,7 +146,7 @@ button.link:hover:not(:disabled) {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	text-align: left;
+	text-align: start;
 }
 .field {
 	display: flex;
@@ -213,12 +162,15 @@ button.link:hover:not(:disabled) {
 	border: 2px solid transparent;
 	font: inherit;
 	font-weight: 500;
-	background: #fff;
-	color: #1b1b1b;
+	background: var(--field-bg);
+	color: var(--field-ink);
+}
+.field input::placeholder,
+.codein::placeholder {
+	color: var(--field-placeholder);
 }
 .field input.err {
 	border-color: #ff5252;
-	animation: shake 0.3s;
 }
 .errtxt {
 	color: #ffb4ab;
@@ -231,7 +183,7 @@ button.link:hover:not(:disabled) {
 	width: 100%;
 	padding: 14px 16px;
 	border-radius: 16px;
-	text-align: left;
+	text-align: start;
 	background: #0000003a;
 	border: 1px solid #ffffff22;
 	color: #fff;
@@ -246,12 +198,12 @@ button.link:hover:not(:disabled) {
 }
 .opt small {
 	display: block;
-	opacity: 0.78;
+	opacity: 0.85;
 	font-weight: 400;
 }
 button.opt.primary {
 	box-shadow:
-		0 3px 0 #b07800,
+		0 3px 0 var(--amber-deep),
 		0 10px 20px #0004;
 }
 button.opt.primary small {
@@ -262,7 +214,7 @@ button.opt.primary small {
 }
 .opt.invited {
 	border-color: var(--amber);
-	box-shadow: 0 0 0 3px #ffb30033;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 20%, transparent);
 }
 .joinrow {
 	display: flex;
@@ -283,9 +235,9 @@ button.opt.primary small {
 	max-width: 440px;
 	padding: 12px 14px;
 	border-radius: 16px;
-	background: #ffb30026;
+	background: color-mix(in srgb, var(--amber) 14.9%, transparent);
 	border: 1px solid var(--amber);
-	text-align: left;
+	text-align: start;
 }
 .resume div {
 	flex: 1;
@@ -327,14 +279,14 @@ button.opt.primary small {
 	border-radius: 14px;
 	background: #ffffff14;
 	border: 1px solid #ffffff1f;
-	text-align: left;
+	text-align: start;
 }
 .lseat b {
 	flex: 1;
 }
 .lseat em {
 	font-weight: 400;
-	opacity: 0.75;
+	opacity: 0.85;
 }
 .lseat.off {
 	opacity: 0.55;
@@ -356,19 +308,27 @@ button.opt.primary small {
 	align-items: center;
 	gap: 12px;
 	cursor: pointer;
-	text-align: left;
+	text-align: start;
 	max-width: 440px;
+}
+.switch {
+	position: relative; /* anchors the visually-hidden checkbox so it cannot scroll the page when focused */
 }
 .switch input {
 	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
 	opacity: 0;
+	cursor: pointer;
 }
 .switch b {
 	display: block;
 }
 .switch small {
 	display: block;
-	opacity: 0.75;
+	opacity: 0.85;
 }
 .switch .tr {
 	flex: none;
@@ -377,7 +337,7 @@ button.opt.primary small {
 	border-radius: 99px;
 	background: #ffffff33;
 	position: relative;
-	transition: 0.2s;
+	transition: background-color 0.2s;
 }
 .switch .tr::after {
 	content: '';
@@ -388,13 +348,13 @@ button.opt.primary small {
 	height: 20px;
 	border-radius: 50%;
 	background: #fff;
-	transition: 0.2s;
+	transition: translate 0.2s;
 }
 .switch input:checked + .tr {
 	background: var(--amber);
 }
 .switch input:checked + .tr::after {
-	left: 23px;
+	translate: 20px 0;
 }
 .switch input:focus-visible + .tr {
 	outline: 3px solid #fff;
@@ -418,7 +378,6 @@ button.opt.primary small {
 	gap: 8px;
 	padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
 	background: #0000003d;
-	backdrop-filter: blur(6px);
 }
 .seats {
 	display: flex;
@@ -426,7 +385,7 @@ button.opt.primary small {
 	flex: 1;
 	overflow-x: auto;
 	scrollbar-width: none;
-	padding: 6px 8px 2px 0;
+	padding: 6px 6px 6px 2px;
 }
 .seat {
 	display: flex;
@@ -440,8 +399,7 @@ button.opt.primary small {
 }
 .seat.act {
 	border-color: var(--amber);
-	background: #ffb3001f;
-	animation: glow 2.4s ease-in-out infinite;
+	background: color-mix(in srgb, var(--amber) 12.16%, transparent);
 }
 .seat.off {
 	opacity: 0.55;
@@ -461,12 +419,12 @@ button.opt.primary small {
 }
 .si em {
 	font-weight: 400;
-	opacity: 0.7;
+	opacity: 0.85;
 	font-style: normal;
 }
 .si small {
-	font-size: 11px;
-	opacity: 0.75;
+	font-size: 0.75rem;
+	opacity: 0.85;
 	white-space: nowrap;
 }
 .av {
@@ -474,7 +432,7 @@ button.opt.primary small {
 	display: inline-grid;
 	place-items: center;
 	width: 34px;
-	height: 34px;
+	aspect-ratio: 1;
 	border-radius: 50%;
 	font: 700 16px var(--disp);
 	color: #1b1b1b;
@@ -486,7 +444,7 @@ button.opt.primary small {
 	bottom: -6px;
 	background: #fff8e1;
 	color: #222;
-	font: 700 11px var(--font);
+	font: 700 0.75rem var(--font);
 	border-radius: 9px;
 	padding: 1px 5px;
 	border: 1px solid #0003;
@@ -506,19 +464,22 @@ button.opt.primary small {
 	flex: none;
 }
 .menu {
-	position: absolute;
-	right: 0;
-	top: calc(100% + 6px);
+	/* a native popover (top layer): placed against its trigger with anchor positioning, flipping when it would overflow */
+	position-area: block-end span-inline-start;
+	position-try-fallbacks: flip-block, flip-inline;
+	inset: auto;
+	margin-block: 6px;
+	color: #fff;
 	min-width: 240px;
-	background: #12361a;
+	background: var(--felt-deep);
 	border: 1px solid #ffffff30;
 	border-radius: 14px;
 	padding: 6px;
 	box-shadow: 0 14px 34px #0008;
-	z-index: 20;
-	display: flex;
 	flex-direction: column;
-	animation: slide 0.15s both;
+}
+.menu:popover-open {
+	display: flex; /* never unconditional: it would override the closed (display: none) state */
 }
 .menu button {
 	justify-content: flex-start;
@@ -526,13 +487,13 @@ button.opt.primary small {
 	border: 0;
 	border-radius: 10px;
 	width: 100%;
-	text-align: left;
+	text-align: start;
 }
 .menu .sw {
-	margin-left: auto;
-	font-size: 11px;
+	margin-inline-start: auto;
+	font-size: 0.75rem;
 	font-weight: 700;
-	opacity: 0.8;
+	opacity: 0.85;
 	letter-spacing: 0.05em;
 }
 .menu hr {
@@ -549,11 +510,15 @@ button.opt.primary small {
 }
 .tbar i {
 	display: block;
+	width: 100%;
 	height: 100%;
 	background: #66bb6a;
-	transition:
-		width 0.22s linear,
-		background 0.4s;
+	/* The bar drains by scaling (compositor only) over the time left that the host sent with this state,
+	   instead of re-rendering React and animating width 5x a second. --p0 = fraction left, --dur = ms left. */
+	transform-origin: left;
+	transform: scaleX(var(--p0, 1));
+	animation: drain var(--dur, 1s) linear forwards;
+	transition: background-color 0.4s;
 }
 .tbar.amber i {
 	background: var(--amber);
@@ -562,7 +527,6 @@ button.opt.primary small {
 	background: #ef5350;
 }
 .tbar.hot i {
-	animation: fade 1s ease-in-out infinite;
 }
 .tnum {
 	position: absolute;
@@ -582,11 +546,13 @@ button.opt.primary small {
 .tnum.mine {
 	font-size: 30px;
 	opacity: 1;
-	animation: breathe 1s ease-in-out infinite;
 }
+
 .board {
 	flex: 1;
 	overflow: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
 	padding: 14px 12px;
 	display: flex;
 	flex-wrap: wrap;
@@ -607,10 +573,10 @@ button.opt.primary small {
 	background: #b71c1c33;
 }
 .plus {
-	background: linear-gradient(#ffc233, #ffb300);
-	color: #2a1d00;
+	background: linear-gradient(var(--amber-hi), var(--amber));
+	color: var(--ink);
 	font-weight: 700;
-	border-color: #e69f00;
+	border-color: var(--amber-edge);
 	padding: 8px 10px;
 }
 .plus.wide {
@@ -633,7 +599,7 @@ button.opt.primary small {
 	min-width: 0;
 }
 .status .log {
-	opacity: 0.75;
+	opacity: 0.85;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -653,23 +619,24 @@ button.opt.primary small {
 }
 .seg {
 	display: flex;
-	margin-left: auto;
+	margin-inline-start: auto;
 }
 .seg button {
 	border-radius: 0;
 	padding: 8px 10px;
 }
 .seg button:first-child {
-	border-radius: 12px 0 0 12px;
+	border-start-start-radius: 12px;
+	border-end-start-radius: 12px;
 }
 .seg button:last-child {
-	border-radius: 0 12px 12px 0;
-	border-left: 0;
+	border-start-end-radius: 12px;
+	border-end-end-radius: 12px;
+	border-inline-start: 0;
 }
 button.pulse {
-	animation: breathe 1s ease-in-out infinite;
 }
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.lbl {
 		display: none;
 	}
@@ -695,15 +662,17 @@ button.pulse {
 	opacity: 0.9;
 }
 .rackbar .seg {
-	margin-left: 0;
+	margin-inline-start: 0;
 }
 .rackbar .seg button {
 	padding: 5px 12px;
 	background: #00000033;
 	border-color: #ffffff24;
 }
+@media (hover: hover) {
 .rackbar .seg button:not([aria-pressed='true']):hover:not(:disabled) {
 	background: #00000055;
+}
 }
 .rack {
 	display: flex;
@@ -711,6 +680,8 @@ button.pulse {
 	gap: 5px;
 	max-height: 32dvh;
 	overflow: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
 	align-items: center;
 	padding: 10px 10px 14px;
 	min-height: calc(var(--tw) * 1.35 + 24px);
@@ -718,17 +689,17 @@ button.pulse {
 .tile {
 	position: relative;
 	width: var(--tw);
-	height: calc(var(--tw) * 1.35);
+	aspect-ratio: 20 / 27; /* 1.35 tall */
 	padding: 0;
 	flex: none;
 	flex-direction: column;
 	border-radius: calc(var(--tw) * 0.16);
-	border: 1px solid #d6c690;
-	background: linear-gradient(#fffdf6, #f1e7c4);
+	border: 1px solid var(--paper-edge);
+	background: linear-gradient(var(--paper), var(--paper-2));
 	color: var(--tc);
 	box-shadow:
 		inset 0 1px 0 #fff,
-		0 3px 0 #b9a77a,
+		0 3px 0 var(--tile-edge),
 		0 5px 8px #0003;
 	font-family: var(--disp);
 	font-weight: 800;
@@ -737,10 +708,11 @@ button.pulse {
 	gap: 0;
 }
 .tile.enter {
-	animation: pop 0.22s backwards; /* only on a deal / new round; remounts (new set, draw) must not replay it */
 }
+@media (hover: hover) {
 .tile:hover:not(:disabled) {
-	background: linear-gradient(#fffdf6, #f1e7c4);
+	background: linear-gradient(var(--paper), var(--paper-2));
+}
 }
 .tile .n {
 	display: block;
@@ -750,9 +722,9 @@ button.pulse {
 	position: absolute;
 	top: 3px;
 	right: 4px;
-	font: 600 10px var(--font);
+	font: 600 0.75rem var(--font);
 	color: #333;
-	opacity: 0.7;
+	opacity: 0.85;
 }
 .tile .mk {
 	position: absolute;
@@ -771,7 +743,7 @@ button.pulse {
 	transform: rotate(45deg) scale(0.8);
 }
 .tile.sel {
-	transform: translateY(-8px);
+	translate: 0 -8px;
 	box-shadow:
 		inset 0 1px 0 #fff,
 		0 0 0 3px var(--amber),
@@ -781,7 +753,7 @@ button.pulse {
 	z-index: 2;
 	outline: 3px solid var(--amber);
 	outline-offset: 1px;
-	animation: drawn 1.9s ease-out both;
+	animation: drawn-still 1.9s ease-out both; /* outline fade only; the full motion is in motion.css */
 }
 .tile.fresh::after {
 	content: '+';
@@ -801,35 +773,32 @@ button.pulse {
 
 .tile.placed {
 	z-index: 2;
-	outline: 3px solid #4fc3f7;
+	outline: 3px solid var(--sky);
 	outline-offset: 1px;
-	animation: placed 2.4s ease-out both;
+	animation: placed-still 2.4s ease-out both;
 }
 
 /* ---- dialogs, toasts, banner ---- */
-.modal {
-	position: fixed;
-	inset: 0;
-	background: #000a;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 16px;
-	z-index: 40;
-	animation: fadein 0.15s both;
-}
 .card {
-	position: relative;
-	background: #fbfaf3;
-	color: #1d2b1e;
+	/* the <dialog> itself: fixed and centred in the top layer by the UA, so no position/inset here */
+	overscroll-behavior: contain;
+	background: var(--card-bg);
+	color: var(--card-ink);
+	border: 0;
 	border-radius: 20px;
 	padding: 22px;
 	width: min(560px, 100%);
+	max-width: calc(100% - 32px);
 	max-height: 88dvh;
 	overflow: auto;
 	line-height: 1.5;
 	box-shadow: 0 20px 50px #0009;
-	animation: slide 0.2s both;
+}
+dialog.card::backdrop {
+	background: #000a;
+	overflow: hidden; /* ::backdrop is not a scroll container by default, so it would ignore overscroll-behavior */
+	overscroll-behavior: contain;
+	animation: fadein 0.15s both;
 }
 .card h2 {
 	margin-bottom: 10px;
@@ -838,13 +807,13 @@ button.pulse {
 	margin: 14px 0 6px;
 }
 .card button {
-	background: #1b5e20;
-	border-color: #14471a;
+	background: var(--card-btn-bg);
+	border-color: var(--card-btn-edge);
 }
 .card button.primary {
-	background: linear-gradient(#ffc233, #ffb300);
-	color: #2a1d00;
-	border-color: #e69f00;
+	background: linear-gradient(var(--amber-hi), var(--amber));
+	color: var(--ink);
+	border-color: var(--amber-edge);
 }
 .card button.primary.danger {
 	background: linear-gradient(#ef6c5f, #e53935);
@@ -853,23 +822,16 @@ button.pulse {
 }
 .card button.link {
 	background: none;
-	color: #1b5e20;
+	color: var(--card-link);
 	border: 0;
 }
 .card .row {
 	margin-top: 14px;
 }
 .card a {
-	color: #1b5e20;
+	color: var(--card-link);
 }
-.xbtn {
-	position: absolute;
-	top: 10px;
-	right: 10px;
-	background: #0000000f !important;
-	color: #333 !important;
-	border: 0 !important;
-}
+
 .res {
 	list-style: none;
 	padding: 0;
@@ -884,14 +846,14 @@ button.pulse {
 	gap: 10px;
 	padding: 8px 12px;
 	border-radius: 12px;
-	background: #0000000a;
+	background: var(--card-row);
 }
 .res li b {
 	flex: 1;
-	text-align: left;
+	text-align: start;
 }
 .res small {
-	opacity: 0.65;
+	opacity: 0.85;
 }
 .res li {
 	align-items: center;
@@ -904,13 +866,13 @@ button.pulse {
 }
 .res .rk {
 	width: 20px;
-	opacity: 0.6;
+	opacity: 0.85;
 	font-weight: 700;
 }
 .res li b svg {
 	margin-left: 6px;
 	vertical-align: -2px;
-	color: #e69f00;
+	color: var(--amber-edge);
 }
 .res .meta {
 	display: flex;
@@ -928,11 +890,11 @@ button.pulse {
 	font-size: 15px;
 }
 .res .pos {
-	color: #1b7a24;
+	color: var(--card-pos);
 	font-weight: 800;
 }
 .res .neg {
-	color: #c62828;
+	color: var(--card-neg);
 	font-weight: 800;
 }
 .toasts {
@@ -941,13 +903,23 @@ button.pulse {
 		70px + env(safe-area-inset-top)
 	); /* below the header: never hide the seats / menu button */
 	left: 50%;
-	transform: translateX(-50%);
-	display: flex;
+	translate: -50% 0;
 	flex-direction: column;
 	gap: 8px;
-	z-index: 60;
-	width: min(92vw, 420px);
+	width: min(92%, 420px);
 	pointer-events: none;
+	/* a manual popover (top layer, so it stays above open dialogs): neutralise the UA popover box */
+	inset-inline-end: auto;
+	inset-block-end: auto;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	overflow: visible;
+}
+.toasts:popover-open {
+	display: flex;
 }
 .toast {
 	display: flex;
@@ -955,102 +927,165 @@ button.pulse {
 	gap: 10px;
 	padding: 10px 14px;
 	border-radius: 12px;
-	background: #12361a;
+	background: var(--felt-deep);
 	border: 1px solid #ffffff30;
-	border-left: 4px solid #81c784;
+	border-inline-start: 4px solid #81c784;
 	box-shadow: 0 10px 28px #0008;
-	animation: slide 0.25s both;
 }
 .toast.err {
-	border-left-color: #ef5350;
+	border-inline-start-color: #ef5350;
 }
 .toast.warn {
-	border-left-color: var(--amber);
+	border-inline-start-color: var(--amber);
 }
 .toast.info {
-	border-left-color: #4fc3f7;
+	border-inline-start-color: var(--sky);
 }
 .banner {
 	position: fixed;
 	top: calc(
 		62px + env(safe-area-inset-top)
 	); /* under the header so the menu stays usable while offline */
-	left: 0;
-	right: 0;
-	z-index: 29;
-	background: #e65100;
-	display: flex;
+	inset-inline: 0;
+	inset-block-end: auto;
+	width: auto;
+	margin: 0;
+	border: 0;
+	color: #fff;
+	background: #bf360c; /* white text 5.6:1 (was 3.8:1) */
 	gap: 8px;
 	justify-content: center;
 	align-items: center;
-	padding: 6px 10px calc(6px);
+	padding: 6px 10px;
 	font-size: 14px;
 	font-weight: 600;
 }
+.banner:popover-open {
+	display: flex;
+}
+.banner.update {
+	background: var(--felt-deep);
+	border-block-end: 2px solid var(--amber);
+	flex-wrap: wrap;
+}
+.banner.update button {
+	min-height: 44px; /* tap target */
+	padding-inline: 16px;
+	font-size: 14px;
+	font-weight: 700;
+	color: #fff;
+	background: #ffffff1f;
+	border: 1px solid #ffffff80;
+	border-radius: 10px;
+}
+/* ---- round-winner celebration (src/features/game/Celebration.jsx): confetti + highlighted name just before the summary dialog ---- */
+.celebrate {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	overflow: hidden;
+	color: #fff;
+	cursor: pointer; /* a tap anywhere skips to the summary */
+}
+.celebrate:popover-open {
+	display: grid;
+	place-items: center;
+}
+.confetti {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	pointer-events: none;
+}
+.cf {
+	position: absolute;
+	display: block;
+	border-radius: 1px;
+	will-change: transform;
+}
+.cf.r {
+	border-radius: 50%;
+}
+.cel-card {
+	position: relative;
+	display: grid;
+	justify-items: center;
+	gap: 6px;
+	max-width: min(92vw, 560px);
+	padding: 20px 28px;
+	border: 2px solid var(--amber);
+	border-radius: 24px;
+	text-align: center;
+	background: color-mix(in srgb, var(--felt-deep) 90%, transparent);
+	box-shadow: 0 12px 40px #0008;
+}
+.cel-card small {
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #ffffffd9;
+}
+.cel-name {
+	max-width: 100%;
+	padding: 0.1em 0.5em;
+	border-radius: 14px;
+	font: 800 clamp(28px, 8vw, 56px) / 1.15 var(--disp);
+	overflow-wrap: anywhere;
+	color: #1d1300; /* dark ink on amber: about 11:1 */
+	background: var(--amber);
+}
+.cel-card span {
+	font-size: 16px;
+	font-weight: 600;
+}
+.cel-skip {
+	position: absolute;
+	inset-block-end: max(20px, env(safe-area-inset-bottom));
+	inset-inline: 0;
+	width: fit-content;
+	min-height: 44px; /* tap target */
+	margin-inline: auto;
+	padding-inline: 20px;
+	font-size: 15px;
+	font-weight: 700;
+	color: #fff;
+	background: #0000008c;
+	border: 1px solid #ffffff80;
+	border-radius: 12px;
+}
+.seat.win {
+	outline: 2px solid var(--amber);
+	outline-offset: 2px;
+}
+.res li.won {
+	/* carries the highlight into the summary. An outline, not a tint: a tint replaces the row background and lowered the
+	   contrast of the green/red score below 4.5:1 on the dark card (found by Lighthouse) */
+	border-radius: 10px;
+	outline: 2px solid light-dark(var(--amber-deep), var(--amber));
+	outline-offset: -2px;
+}
+.banner.update button.primary {
+	color: #1d1300;
+	background: var(--amber);
+	border-color: var(--amber-edge);
+}
 
 /* ---- motion ---- */
-@keyframes pop {
-	from {
-		opacity: 0;
-		transform: translateY(8px) scale(0.9);
-	}
-	to {
-		opacity: 1;
-		transform: none;
-	}
-}
-@keyframes slide {
-	from {
-		opacity: 0;
-		transform: translateY(-8px);
-	}
-	to {
-		opacity: 1;
-		transform: none;
-	}
-}
-@keyframes fadein {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
-}
-@keyframes spin {
-	to {
-		transform: rotate(360deg);
-	}
-}
-@keyframes shake {
-	25% {
-		transform: translateX(-5px);
-	}
-	75% {
-		transform: translateX(5px);
-	}
-}
-@keyframes glow {
-	50% {
-		box-shadow: 0 0 0 5px #ffb30033;
-	}
-}
-@keyframes fade {
-	50% {
-		opacity: 0.55;
-	}
-}
-@keyframes breathe {
-	0%,
-	100% {
-		filter: brightness(1);
-		box-shadow: 0 0 0 0 #ffb30000;
-	}
-	50% {
-		filter: brightness(1.12);
-		box-shadow: 0 0 0 7px #ffb30055;
-	}
-}
+
+
+
+
+
+
+
 /* ---- drag & drop (only rendered when .game.dnd: fine pointer + wide screen) ---- */
 .dnd .tile {
 	cursor: grab;
@@ -1062,10 +1097,10 @@ button.pulse {
 .rack.dropping {
 	outline: 2px dashed var(--amber);
 	outline-offset: 2px;
-	background-color: #ffb30022;
+	background-color: color-mix(in srgb, var(--amber) 13.33%, transparent);
 }
 .board.dropping {
-	box-shadow: inset 0 0 0 2px #ffb300aa;
+	box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--amber) 66.67%, transparent);
 }
 
 /* ---- reactions ---- */
@@ -1073,27 +1108,29 @@ button.pulse {
 	position: relative;
 }
 .rwrap {
-	margin-left: auto;
+	margin-inline-start: auto;
 }
 .rackbar .rwrap button {
 	padding: 5px 12px;
 }
 .rpick {
-	position: absolute;
-	right: 10px; /* anchored to the rack bar, not the button: never clipped on narrow phones */
-	bottom: calc(100% + 8px);
-	z-index: 25;
+	position-area: block-start span-inline-start;
+	position-try-fallbacks: flip-block, flip-inline; /* flips instead of being clipped on narrow phones */
+	inset: auto;
+	margin-block: 8px;
+	color: #fff;
 	width: 276px;
-	max-width: calc(100vw - 20px);
-	display: grid;
+	max-width: calc(100% - 20px);
 	grid-template-columns: repeat(3, 1fr);
 	gap: 4px;
 	padding: 6px;
-	background: #12361a;
+	background: var(--felt-deep);
 	border: 1px solid #ffffff30;
 	border-radius: 14px;
 	box-shadow: 0 -10px 30px #0008;
-	animation: pop 0.15s both;
+}
+.rpick:popover-open {
+	display: grid;
 }
 .rpick button {
 	flex-direction: column;
@@ -1103,15 +1140,17 @@ button.pulse {
 	border: 0;
 	border-radius: 10px;
 }
+@media (hover: hover) {
 .rpick button:hover:not(:disabled) {
 	background: #ffffff1f;
+}
 }
 .rpick button span {
 	font-size: 26px;
 	line-height: 1.1;
 }
 .rpick button small {
-	font-size: 11px;
+	font-size: 0.75rem;
 	font-weight: 600;
 	opacity: 0.85;
 }
@@ -1124,15 +1163,11 @@ button.pulse {
 	align-items: center;
 	gap: 2px;
 	pointer-events: none;
-	animation: rin 0.25s ease-out both;
 }
 .rbub .rx {
 	font-size: 44px;
 	line-height: 1;
 	filter: drop-shadow(0 4px 6px #0006);
-	animation-duration: 0.9s;
-	animation-iteration-count: 2;
-	animation-timing-function: ease-in-out;
 }
 .rbub small {
 	padding: 3px 10px;
@@ -1141,196 +1176,29 @@ button.pulse {
 	color: #fff;
 	font: 700 12px var(--font);
 	white-space: nowrap;
-	animation: rout 2.6s both;
-}
-.rx-clap {
-	animation-name: rx-clap;
-}
-.rx-bounce {
-	animation-name: rx-bounce;
-}
-.rx-zoom {
-	animation-name: rx-zoom;
-}
-.rx-shake {
-	animation-name: rx-shake;
-}
-.rx-sway {
-	animation-name: rx-sway;
-}
-.rx-tilt {
-	animation-name: rx-tilt;
-}
-.rx-flip {
-	animation-name: rx-flip;
-}
-.rx-drop {
-	animation-name: rx-drop;
-}
-.rx-rumble {
-	animation-name: rx-rumble;
-}
-@keyframes rin {
-	from {
-		opacity: 0;
-		transform: translateY(-10px) scale(0.6);
-	}
-	to {
-		opacity: 1;
-		transform: none;
-	}
-}
-@keyframes rout {
-	0%,
-	80% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-	}
-}
-@keyframes rx-clap {
-	30% {
-		transform: scale(1.3) rotate(-12deg);
-	}
-	60% {
-		transform: scale(0.9) rotate(10deg);
-	}
-}
-@keyframes rx-bounce {
-	40% {
-		transform: translateY(-16px);
-	}
-	70% {
-		transform: translateY(2px);
-	}
-}
-@keyframes rx-zoom {
-	50% {
-		transform: scale(1.5);
-	}
-}
-@keyframes rx-shake {
-	20%,
-	60% {
-		transform: rotate(-14deg) translateY(-4px);
-	}
-	40%,
-	80% {
-		transform: rotate(14deg) translateY(-4px);
-	}
-}
-@keyframes rx-sway {
-	25% {
-		transform: translateX(-8px) rotate(-8deg);
-	}
-	75% {
-		transform: translateX(8px) rotate(8deg);
-	}
-}
-@keyframes rx-tilt {
-	50% {
-		transform: rotate(-20deg) scale(1.1);
-	}
-}
-@keyframes rx-flip {
-	50% {
-		transform: rotateY(180deg) scale(1.15);
-	}
-}
-@keyframes rx-drop {
-	40% {
-		transform: translateY(10px) scale(0.9);
-	}
-	70% {
-		transform: translateY(4px) scale(0.95);
-	}
-}
-@keyframes rx-rumble {
-	20% {
-		transform: translate(-4px, 2px) scale(1.1);
-	}
-	40% {
-		transform: translate(4px, -2px) scale(1.1);
-	}
-	60% {
-		transform: translate(-4px, -2px) scale(1.1);
-	}
-	80% {
-		transform: translate(4px, 2px) scale(1.1);
-	}
 }
 
-@keyframes drawn {
-	0% {
-		opacity: 0;
-		transform: translateY(-26px) scale(1.5);
-	}
-	22% {
-		opacity: 1;
-		transform: scale(1.12);
-	}
-	36%,
-	70% {
-		transform: scale(1);
-		filter: brightness(1.1);
-	}
-	53% {
-		transform: scale(1.1);
-		filter: brightness(1.25);
-	}
-	100% {
-		outline-color: transparent;
-		filter: none;
-	}
-}
-@keyframes placed {
-	0% {
-		transform: translateY(-18px) scale(1.3);
-		box-shadow: 0 0 0 0 #4fc3f7aa;
-	}
-	20% {
-		transform: scale(1.1);
-		box-shadow: 0 0 0 10px #4fc3f766;
-	}
-	40%,
-	100% {
-		transform: none;
-	}
-	60% {
-		box-shadow: 0 0 0 7px #4fc3f744;
-	}
-	100% {
-		outline-color: transparent;
-		box-shadow:
-			inset 0 1px 0 #fff,
-			0 3px 0 #b9a77a,
-			0 5px 8px #0003;
-	}
-}
-@keyframes fadeout {
-	0%,
-	70% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-	}
-}
-@media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		animation: none !important;
-		transition: none !important;
-	}
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* sort toggle (selected state), name chips, minimal invite screen */
 .seg button[aria-pressed='true'] {
-	background: linear-gradient(#ffc233, #ffb300);
-	color: #2a1d00;
-	border-color: #e69f00;
+	background: linear-gradient(var(--amber-hi), var(--amber));
+	color: var(--ink);
+	border-color: var(--amber-edge);
 }
 .chips {
 	display: flex;
@@ -1375,27 +1243,18 @@ button.pulse {
 .top {
 	position: relative;
 	z-index: 30;
-	-webkit-backdrop-filter: blur(6px);
 }
 .menu {
-	z-index: 31;
 	min-width: 270px;
 	max-width: calc(100vw - 20px);
-}
-.seats {
-	padding: 6px 6px 6px 2px;
 }
 .si small {
 	display: flex;
 	align-items: center;
 	gap: 3px;
 }
-@keyframes glow {
-	50% {
-		box-shadow: 0 0 0 3px #ffb30033;
-	}
-}
-@media (max-width: 520px) {
+
+@media (width <= 520px) {
 	.top {
 		gap: 6px;
 		padding-left: 8px;
@@ -1408,7 +1267,6 @@ button.pulse {
 	}
 	.av {
 		width: 30px;
-		height: 30px;
 		font-size: 14px;
 	}
 	.si b {
@@ -1438,7 +1296,7 @@ button.pulse {
 	position: absolute;
 	top: -13px; /* straddles the set's top border instead of covering the tile below */
 	left: 50%;
-	transform: translateX(-50%);
+	translate: -50% 0;
 	width: 24px;
 	height: 24px;
 	padding: 0;
@@ -1457,20 +1315,17 @@ button.pulse {
 	height: 15px;
 }
 .plus.badge:active:not(:disabled) {
-	transform: translateX(-50%) scale(0.94);
+	transform: scale(0.94);
 }
 .plus.float {
 	position: absolute;
 	left: 50%;
 	bottom: 14px;
-	transform: translateX(-50%);
+	translate: -50% 0;
 	z-index: 3;
 	padding: 10px 18px;
 	box-shadow: 0 8px 22px #0008;
 	animation: fadein 0.15s both;
-}
-.plus.float:active:not(:disabled) {
-	transform: translateX(-50%) scale(0.97);
 }
 
 /* bot difficulty dropdown */
@@ -1500,8 +1355,7 @@ button.pulse {
 	text-overflow: ellipsis;
 }
 .lvlpop {
-	left: 0;
-	right: auto;
+	position-area: block-end span-inline-end;
 	min-width: 250px;
 }
 .lvlpop button {
@@ -1518,10 +1372,10 @@ button.pulse {
 }
 .lvlpop small {
 	font-weight: 400;
-	opacity: 0.8;
+	opacity: 0.85;
 }
 .lvltag {
-	opacity: 0.75;
+	opacity: 0.85;
 	font-weight: 500;
 }
 
@@ -1529,12 +1383,8 @@ button.pulse {
 .lseat {
 	position: relative;
 }
-.lseat:has(.lvlpop) {
-	z-index: 40;
-	opacity: 1;
-}
 .lvlpop {
-	background: #12361a;
+	background: var(--felt-deep);
 }
 
 /* solo difficulty chooser (modal, light card) */
@@ -1554,27 +1404,31 @@ button.pulse {
 	justify-content: space-between;
 	gap: 16px;
 	width: 100%;
-	text-align: left;
+	text-align: start;
 	padding: 16px 18px;
 	border-radius: 14px;
-	background: #fff;
-	color: #1d2b1e;
-	border: 2px solid #d5e0d3;
+	background: var(--card-opt-bg);
+	color: var(--card-ink);
+	border: 2px solid var(--card-opt-edge);
 	box-shadow: 0 1px 0 #0000000d;
 }
+@media (hover: hover) {
 .card .lvlopts button:hover:not(:disabled) {
-	background: #eaf4e6;
-	border-color: #1b5e20;
+	background: var(--card-opt-hover);
+	border-color: var(--card-opt-hover-edge);
+}
 }
 .card .lvlopts button:active:not(:disabled) {
-	background: #dcecd6;
+	background: var(--card-opt-active);
 }
 .card .lvlopts button.sel {
-	background: #fff7de;
-	border-color: #e69f00;
+	background: var(--card-opt-sel);
+	border-color: var(--amber-edge);
 }
+@media (hover: hover) {
 .card .lvlopts button.sel:hover:not(:disabled) {
-	background: #ffefbd;
+	background: var(--card-opt-sel-hover);
+}
 }
 .lvlopts button > span {
 	display: flex;
@@ -1589,21 +1443,17 @@ button.pulse {
 	font-size: 14px;
 	line-height: 1.4;
 	font-weight: 400;
-	color: #4a5b4b;
+	color: var(--card-sub-ink);
 	opacity: 1;
 }
 .lvlopts svg {
 	flex: none;
-	color: #1b5e20;
+	color: var(--card-link);
 }
 
 /* ---- audit fixes ---- */
-div.tile {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: grab;
-	user-select: none;
+.tile {
+	user-select: none; /* dragging must not select text (buttons and the old div tiles alike) */
 	-webkit-user-select: none;
 }
 .tile:focus-visible {
@@ -1611,14 +1461,15 @@ div.tile {
 	outline-offset: 3px;
 	box-shadow:
 		0 0 0 6px #000a,
-		0 3px 0 #b9a77a;
+		0 3px 0 var(--tile-edge);
 }
 .card :focus-visible {
-	outline-color: #1b5e20;
+	outline-color: var(--card-focus);
 }
 .menu {
 	max-height: calc(100dvh - 84px);
 	overflow-y: auto;
+	overscroll-behavior: contain;
 }
 button,
 .tile {
@@ -1627,16 +1478,16 @@ button,
 .board.adding {
 	padding-bottom: 68px; /* room for the floating "New set" button */
 }
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.set {
 		flex-wrap: wrap;
 		max-width: 100%;
 	}
 }
-@media (max-height: 480px) and (orientation: landscape) {
+@media (height <= 480px) and (orientation: landscape) {
 	.rpick {
 		grid-template-columns: repeat(5, 1fr);
-		width: min(430px, calc(100vw - 20px));
+		width: min(430px, calc(100% - 20px));
 	}
 	.rpick button small {
 		display: none;
@@ -1647,22 +1498,12 @@ button,
 }
 
 /* ---- audit fixes: large screens, safe areas, touch ---- */
-@media (min-width: 1200px) {
-	:root {
-		--tw: 48px;
-	}
-}
-@media (min-width: 1800px) {
-	:root {
-		--tw: 58px;
-	}
-}
-@media (min-width: 900px) {
+@media (width >= 900px) {
 	.status {
 		flex: 1 1 0; /* buttons share the row with the status instead of wrapping to a second line */
 	}
 }
-@media (max-height: 480px) and (orientation: landscape) {
+@media (height <= 480px) and (orientation: landscape) {
 	.status {
 		flex: 1 1 0;
 	}
@@ -1720,7 +1561,7 @@ button,
 }
 
 /* compact primary actions on phones (kept last so it wins over the touch min-height rule) */
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.plus.float {
 		min-height: 0;
 		padding: 7px 14px;
@@ -1738,7 +1579,7 @@ button,
 		padding-bottom: 6px;
 	}
 	.bar button {
-		min-height: 38px;
+		min-height: 44px;
 		padding: 6px 12px;
 		font-size: 14px;
 	}
@@ -1752,7 +1593,7 @@ button,
 }
 
 /* smaller last-10-seconds countdown on phones (it floats over the board) */
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.tnum {
 		top: 8px;
 		right: 8px;
@@ -1767,14 +1608,14 @@ button,
 }
 
 /* compact rack toolbar (sort + react) on phones */
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.rackbar {
 		padding-top: 6px;
 	}
 	.rackbar button,
 	.rackbar .seg button,
 	.rackbar .rwrap button {
-		min-height: 34px;
+		min-height: 44px;
 		padding: 4px 10px;
 	}
 	.rackbar button svg {
@@ -1791,7 +1632,7 @@ button,
 	border-radius: 999px;
 	background: #000000c4;
 	box-shadow: 0 6px 16px #0006;
-	animation: rbub 2.6s ease-out both;
+	animation: rbub-fade 2.6s ease-out both;
 }
 .rbub .rx {
 	font-size: 26px;
@@ -1800,25 +1641,9 @@ button,
 .rbub small {
 	padding: 0;
 	background: none;
-	animation: none;
 	font-size: 13px;
 }
-@keyframes rbub {
-	0% {
-		opacity: 0;
-		transform: translateY(-6px) scale(0.85);
-	}
-	8% {
-		opacity: 1;
-		transform: none;
-	}
-	80% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-	}
-}
+
 .seat .av {
 	margin-right: 5px; /* the rack-count badge overhangs the avatar; keep it off the score text */
 }
@@ -1829,13 +1654,8 @@ button.primary:disabled {
 	box-shadow: none;
 	opacity: 1; /* reads as "disabled", not as a muddy half-transparent gold */
 }
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.seats {
-		-webkit-mask-image: linear-gradient(
-			90deg,
-			#000 calc(100% - 22px),
-			transparent
-		);
 		mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
 	}
 	.meld {
@@ -1849,7 +1669,7 @@ button.primary:disabled {
 		line-height: 1.25;
 	}
 }
-@media (max-width: 420px) {
+@media (width <= 420px) {
 	.lvlbtn {
 		padding: 8px 9px;
 		gap: 4px;
@@ -1866,12 +1686,12 @@ button.primary:disabled {
 	top: calc(env(safe-area-inset-top, 0px) + 58px);
 	left: 50%;
 	translate: -50% 0;
-	width: min(calc(100vw - 24px), 420px);
+	width: min(calc(100% - 24px), 420px);
 	box-sizing: border-box;
 	padding: 12px 14px;
 	border-radius: 14px;
-	background: #fffdf6;
-	color: #222;
+	background: var(--coach-bg);
+	color: var(--coach-ink);
 	border: 2px solid var(--amber);
 	box-shadow: 0 10px 28px #0006;
 	display: grid;
@@ -1892,23 +1712,14 @@ button.primary:disabled {
 }
 .coachn {
 	font-size: 0.75rem;
-	opacity: 0.6;
+	opacity: 0.85;
 }
 .coach .row {
 	flex-wrap: wrap;
 	justify-content: flex-end;
 }
-.tut-hl {
-	outline: 3px solid #4fc3f7 !important;
-	outline-offset: 2px;
-	animation: tutpulse 1s ease-in-out infinite !important;
-	z-index: 3;
-}
-@keyframes tutpulse {
-	50% {
-		outline-color: transparent;
-	}
-}
+
+
 
 .card .lvltitle + .switch {
 	margin-bottom: 14px;
@@ -1916,58 +1727,71 @@ button.primary:disabled {
 
 /* switch on the light dialog card: the default translucent-white track is invisible there */
 .card .switch .tr {
-	background: #8a948a;
-	box-shadow: inset 0 0 0 1px #5b665c;
+	background: var(--card-switch-off);
+	box-shadow: inset 0 0 0 1px var(--card-switch-ring);
 }
 .card .switch input:checked + .tr {
-	background: var(--felt);
+	background: var(--card-switch-on);
 	box-shadow: none;
 }
 .card .switch input:focus-visible + .tr {
-	outline-color: var(--felt);
+	outline-color: var(--card-focus);
 	outline-offset: 2px;
 }
 
 /* ---- light dialog cards: contrast + hover/active/focus states ----
    (the global button:hover rule is a translucent white made for the dark table; it beat `.card button` and
    turned every dialog button white-on-white when hovered) */
+@media (hover: hover) {
 .card button:hover:not(:disabled) {
-	background: #2e7d32;
+	background: var(--card-btn-hover);
+}
 }
 .card button:active:not(:disabled) {
-	background: #14471a;
+	background: var(--card-btn-active);
 }
+@media (hover: hover) {
 .card button.primary:hover:not(:disabled) {
 	background: linear-gradient(#ffcb52, #ffbb1a);
 }
-.card button.primary:active:not(:disabled) {
-	background: linear-gradient(#f0a800, #e69f00);
 }
+.card button.primary:active:not(:disabled) {
+	background: linear-gradient(#f0a800, var(--amber-edge));
+}
+@media (hover: hover) {
 .card button.primary.danger:hover:not(:disabled) {
 	background: linear-gradient(#f4786c, #ec4a46);
 }
-.card button.link:hover:not(:disabled),
+}
 .card button.link:active:not(:disabled) {
 	background: none;
-	color: #0d3a12;
+	color: var(--card-link-hover);
+}
+@media (hover: hover) {
+.card button.link:hover:not(:disabled) {
+	background: none;
+	color: var(--card-link-hover);
+}
 }
 .card button:focus-visible {
-	outline: 3px solid #1b5e20;
+	outline: 3px solid var(--card-focus);
 	outline-offset: 2px;
 }
 .card button.primary:focus-visible {
-	outline-color: #2a1d00;
+	outline-color: var(--ink);
 }
 .card .codechip {
-	background: #1b5e20;
-	border-color: #14471a;
+	background: var(--card-chip-bg);
+	border-color: var(--card-chip-edge);
 }
 .card .codechip button.icon {
-	background: #2e7d32;
-	border-color: #4a9a4e;
+	background: var(--card-chip-btn);
+	border-color: var(--card-chip-btn-edge);
 }
+@media (hover: hover) {
 .card .codechip button.icon:hover:not(:disabled) {
-	background: #3d8b40;
+	background: var(--card-chip-btn-hover);
+}
 }
 .card .codechip button:focus-visible {
 	outline-color: var(--amber);
@@ -2010,8 +1834,10 @@ button.primary:disabled {
 	border-color: var(--btn-edge);
 	color: #fff;
 }
+@media (hover: hover) {
 :is(.lobby, .card.felt) button:not(.primary):not(.link):hover:not(:disabled) {
 	background: var(--btn-hover);
+}
 }
 :is(.lobby, .card.felt) button:not(.primary):not(.link):active:not(:disabled) {
 	background: #000000a6;
@@ -2024,8 +1850,10 @@ button.primary:disabled {
 	background: none;
 	border-color: transparent;
 }
+@media (hover: hover) {
 :is(.lobby, .card.felt) .menu button:hover:not(:disabled) {
 	background: #ffffff26;
+}
 }
 :is(.lobby, .card.felt) .lvlpop button[aria-selected='true'] {
 	background: #ffffff38;
@@ -2038,8 +1866,10 @@ button.primary:disabled {
 	background: #ffffff2e;
 	border-color: #ffffffb3;
 }
+@media (hover: hover) {
 :is(.lobby, .card.felt) .codechip button.icon:hover:not(:disabled) {
 	background: #ffffff47;
+}
 }
 .lobby .switch .tr {
 	background: #0000005c;
@@ -2065,11 +1895,17 @@ button.primary:disabled {
 	cursor: not-allowed;
 }
 .card.felt button.link,
-.card.felt button.link:hover:not(:disabled),
 .card.felt button.link:active:not(:disabled) {
 	background: none;
 	color: #fff;
 	border: 0;
+}
+@media (hover: hover) {
+.card.felt button.link:hover:not(:disabled) {
+	background: none;
+	color: #fff;
+	border: 0;
+}
 }
 .card.felt .res li {
 	background: #00000040;
@@ -2083,27 +1919,19 @@ button.primary:disabled {
 .card.felt .res small {
 	opacity: 0.9;
 }
-.card.felt .xbtn {
-	background: #00000059 !important;
-	color: #fff !important;
-	border: 1px solid #ffffff59 !important;
-}
 
-/* inside the scrolling dialog the difficulty popup opens upward, so the card doesn't clip it */
-.card.felt .lvlpop {
-	top: auto;
-	bottom: calc(100% + 6px);
-}
 
 /* dropdown rows stay flat: the generic felt button style above has equal-or-higher specificity, so repeat it here */
 :is(.lobby, .card.felt) .menu button:not(.primary):not(.link) {
 	background: none;
 	border-color: transparent;
 }
+@media (hover: hover) {
 :is(.lobby, .card.felt)
 	.menu
 	button:not(.primary):not(.link):hover:not(:disabled) {
 	background: #ffffff26;
+}
 }
 :is(.lobby, .card.felt)
 	.menu
@@ -2117,17 +1945,17 @@ button.primary:disabled {
 	flex-direction: column;
 	gap: 8px;
 	align-items: stretch;
-	text-align: left;
+	text-align: start;
 }
 .timerpick > span {
 	display: flex;
 	flex-direction: column;
 }
 .timerpick small {
-	opacity: 0.75;
+	opacity: 0.85;
 }
 .timerpick .seg {
-	margin-left: 0;
+	margin-inline-start: 0;
 	flex-wrap: nowrap;
 }
 .timerpick .seg button {
@@ -2138,41 +1966,25 @@ button.primary:disabled {
 
 /* Draw: its own colour so it reads as an equal alternative to End turn */
 button.draw {
-	background: linear-gradient(#4fc3f7, #0288d1);
-	border-color: #01579b;
+	background: linear-gradient(#0277bd, var(--sky-deep)); /* white text: 4.8-7.5:1 (was ~2:1 on the light top) */
+	border-color: var(--sky-deep);
 	color: #fff;
-	box-shadow: 0 2px 0 #01579b;
+	box-shadow: 0 2px 0 var(--sky-deep);
 }
+@media (hover: hover) {
 button.draw:hover:not(:disabled) {
-	background: linear-gradient(#6fd0fa, #039be5);
+	background: linear-gradient(#0288d1, #0277bd);
+}
 }
 button.draw:disabled {
 	opacity: 0.5;
 }
-button.draw.pulse {
-	animation: draw-pulse 0.9s ease-in-out infinite;
-}
-@keyframes draw-pulse {
-	0%,
-	100% {
-		box-shadow:
-			0 2px 0 #01579b,
-			0 0 0 0 #4fc3f700;
-		filter: brightness(1);
-	}
-	50% {
-		box-shadow:
-			0 2px 0 #01579b,
-			0 0 0 6px #4fc3f7aa;
-		filter: brightness(1.15);
-	}
-}
+
 
 /* ---- phone audit fixes ---- */
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	/* 4 players: chips share the row; only the active seat shows name + score */
 	.seats {
-		-webkit-mask-image: none;
 		mask-image: none;
 		gap: 6px;
 		padding-right: 0;
@@ -2190,7 +2002,7 @@ button.draw.pulse {
 	.seats {
 		min-width: 0;
 	}
-	.seats:has(.seat:nth-child(3)) .seat:not(.act) .seat-bot {
+	.seats[data-many] .seat:not(.act) .seat-bot {
 		display: none; /* frees room so the active seat keeps its name/score */
 	}
 	.pill {
@@ -2207,7 +2019,7 @@ button.draw.pulse {
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) {
+	.seats:not([data-many]) .seat:not(.act) {
 		flex: 1 1 auto; /* 2 players: keep the other chip at its content width (name, score, bot + check icons) */
 	}
 	.seat .si small {
@@ -2215,57 +2027,57 @@ button.draw.pulse {
 		text-overflow: ellipsis;
 	}
 }
-@media (max-width: 400px) {
+@media (width <= 400px) {
 	/* very narrow, 2 players: the other chip shows avatar + score only (name and icons hidden) and the active chip may shrink (its name ellipsizes) */
-	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) {
+	.seats:not([data-many]) .seat:not(.act) {
 		flex: 0 0 auto;
 	}
-	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) .si b,
-	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) > svg {
+	.seats:not([data-many]) .seat:not(.act) .si b,
+	.seats:not([data-many]) .seat:not(.act) > svg {
 		display: none;
 	}
-	.seats:not(:has(.seat:nth-child(3))) .seat.act {
+	.seats:not([data-many]) .seat.act {
 		flex: 1 1 auto;
 	}
-	.seats:not(:has(.seat:nth-child(3))) .seat {
+	.seats:not([data-many]) .seat {
 		padding: 4px 6px 4px 4px;
 		gap: 4px;
 	}
-	.seats:not(:has(.seat:nth-child(3))) .seat .si small {
-		font-size: 10px;
+	.seats:not([data-many]) .seat .si small {
+		font-size: 0.75rem;
 	}
-	.seats:not(:has(.seat:nth-child(3))) .seat .seat-bot {
+	.seats:not([data-many]) .seat .seat-bot {
 		display: none; /* the "Bot n" name already says it */
 	}
 }
-@media (max-width: 340px) {
+@media (width <= 340px) {
 	/* tiniest phones: same compact look as 3-4 players, the other chip is avatar + tile count only */
-	.seats:not(:has(.seat:nth-child(3))) .seat:not(.act) .si {
+	.seats:not([data-many]) .seat:not(.act) .si {
 		display: none;
 	}
 }
-@media (max-width: 520px) {
-	.seats:has(.seat:nth-child(3)) .seat:not(.act) .si {
+@media (width <= 520px) {
+	.seats[data-many] .seat:not(.act) .si {
 		display: none;
 	}
-	.seats:has(.seat:nth-child(3)) {
+	.seats[data-many] {
 		gap: 4px; /* 3-4 players: all chips must fit next to the pool count and menu on a 360 px phone */
 		padding-right: 8px; /* room for the last chip's tile-count badge, which overhangs its avatar */
 	}
-	.seats:has(.seat:nth-child(3)) .seat:not(.act) {
+	.seats[data-many] .seat:not(.act) {
 		flex: 0 0 auto;
 		padding: 5px 3px;
 	}
-	.seats:has(.seat:nth-child(3)) .seat.act {
+	.seats[data-many] .seat.act {
 		flex: 1 1 auto; /* may shrink to its minimum (the name ellipsizes) instead of pushing the last chip off-screen */
 		min-width: 96px;
 	}
-	.seats:has(.seat:nth-child(3)) .seat:not(.act) .av {
+	.seats[data-many] .seat:not(.act) .av {
 		margin-right: 0;
 	}
 	/* reaction picker: emoji grid, labels hidden, so it no longer covers the status line */
 	.rpick {
-		width: min(300px, calc(100vw - 20px));
+		width: min(300px, calc(100% - 20px));
 		grid-template-columns: repeat(5, 1fr);
 	}
 	.rpick button small {
@@ -2284,15 +2096,12 @@ button.draw.pulse {
 		font-size: 21px;
 	}
 	.board {
-		overscroll-behavior: contain;
 		scroll-padding-top: 24px;
 	}
 	/* round-end / lobby dialogs: more room, primary action always reachable */
-	.modal {
-		padding: 10px;
-	}
 	.card {
 		padding: 14px;
+		max-width: calc(100% - 20px);
 		max-height: 94dvh;
 	}
 	.card .endact {
@@ -2304,48 +2113,44 @@ button.draw.pulse {
 		flex-direction: column;
 		align-items: center;
 		gap: 6px;
-		background: linear-gradient(#0000, #1b5e20 30%);
+		background: linear-gradient(#0000, var(--felt) 30%);
 	}
 	.card:not(.felt) .endact {
-		background: linear-gradient(#fbfaf300, #fbfaf3 30%);
+		background: linear-gradient(var(--card-bg-clear), var(--card-bg) 30%);
 	}
 	.res li {
 		padding: 6px 10px;
 	}
 }
-@media (max-width: 400px) {
+@media (width <= 400px) {
 	/* 3-4 players on a phone: the active chip shows "N pts" only (wins are in the round-end dialog) and the other chips get tighter, so all seats fit */
-	.seats:has(.seat:nth-child(3)) .seat.act .wn {
+	.seats[data-many] .seat.act .wn {
 		display: none;
 	}
-	.seats:has(.seat:nth-child(3)) .seat .seat-bot,
-	.seats:has(.seat:nth-child(3)) .seat .seat-ok {
+	.seats[data-many] .seat .seat-bot,
+	.seats[data-many] .seat .seat-ok {
 		display: none; /* the name already says "Bot n"; the melded check would widen the chips (the status line shows meld progress) */
 	}
-	.seats:has(.seat:nth-child(3)) .seat:not(.act) {
+	.seats[data-many] .seat:not(.act) {
 		padding: 5px 2px;
 	}
 }
-@media (max-width: 340px) {
+@media (width <= 340px) {
 	/* tiniest phones, 3-4 players: smaller avatars and no name on the active chip (its avatar + "N pts" remain) */
-	.seats:has(.seat:nth-child(3)) .seat .av {
+	.seats[data-many] .seat .av {
 		width: 26px;
-		height: 26px;
 		font-size: 14px;
 	}
-	.seats:has(.seat:nth-child(3)) .seat.act {
+	.seats[data-many] .seat.act {
 		min-width: 70px;
 		padding: 5px 6px 5px 4px;
 		gap: 4px;
 	}
-	.seats:has(.seat:nth-child(3)) .seat.act .si b {
+	.seats[data-many] .seat.act .si b {
 		display: none;
 	}
 }
-@media (max-width: 380px) {
-	:root {
-		--tw: 29px;
-	}
+@media (width <= 380px) {
 	.rack {
 		gap: 3px;
 		max-height: 28dvh;
@@ -2359,9 +2164,9 @@ button.draw.pulse {
 .timerpick {
 	margin-bottom: 14px;
 	padding-bottom: 14px;
-	border-bottom: 1px solid #0000001f;
+	border-bottom: 1px solid var(--card-rule);
 }
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.bar button .lg {
 		display: none;
 	}
@@ -2380,7 +2185,7 @@ button.draw.pulse {
 		margin-top: 6px;
 	}
 }
-@media (max-width: 380px) {
+@media (width <= 380px) {
 	.bar {
 		flex-wrap: wrap;
 		justify-content: flex-end;
@@ -2395,14 +2200,14 @@ button.draw.pulse {
 	display: flex;
 	gap: 8px;
 	align-items: center;
-	margin-left: auto;
+	margin-inline-start: auto;
 }
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.bar {
 		gap: 8px;
 	}
 	.bar button {
-		min-height: 40px;
+		min-height: 44px;
 		padding: 6px 12px;
 		font-size: 14px;
 	}
@@ -2427,31 +2232,32 @@ button.draw.pulse {
 }
 
 /* phones: the bot level list floats as a bottom sheet instead of pushing the page to scroll */
-@media (max-width: 520px) {
+@media (width <= 520px) {
 	.lvlpop,
 	.card.felt .lvlpop {
-		position: fixed;
-		left: 12px;
-		right: 12px;
-		top: auto;
-		bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+		position-area: none; /* a bottom sheet, not anchored to its trigger */
+		position-try-fallbacks: none;
+		inset-inline: 12px;
+		inset-block: auto calc(12px + env(safe-area-inset-bottom, 0px));
+		margin: 0;
 		min-width: 0;
 		max-height: 70dvh;
 		overflow-y: auto;
-		z-index: 80;
-		box-shadow: 0 0 0 100vmax #0009;
+	}
+	.lvlpop::backdrop {
+		background: #0009; /* replaces the old 100vmax box-shadow scrim */
 	}
 }
 
 /* phones: table tiles a bit bigger than the rack's, with tighter gaps between groups */
-@media (max-width: 520px) and (min-height: 481px) {
+@media (width <= 520px) and (height >= 481px) {
 	.board {
 		--tw: 33px;
 		gap: 8px;
 		row-gap: 16px;
 	}
 }
-@media (max-width: 380px) and (min-height: 481px) {
+@media (width <= 380px) and (height >= 481px) {
 	.board {
 		--tw: 31px;
 	}
@@ -2482,13 +2288,8 @@ button.draw.pulse {
 	opacity: 0;
 }
 .seat.bump {
-	animation: seatbump 0.4s ease-out;
 }
-@keyframes seatbump {
-	40% {
-		transform: scale(1.08);
-	}
-}
+
 .tile.dealhide {
 	opacity: 0;
 	pointer-events: none;
@@ -2535,4 +2336,85 @@ button.draw.pulse {
 }
 .board.bg9 {
 	background: repeating-radial-gradient(circle at 50% 50%, transparent 0 8px, #ffffff14 8px 9px) 0 0 / 56px 56px;
+}
+
+/* ---- attention rings (animated in motion.css; here only the static, invisible ring) ---- */
+.seat.act,
+button.pulse {
+	position: relative; /* anchor for the ::after ring */
+}
+.seat.act::after,
+.tnum.mine::after,
+button.pulse::after,
+.tile.placed::before {
+	content: '';
+	position: absolute;
+	inset: -1px;
+	border-radius: inherit;
+	pointer-events: none;
+	box-shadow: 0 0 0 var(--ring, 7px) var(--ring-color, color-mix(in srgb, var(--amber) 33.33%, transparent));
+	opacity: 0;
+}
+.tnum.mine::after {
+	inset: 0;
+}
+.seat.act {
+	--ring: 3px;
+	--ring-color: color-mix(in srgb, var(--amber) 20%, transparent);
+	--ring-dur: 2.4s;
+}
+button.draw.pulse {
+	--ring: 6px;
+	--ring-color: color-mix(in srgb, var(--sky) 66.67%, transparent);
+	--ring-dur: 0.9s;
+}
+.tile.placed::before {
+	--ring: 10px;
+	--ring-color: color-mix(in srgb, var(--sky) 40%, transparent);
+	inset: 0;
+}
+
+/* ---- drag preview: the lifted copy that follows the pointer (pointer-events none, so hit-testing sees what is below) ---- */
+.drag-preview {
+	position: fixed;
+	left: 0;
+	top: 0;
+	z-index: 100;
+	pointer-events: none;
+	scale: 1.08;
+	box-shadow:
+		inset 0 1px 0 #fff,
+		0 3px 0 var(--tile-edge),
+		0 14px 22px #0006;
+}
+.drag-preview[data-count]::after {
+	content: attr(data-count);
+	position: absolute;
+	top: -9px;
+	inset-inline-end: -9px;
+	min-width: 20px;
+	height: 20px;
+	border-radius: 10px;
+	background: var(--amber);
+	color: #222;
+	font: 800 12px/20px var(--font);
+	text-align: center;
+}
+
+/* ---- short landscape phones: every pixel of height counts, the table was left with about a third of it ---- */
+@media (height <= 480px) and (orientation: landscape) {
+	.top {
+		padding-block: calc(4px + env(safe-area-inset-top)) 4px;
+	}
+	.bar {
+		padding-block: 4px;
+	}
+	.rackbar {
+		padding-top: 2px;
+	}
+	.rackbar button,
+	.rackbar .seg button,
+	.rackbar .rwrap button {
+		min-height: 40px; /* secondary controls; the action bar keeps 44px */
+	}
 }

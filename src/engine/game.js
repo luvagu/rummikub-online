@@ -15,7 +15,7 @@ export const T = i => DECK[i]
 export const TIMES = [0, 15, 30, 45, 60, 90] // turn timer choices in seconds (0 = off)
 const E = (k, p) => ({ k, p }) // translatable message (see i18n.js)
 export const val = ids => ids.reduce((a, i) => a + (T(i).j ? 30 : T(i).n), 0)
-export const key = a => [...a].sort((x, y) => x - y).join()
+export const key = a => a.toSorted((x, y) => x - y).join()
 // Uniform integer in [0, n) — crypto-backed with rejection sampling (no modulo bias); falls back to Math.random.
 const rnd = n => {
 	const c = globalThis.crypto
@@ -42,8 +42,8 @@ export function analyze(ids) {
 		L = ts.length
 	const bad = {
 		ok: false,
-		order: [...nj]
-			.sort((a, b) => a.c - b.c || a.n - b.n)
+		order: nj
+			.toSorted((a, b) => a.c - b.c || a.n - b.n)
 			.concat(js)
 			.map(t => t.id),
 		nums: null,
@@ -376,7 +376,7 @@ export class Game {
 			if (i === 0 && (s.phase === 'lobby' || s.phase === 'over')) {
 				const k = m.id
 					? s.players.findIndex(x => x.id === m.id && (x.bot || x.on === false))
-					: s.players.map(x => !!x.bot).lastIndexOf(true)
+					: s.players.findLastIndex(x => x.bot)
 				if (k > 0) this.removeSeat(k)
 			}
 			return
@@ -480,7 +480,7 @@ function solve(rack, board, melded, cfg, full) {
 		} else {
 			cnt[t.c][t.n]++
 			if (isBoard) req[t.c][t.n]++
-			;(ids[t.c + '-' + t.n] = ids[t.c + '-' + t.n] || []).push(id)
+			;(ids[t.c + '-' + t.n] ??= []).push(id)
 		}
 	}
 	// board tiles first so they are the ones consumed when sets are built
@@ -569,7 +569,7 @@ function solve(rack, board, melded, cfg, full) {
 	if (!best) return null
 	if (cfg.one) {
 		// beginner: only the biggest set (plus one more if the first doesn't reach 30 to meld)
-		const sorted = [...best.sets].sort((a, b) => b.val - a.val),
+		const sorted = best.sets.toSorted((a, b) => b.val - a.val),
 			pick = []
 		let pts = 0
 		for (const cd of sorted) {
@@ -580,8 +580,7 @@ function solve(rack, board, melded, cfg, full) {
 		if (!melded && pts < 30) return null
 		best = { sets: pick }
 	}
-	const pool = {}
-	for (const k in ids) pool[k] = [...ids[k]]
+	const pool = structuredClone(ids) // plain object of integer arrays; consumed (shift) below without touching `ids`
 	const jp = [...js]
 	const fresh = best.sets.map(cd => [
 		...cd.sl.map(([c, n]) => pool[c + '-' + n].shift()),
