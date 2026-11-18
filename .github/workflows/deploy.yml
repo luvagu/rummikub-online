@@ -8,8 +8,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: npm install && npm run build
+        with: { node-version-file: .nvmrc, cache: npm } # one source of truth for the Node version (see .nvmrc)
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -122,6 +122,7 @@ Scores and wins add up across games in the same room (the round-end dialog shows
 
 ## Development
 
+- **Node 22:** `.nvmrc` pins the Node version (`nvm use` / `fnm use`); CI reads the same file, and `package.json` declares `engines`. Vite 8 needs Node 20.19+ / 22.12+.
 - `npm run dev` / `npm run build` / `npm test`. The tests (`tests/game.test.mjs`, Node's built-in runner, no dependencies) cover the rules engine and the bots.
 - **Browser support:** the app targets Baseline "newly available" web features (native `<dialog>`, Popover API with anchor positioning, `@layer`, `color-mix()`, `toSorted()`, `Promise.withResolvers()`), with no polyfills. `closedby` on dialogs is progressive enhancement; a pointer-position fallback covers Safari.
 - **CSS** is an entry file (`src/styles.css`) that imports `src/styles/*.css` into an explicit cascade: `tokens` (custom properties), then the layers `base`, `components`, `motion`, `overrides`. Later layers win regardless of specificity, so there is no `!important`. Decorative motion is opt-in (`prefers-reduced-motion: no-preference`) and lives in `motion.css`.

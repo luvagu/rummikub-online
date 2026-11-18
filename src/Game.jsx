@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useContext } from "react";
+import { useState, useEffect, useEffectEvent, useRef, useMemo, useContext } from "react";
 import {
   EllipsisVertical,
   BookOpen,
@@ -344,7 +344,9 @@ export default function Game({
   const hot = timed && secs <= redAt,
     cls = !timed ? "" : secs > amberAt ? "ok" : secs > redAt ? "amber" : "red";
   const ev = useRef({ seq: -1, warn: 0, sent: 0 });
-  useEffect(() => {
+  // An Effect Event always sees the latest my/redAt/net, while the effect below re-runs only when the countdown
+  // second or the turn changes (the explicit intent that the old, incomplete dependency list only implied).
+  const onCountdown = useEffectEvent(() => {
     if (!timed) return;
     if (ev.current.seq !== s.seq) ev.current = { seq: s.seq, warn: 0, sent: 0 };
     const e = ev.current;
@@ -357,6 +359,9 @@ export default function Game({
       e.sent = 1;
       net.send({ t: "timeout" });
     }
+  });
+  useEffect(() => {
+    onCountdown();
   }, [secs, s.seq]);
 
   useEffect(() => {
