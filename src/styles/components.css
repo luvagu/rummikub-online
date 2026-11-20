@@ -387,6 +387,9 @@ button.opt.primary small {
 	scrollbar-width: none;
 	padding: 6px 6px 6px 2px;
 }
+.seats[title] {
+	cursor: pointer; /* during play a tap on the chips opens the standings */
+}
 .seat {
 	display: flex;
 	align-items: center;
@@ -2049,7 +2052,7 @@ button.draw:disabled {
 		font-size: 0.75rem;
 	}
 	.seats:not([data-many]) .seat .seat-bot {
-		display: none; /* the "Bot n" name already says it */
+		display: none; /* the name ("Expert Bot") already says it */
 	}
 }
 @media (width <= 340px) {
@@ -2131,7 +2134,7 @@ button.draw:disabled {
 	}
 	.seats[data-many] .seat .seat-bot,
 	.seats[data-many] .seat .seat-ok {
-		display: none; /* the name already says "Bot n"; the melded check would widen the chips (the status line shows meld progress) */
+		display: none; /* the name ("Expert Bot") already says it is a bot; the melded check would widen the chips (the status line shows meld progress) */
 	}
 	.seats[data-many] .seat:not(.act) {
 		padding: 5px 2px;

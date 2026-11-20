@@ -188,7 +188,7 @@ export default function App() {
 			mode === 'host'
 				? hostGame
 				: mode === 'solo'
-					? localGame
+					? (nm2, c2, tk, sn) => localGame(nm2, c2, tk, sn, l => t('botName', { lvl: t('lvl' + l) }))
 					: mode === 'tutorial'
 						? (nm2, c2, tk) => tutorialGame(nm2, c2, tk, t('tutBot'), o.lesson)
 						: (nm2, c2, tk) => joinGame(cd, nm2, c2, tk)

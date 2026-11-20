@@ -177,3 +177,33 @@ test('the hold also applies to the next round', () => {
 	g.act('h', { t: 'start' })
 	assert.ok(g.hold() > 0)
 })
+
+test('bots take the name the host gives them, numbered when it repeats', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.act('h', { t: 'bot', name: 'Expert Bot' })
+	g.act('h', { t: 'bot', name: '  Expert Bot ' })
+	g.act('h', { t: 'bot', name: 'Master Bot' })
+	assert.deepEqual(g.s.players.map(p => p.name), ['Host', 'Expert Bot', 'Expert Bot 2', 'Master Bot'])
+	assert.deepEqual(g.s.players.slice(1).map(p => p.id), ['bot1', 'bot2', 'bot3'])
+})
+
+test('a bot without a usable name is called "Bot", and long names are cut', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.act('h', { t: 'bot' })
+	g.act('h', { t: 'bot', name: { x: 1 } })
+	g.act('h', { t: 'bot', name: 'x'.repeat(60) })
+	assert.deepEqual(g.s.players.map(p => p.name), ['Host', 'Bot', 'Bot 2', 'x'.repeat(24)])
+})
+
+test('a player who leaves mid-game keeps their name while a bot plays the seat', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.join('g', 'Guest')
+	g.act('h', { t: 'start' })
+	g.act('g', { t: 'leave' })
+	const p = g.s.players[1]
+	assert.equal(p.bot, true)
+	assert.equal(p.name, 'Guest')
+})

@@ -93,6 +93,9 @@ import {
   EndRoundDialog,
 } from "./EndRoundDialog.jsx";
 import {
+  ScoresDialog,
+} from "./ScoresDialog.jsx";
+import {
   celebrationFor,
 } from "./celebrate.js";
 import {
@@ -576,10 +579,12 @@ export default function Game({
   // while rendering, so the summary never shows for a frame first. A mount that is already "over" (reload, late join) has
   // prevPhase === s.phase and never celebrates; neither does a repeat of the same state.
   const [prevPhase, setPrevPhase] = useState(s.phase),
-    [celebrate, setCelebrate] = useState(null);
+    [celebrate, setCelebrate] = useState(null),
+    [scoresOpen, setScoresOpen] = useState(false); // the standings dialog (menu item or a tap on the seat chips)
   if (prevPhase !== s.phase) {
     setPrevPhase(s.phase);
     setCelebrate(celebrationFor(prevPhase, s)); // also clears it when the next round starts while a slow client still celebrates
+    setScoresOpen(false); // the round summary takes over; it must not reopen when the next round starts
   }
   useEffect(() => {
     if (!celebrate) return;
@@ -809,7 +814,14 @@ export default function Game({
           .join(". ")}
       </div>
       <header className="top">
-        <div className="seats" ref={seatsRef} data-many={s.players.length > 2 || undefined}>
+        {/* tapping the chips opens the standings (a shortcut: keyboard and screen-reader users have the menu item) */}
+        <div
+          className="seats"
+          ref={seatsRef}
+          data-many={s.players.length > 2 || undefined}
+          title={s.phase === "play" ? t("scores") : undefined}
+          onClick={() => s.phase === "play" && setScoresOpen(true)}
+        >
           {s.players.map((p, i) => (
             <div
               key={p.id}
@@ -877,6 +889,16 @@ export default function Game({
             <EllipsisVertical size={20} />
           </button>
           <Popup id="game-menu" className="menu" label={t("menu")} onOpenChange={setMenu}>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  hidePopup("game-menu");
+                  setScoresOpen(true);
+                }}
+              >
+                <Trophy size={18} />
+                {t("scores")}
+              </button>
               <button
                 role="menuitem"
                 onClick={() => {
@@ -1246,6 +1268,9 @@ export default function Game({
             net.send({ t: "forfeit" });
           }}
         />
+      )}
+      {scoresOpen && s.phase === "play" && (
+        <ScoresDialog s={s} onClose={() => setScoresOpen(false)} />
       )}
       {s.phase === "over" && !celebrate && (
         <RoundSummary s={s} net={net} copy={copy} share={share} inRoom={inRoom} hostRoom={hostRoom} onLeave={onLeave} />
