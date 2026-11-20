@@ -20,7 +20,7 @@ export function Lobby({ s, net, copy, share, whatsappUrl, leave, openRules }) {
 				<header className='lb-bar'>
 					<button className='lb-ghost' onClick={leave}>
 						<LogOut size={16} aria-hidden='true' />
-						{t('leave')}
+						<span className='lb-leave'>{t('leave')}</span>
 					</button>
 					<div className='lb-bar-end'>
 						<button className='lb-ghost lb-rules' onClick={openRules} aria-label={t('readRules')} title={t('readRules')}>

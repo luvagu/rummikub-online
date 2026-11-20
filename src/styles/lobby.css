@@ -26,12 +26,22 @@ html:has(.lobby) {
 /* ---- top bar: the secondary actions, out of the way of the content ---- */
 .lb-bar {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--space-2);
 }
+.lb-bar > .lb-ghost {
+	min-inline-size: 0; /* on a very narrow phone the leave label shrinks (ellipsis) rather than wrapping the bar */
+}
+.lb-leave {
+	min-inline-size: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
 .lb-bar-end {
+	flex: none;
 	margin-inline-start: auto;
 	display: flex;
 	align-items: center;
@@ -61,15 +71,23 @@ html:has(.lobby) {
 	}
 }
 /* the label has a long and a short form: the short one on narrow (phone) widths */
-.lb-rules .rules-short {
+.lb-rules .rules-short,
+.lobby .lang-short {
 	display: none;
 }
 @container lobby (inline-size < 32rem) {
-	.lb-rules .rules-long {
+	.lb-rules .rules-long,
+	.lobby .lang-long {
 		display: none;
 	}
-	.lb-rules .rules-short {
+	.lb-rules .rules-short,
+	.lobby .lang-short {
 		display: inline;
+	}
+	/* tighter buttons so "Salir de la sala" + Reglas + EN fit one row on a 360px phone */
+	.lobby .lb-ghost,
+	.lobby .lang {
+		padding-inline: var(--space-2);
 	}
 }
 
