@@ -206,13 +206,13 @@ html:has(.lobby) {
 }
 /* the four Rummikub numeral colours, cycling */
 .lb-tile:nth-child(4n + 2) {
-	color: #c62828;
+	color: var(--tile-ink-1);
 }
 .lb-tile:nth-child(4n + 3) {
-	color: #1565c0;
+	color: var(--tile-ink-2);
 }
 .lb-tile:nth-child(4n) {
-	color: #d84315;
+	color: var(--tile-ink-3);
 }
 .lb-codeicon {
 	flex: none;

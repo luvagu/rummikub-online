@@ -92,6 +92,16 @@
 	margin: 0;
 }
 .ltile {
+	color: var(--tile-ink-0);
+	&[data-c='1'] {
+		color: var(--tile-ink-1);
+	}
+	&[data-c='2'] {
+		color: var(--tile-ink-2);
+	}
+	&[data-c='3'] {
+		color: var(--tile-ink-3);
+	}
 	/* eight tiles and seven gaps fill the hero, within sensible bounds */
 	--tile-w: clamp(1.75rem, (88cqi - 7 * var(--logo-gap)) / 8, 4.5rem);
 	display: grid;

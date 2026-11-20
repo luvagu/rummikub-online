@@ -88,11 +88,15 @@
 	--xbtn-bg: light-dark(#0000000f, #00000059);
 	--xbtn-ink: light-dark(#333, #fff);
 	/* ---- game table (src/styles/game.css). Game objects: identical in both colour schemes ---- */
-	--tile-ink-0: #1b1b1b; /* same four inks as COLORS in src/engine/game.js (the home logo still reads them from there) */
+	--tile-ink-0: #1b1b1b; /* the four tile inks: tiles, the home logo and the room code (scripts/make-icons.mjs keeps a copy) */
 	--tile-ink-1: #d32f2f;
 	--tile-ink-2: #1565c0;
 	--tile-ink-3: #d97800;
 	--tile-joker: #7b1fa2;
+	--seat-0: #ffb300; /* seat colours: avatars (components.css .av) */
+	--seat-1: #81c784;
+	--seat-2: #4fc3f7;
+	--seat-3: #f48fb1;
 	--felt-hud: var(--felt-edge); /* opaque: iOS samples the header for the status-bar tint */
 	--felt-ink: oklch(100% 0 0 / 0.08); /* pattern strokes and hairlines on the felt */
 	--felt-tray: oklch(18% 0.04 150 / 0.34); /* the recessed trays that hold sets */
@@ -102,6 +106,22 @@
 	--ring-ok: #66bb6a;
 	--ring-amber: var(--amber);
 	--ring-red: #ef5350;
+	/* ---- buttons (components.css): the defaults are for the felt; dialog cards, the felt card and the coach re-point them ---- */
+	--btn-bg: color-mix(in oklab, white 12%, transparent);
+	--btn-bg-hover: color-mix(in oklab, white 20%, transparent);
+	--btn-bg-active: color-mix(in oklab, white 20%, transparent);
+	--btn-edge: color-mix(in oklab, white 18%, transparent);
+	--btn-ink: #fff;
+	--btn-link-ink: color-mix(in oklab, white 92%, transparent);
+	--btn-link-ink-hover: #fff;
+	--btn-primary-bg: linear-gradient(var(--amber-hi), var(--amber));
+	--btn-primary-bg-hover: linear-gradient(#ffcb52, #ffbb1a);
+	--btn-primary-bg-active: linear-gradient(#f0a800, var(--amber-edge));
+	--btn-danger-bg: linear-gradient(#ef6c5f, #e53935);
+	--btn-danger-bg-hover: linear-gradient(#f4786c, #ec4a46);
+	--btn-off-bg: color-mix(in oklab, white 15%, transparent);
+	--btn-off-edge: color-mix(in oklab, white 18%, transparent);
+	--btn-off-ink: color-mix(in oklab, white 70%, transparent);
 	/* ---- surfaces (src/styles/surfaces.css): dialogs, sheets, toasts, banners, pop-ups ---- */
 	--sf-pad: 22px;
 	--sf-radius: 22px;

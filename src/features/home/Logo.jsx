@@ -1,5 +1,3 @@
-import { COLORS } from '../../engine/game.js'
-
 // The page heading: one accessible name, with the decorative tiles hidden so it is not read letter by letter.
 export const Logo = () => (
 	<h1 className='logo'>
@@ -9,7 +7,8 @@ export const Logo = () => (
 				key={i}
 				className='ltile'
 				aria-hidden='true'
-				style={{ color: COLORS[i % 4], '--i': i }}
+				data-c={i % 4}
+				style={{ '--i': i }}
 			>
 				{c}
 			</span>

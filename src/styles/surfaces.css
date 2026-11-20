@@ -214,63 +214,21 @@
 	.card :focus-visible {
 		outline-color: var(--card-focus);
 	}
-	/* buttons on the light card (the generic translucent-white button is made for the dark table) */
-	.card button {
-		background: var(--card-btn-bg);
-		border-color: var(--card-btn-edge);
-		@media (hover: hover) {
-			&:hover:not(:disabled) {
-				background: var(--card-btn-hover);
-			}
-		}
-		&:active:not(:disabled) {
-			background: var(--card-btn-active);
-		}
-		&:focus-visible {
-			outline: 3px solid var(--card-focus);
-			outline-offset: 2px;
-		}
+	/* buttons on the card: the card re-points the button tokens (components.css); the variants keep their own colours */
+	dialog.card {
+		--btn-bg: var(--card-btn-bg);
+		--btn-bg-hover: var(--card-btn-hover);
+		--btn-bg-active: var(--card-btn-active);
+		--btn-edge: var(--card-btn-edge);
+		--btn-link-ink: var(--card-link);
+		--btn-link-ink-hover: var(--card-link-hover);
 	}
-	.card button.primary {
-		background: linear-gradient(var(--amber-hi), var(--amber));
-		color: var(--ink);
-		border-color: var(--amber-edge);
-		@media (hover: hover) {
-			&:hover:not(:disabled) {
-				background: linear-gradient(#ffcb52, #ffbb1a);
-			}
-		}
-		&:active:not(:disabled) {
-			background: linear-gradient(#f0a800, var(--amber-edge));
-		}
-		&:focus-visible {
-			outline-color: var(--ink);
-		}
+	.card button:focus-visible {
+		outline: 3px solid var(--card-focus);
+		outline-offset: 2px;
 	}
-	.card button.primary.danger {
-		background: linear-gradient(#ef6c5f, var(--tone-danger-solid));
-		color: #fff;
-		border-color: #b71c1c;
-		@media (hover: hover) {
-			&:hover:not(:disabled) {
-				background: linear-gradient(#f4786c, #ec4a46);
-			}
-		}
-	}
-	.card button.link {
-		background: none;
-		color: var(--card-link);
-		border: 0;
-		@media (hover: hover) {
-			&:hover:not(:disabled) {
-				background: none;
-				color: var(--card-link-hover);
-			}
-		}
-		&:active:not(:disabled) {
-			background: none;
-			color: var(--card-link-hover);
-		}
+	.card button.primary:focus-visible {
+		outline-color: var(--ink);
 	}
 	/* the room components (lobby.css: seat list, invite, timer) are drawn with the felt surface tokens; a light card
 	   re-points them, so the same components read well there (the felt card keeps the felt values) */
@@ -286,9 +244,15 @@
 	/* ---- the felt card: room screens (the between-rounds summary in a room) ----
 	   Dark tint + a clear light edge instead of faint white: the old 8-20% whites almost vanished on the green. */
 	.card.felt {
-		--btn: #0000005c;
-		--btn-hover: #00000080;
+		--btn-bg: #0000005c;
+		--btn-bg-hover: #00000080;
+		--btn-bg-active: #000000a6;
 		--btn-edge: #ffffffb3;
+		--btn-link-ink: #fff;
+		--btn-link-ink-hover: #fff;
+		--btn-off-bg: #0000004d;
+		--btn-off-edge: #ffffff99;
+		--btn-off-ink: #ffffffcc;
 		--card-bg: #1f5f24; /* the footer and the sheet handle read the card colour */
 		background: radial-gradient(circle at 50% 0%, #3b7f3f, #1f5f24 78%);
 		color: #fff;
@@ -302,56 +266,14 @@
 			color: #fff;
 			border: 1px solid #ffffff59;
 		}
-		& button:not(.primary, .link) {
-			background: var(--btn);
-			border-color: var(--btn-edge);
-			color: #fff;
-			@media (hover: hover) {
-				&:hover:not(:disabled) {
-					background: var(--btn-hover);
-				}
-			}
-			&:active:not(:disabled) {
-				background: #000000a6;
-			}
-		}
 		& button:focus-visible {
 			outline: 3px solid var(--amber);
 			outline-offset: 2px;
 		}
 		/* a disabled primary stays legible but clearly inactive (no 45% fade) */
 		& button.primary:disabled {
-			opacity: 1;
-			background: #0000004d;
-			color: #ffffffcc;
-			border: 1px dashed #ffffff99;
-			box-shadow: none;
+			border-style: dashed;
 			cursor: not-allowed;
-		}
-		& button.link,
-		& button.link:active:not(:disabled) {
-			background: none;
-			color: #fff;
-			border: 0;
-		}
-		@media (hover: hover) {
-			& button.link:hover:not(:disabled) {
-				background: none;
-				color: #fff;
-			}
-		}
-		/* dropdown rows stay flat inside the felt card */
-		& .menu button:not(.primary, .link) {
-			background: none;
-			border-color: transparent;
-			@media (hover: hover) {
-				&:hover:not(:disabled) {
-					background: #ffffff26;
-				}
-			}
-			&[aria-selected='true'] {
-				background: #ffffff38;
-			}
 		}
 	}
 
@@ -804,6 +726,11 @@
 			background: none;
 			text-align: start;
 		}
+		@media (hover: hover) {
+			& button:hover:not(:disabled) {
+				background: oklch(100% 0 0 / 0.1);
+			}
+		}
 		/* a value (pattern, language, theme); on/off items draw a switch instead (game.css .gmenu) */
 		& :not([role='menuitemcheckbox']) > .sw {
 			margin-inline-start: auto;
@@ -1097,21 +1024,35 @@
 
 /* ================================================================== coach: the tutorial's guide */
 @layer coach {
+	/* a non-modal dialog in the top layer (Tutorial.jsx: popover="manual") */
 	.coach {
+		/* buttons follow the coach's own light / dark background */
+		--btn-bg: light-dark(#0000000d, oklch(100% 0 0 / 0.12));
+		--btn-bg-hover: light-dark(#0000001a, oklch(100% 0 0 / 0.2));
+		--btn-bg-active: light-dark(#0000001a, oklch(100% 0 0 / 0.2));
+		--btn-edge: light-dark(#00000026, oklch(100% 0 0 / 0.18));
+		--btn-ink: var(--coach-ink);
+		--btn-link-ink: var(--coach-ink);
+		--btn-link-ink-hover: var(--coach-ink);
 		position: fixed;
-		z-index: 40;
+		inset: auto;
 		top: calc(env(safe-area-inset-top, 0px) + 58px);
 		left: 50%;
 		translate: -50% 0;
-		display: grid;
 		gap: 8px;
 		width: min(calc(100% - 24px), 420px);
+		max-width: none;
+		margin: 0;
+		overflow: visible;
 		padding: 12px 14px;
 		border: 2px solid var(--amber);
 		border-radius: 16px;
 		background: var(--coach-bg);
 		box-shadow: var(--elev-4);
 		color: var(--coach-ink);
+		&:popover-open {
+			display: grid; /* only while open: an unconditional display would override the closed state */
+		}
 		& p {
 			margin: 0;
 			font-size: 0.92rem;

@@ -1262,7 +1262,8 @@
 			}
 		}
 	}
-	/* a reaction bubble under the sender's seat */
+	/* a reaction bubble under the sender's seat: anchored to the seat (Game.jsx names each seat --seat-<i>), or placed
+	   from measured coordinates where anchor positioning is missing */
 	.rbub {
 		position: fixed;
 		z-index: 35;
@@ -1320,6 +1321,17 @@
 			& .rx-rumble {
 				animation-name: rx-rumble;
 			}
+		}
+	}
+
+	/* anchored under the seat (after the base rule above, which it overrides) */
+	@supports (position-area: block-end) {
+		.rbub {
+			position-area: block-end span-all;
+			justify-self: anchor-center;
+			inset: auto;
+			margin-top: 16px;
+			translate: none;
 		}
 	}
 

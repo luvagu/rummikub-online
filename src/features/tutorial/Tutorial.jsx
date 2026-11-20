@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId, useLayoutEffect, useRef } from 'react'
 import {
 	GraduationCap,
 	X,
@@ -68,50 +68,67 @@ export default function Tutorial({
 		}
 	}, [step, mine, s, draft])
 
-	const showWait = !mine && !step.next
+	const showWait = !mine && !step.next,
+		title = showWait ? t('tut.wait.t') : t('tut.' + step.k + '.t'),
+		body = showWait ? t('tut.wait.b') : t('tut.' + step.k + '.b')
+	// The coach is a non-modal dialog in the top layer (popover="manual": it stays open while the player works on the
+	// table), labelled by its step title and placed beside the highlighted target (surfaces.css). Only the step itself is
+	// announced, through a separate live region, instead of the whole card re-reading on every change.
+	const ref = useRef(),
+		hid = useId()
+	useLayoutEffect(() => {
+		const el = ref.current
+		el.showPopover()
+		return () => el.matches(':popover-open') && el.hidePopover()
+	}, [])
 	return (
-		<aside className='coach' role='status' aria-live='polite'>
-			<div className='coachhead'>
-				<GraduationCap size={18} />
-				<b>{showWait ? t('tut.wait.t') : t('tut.' + step.k + '.t')}</b>
-				<span className='coachn'>
-					{i + 1}/{STEPS.length}
-				</span>
-				<button
-					className='icon'
-					aria-label={t('tut.exit')}
-					title={t('tut.exit')}
-					onClick={onExit}
-				>
-					<X size={16} />
-				</button>
+		<>
+			<div className='sr' role='status'>
+				{title}. {body}
 			</div>
-			<p>{showWait ? t('tut.wait.b') : t('tut.' + step.k + '.b')}</p>
-			<div className='coach-actions'>
-				{step.last ? (
-					<>
-						{nextL && (
-							<button
-								className='primary'
-								data-autofocus
-								onClick={() => onNext(nextL)}
-							>
-								<ListChecks size={16} />
-								{t('tut.nextLesson')}
+			{/* aria-modal: the table stays usable behind it; say so, or a top-layer dialog can be reported as modal */}
+			<dialog ref={ref} popover='manual' className='coach' aria-labelledby={hid} aria-modal='false'>
+				<div className='coachhead'>
+					<GraduationCap size={18} aria-hidden='true' />
+					<b id={hid}>{title}</b>
+					<span className='coachn'>
+						{i + 1}/{STEPS.length}
+					</span>
+					<button
+						className='icon'
+						aria-label={t('tut.exit')}
+						title={t('tut.exit')}
+						onClick={onExit}
+					>
+						<X size={16} />
+					</button>
+				</div>
+				<p>{body}</p>
+				<div className='coach-actions'>
+					{step.last ? (
+						<>
+							{nextL && (
+								<button
+									className='primary'
+									data-autofocus
+									onClick={() => onNext(nextL)}
+								>
+									<ListChecks size={16} />
+									{t('tut.nextLesson')}
+								</button>
+							)}
+							<button className={nextL ? '' : 'primary'} onClick={onPlay}>
+								<Bot size={16} />
+								{t('tut.play')}
 							</button>
-						)}
-						<button className={nextL ? '' : 'primary'} onClick={onPlay}>
-							<Bot size={16} />
-							{t('tut.play')}
-						</button>
-						<button onClick={onRules}>
-							<BookOpen size={16} />
-							{t('readRules')}
-						</button>
-						<button onClick={onFinish}>
-							<House size={16} />
-							{t('tut.home')}
-						</button>
+							<button onClick={onRules}>
+								<BookOpen size={16} />
+								{t('readRules')}
+							</button>
+							<button onClick={onFinish}>
+								<House size={16} />
+								{t('tut.home')}
+							</button>
 					</>
 				) : step.next ? (
 					<button
@@ -131,6 +148,7 @@ export default function Tutorial({
 					</button>
 				)}
 			</div>
-		</aside>
+		</dialog>
+		</>
 	)
 }

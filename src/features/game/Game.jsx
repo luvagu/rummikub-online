@@ -116,6 +116,9 @@ import {
 } from "../../utils/motion.js";
 import { withTileTransition, tilesMoving } from "../../utils/viewTransition.js";
 
+// Anchor positioning (reaction bubbles under their seat); without it they are placed from measured coordinates.
+const ANCHORS = typeof CSS !== "undefined" && CSS.supports("position-area: block-end");
+
 export default function Game({
   s,
   net,
@@ -840,17 +843,23 @@ export default function Game({
       <div className="fly-layer" ref={flyRef} aria-hidden="true" />
       {celebrate && <Celebration c={celebrate} onDone={() => setCelebrate(null)} />}
       {Object.entries(bub).map(([id, b]) => {
-        const r = REACTIONS.find((x) => x.k === b.k);
+        const r = REACTIONS.find((x) => x.k === b.k),
+          seat = s.players.findIndex((p) => p.id === id);
         return (
           r && (
             <div
               key={b.id}
               className="rbub"
               aria-hidden="true"
-              style={{
-                left: Math.min(Math.max(b.x, 100), window.innerWidth - 100),
-                top: b.y - 6,
-              }}
+              // tethered under the sender's seat by anchor positioning (game.css); measured coordinates only without it
+              style={
+                ANCHORS
+                  ? { positionAnchor: "--seat-" + seat }
+                  : {
+                      left: Math.min(Math.max(b.x, 100), window.innerWidth - 100),
+                      top: b.y - 6,
+                    }
+              }
             >
               <span className={"rx rx-" + r.a}>{r.e}</span>
               <small>
@@ -888,7 +897,10 @@ export default function Game({
               key={p.id}
               data-pid={p.id}
               data-t={act && timed ? cls : undefined}
-              style={act && timed && secs != null ? { "--sweep": (Math.max(0, secs) / tot) * 360 + "deg" } : undefined}
+              style={{
+                anchorName: "--seat-" + i, // reaction bubbles anchor here
+                ...(act && timed && secs != null && { "--sweep": (Math.max(0, secs) / tot) * 360 + "deg" }),
+              }}
               className={
                 "seat" +
                 (act ? " act" : "") +

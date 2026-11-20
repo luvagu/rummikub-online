@@ -1,3 +1,6 @@
+/* Buttons: one rule set, driven by the --btn-* tokens (tokens.css). A surface that needs other colours (a dialog card, the
+   felt card, the tutorial coach) re-points the tokens instead of re-declaring these rules; variants (.primary, .danger,
+   .link) do the same on the button itself. */
 button {
 	font: inherit;
 	display: inline-flex;
@@ -5,48 +8,56 @@ button {
 	justify-content: center;
 	gap: 8px;
 	cursor: pointer;
-	color: #fff;
-	border: 1px solid #ffffff2e;
+	color: var(--btn-ink);
+	border: 1px solid var(--btn-edge);
 	border-radius: 12px;
 	padding: 10px 14px;
-	background: #ffffff1f;
+	background: var(--btn-bg);
 	transition:
 		background 0.15s,
 		transform 0.1s,
 		box-shadow 0.15s;
-}
-@media (hover: hover) {
-button:hover:not(:disabled) {
-	background: #ffffff33;
-}
-}
-button:active:not(:disabled) {
-	transform: scale(0.97);
-}
-button:disabled {
-	opacity: 0.45;
-	cursor: default;
+	@media (hover: hover) {
+		&:hover:not(:disabled) {
+			background: var(--btn-bg-hover);
+		}
+	}
+	&:active:not(:disabled) {
+		background: var(--btn-bg-active);
+		transform: scale(0.97);
+	}
+	&:disabled {
+		opacity: 0.45;
+		cursor: default;
+	}
 }
 :focus-visible {
 	outline: 3px solid var(--amber);
 	outline-offset: 2px;
 }
 button.primary {
-	background: linear-gradient(var(--amber-hi), var(--amber));
-	color: var(--ink);
-	border-color: var(--amber-edge);
+	--btn-bg: var(--btn-primary-bg);
+	--btn-bg-hover: var(--btn-primary-bg-hover);
+	--btn-bg-active: var(--btn-primary-bg-active);
+	--btn-edge: var(--amber-edge);
+	--btn-ink: var(--ink);
 	font-weight: 700;
 	box-shadow: 0 2px 0 var(--amber-deep);
-}
-@media (hover: hover) {
-button.primary:hover:not(:disabled) {
-	background: linear-gradient(#ffcb52, #ffbb1a);
-}
+	/* reads as "disabled", not as a muddy half-transparent gold */
+	&:disabled {
+		--btn-bg: var(--btn-off-bg);
+		--btn-edge: var(--btn-off-edge);
+		--btn-ink: var(--btn-off-ink);
+		box-shadow: none;
+		opacity: 1;
+	}
 }
 button.primary.danger {
-	background: linear-gradient(#ef6c5f, #e53935);
-	color: #fff;
-	border-color: #b71c1c;
+	--btn-bg: var(--btn-danger-bg);
+	--btn-bg-hover: var(--btn-danger-bg-hover);
+	--btn-bg-active: var(--btn-danger-bg-hover);
+	--btn-edge: #b71c1c;
+	--btn-ink: #fff;
 	box-shadow: 0 2px 0 #8e1b1b;
 }
 button.big {
@@ -59,17 +70,19 @@ button.icon {
 	flex: none;
 }
 button.link {
-	background: none;
+	--btn-bg: none;
+	--btn-bg-hover: none;
+	--btn-bg-active: none;
+	--btn-edge: transparent;
 	border: 0;
+	color: var(--btn-link-ink);
 	text-decoration: underline;
 	text-underline-offset: 3px;
-	opacity: 0.9;
-}
-@media (hover: hover) {
-button.link:hover:not(:disabled) {
-	background: none;
-	opacity: 1;
-}
+	@media (hover: hover) {
+		&:hover:not(:disabled) {
+			color: var(--btn-link-ink-hover);
+		}
+	}
 }
 .sr {
 	position: absolute;
@@ -95,6 +108,18 @@ button.link:hover:not(:disabled) {
 	font: 700 16px var(--disp);
 	color: #1b1b1b;
 	flex: none;
+	&[data-seat='0'] {
+		background: var(--seat-0);
+	}
+	&[data-seat='1'] {
+		background: var(--seat-1);
+	}
+	&[data-seat='2'] {
+		background: var(--seat-2);
+	}
+	&[data-seat='3'] {
+		background: var(--seat-3);
+	}
 	& > svg {
 		width: 56%;
 		height: auto; /* a bot's robot scales with the avatar */
@@ -137,13 +162,6 @@ button {
 	}
 }
 
-button.primary:disabled {
-	background: #ffffff26;
-	color: #ffffffb3;
-	border-color: #ffffff2e;
-	box-shadow: none;
-	opacity: 1; /* reads as "disabled", not as a muddy half-transparent gold */
-}
 /* a narrow seat list (the room's players panel): the difficulty button drops its icon */
 @container lbpanel (inline-size < 22rem) {
 	.lvlbtn {
