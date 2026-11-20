@@ -396,8 +396,7 @@ export default function Game({
     if (my && secs > 0 && secs <= redAt && !e.warn) {
       e.warn = 1;
       warn();
-    }
-    if (my && secs > 0 && secs <= 3) tick();
+    } else if (my && secs > 0 && secs <= 5) tick(secs === 1); // never in the same second as the warning
     if (my && secs === 0 && !e.sent) {
       e.sent = 1;
       net.send({ t: "timeout" });
@@ -519,6 +518,10 @@ export default function Game({
         unlockAudio();
         chime();
       } else if (k === "vibe") buzz();
+      else if (k === "ticks") {
+        unlockAudio();
+        tick(true); // let the player hear what they just turned on
+      }
     }
   };
 
@@ -971,7 +974,7 @@ export default function Game({
                 <span className="sw">{pf.reacts ? t("sw.on") : t("sw.off")}</span>
               </button>
               {s.opts.timer > 0 && (
-                <button role="menuitemcheckbox" aria-checked={pf.ticks} onClick={() => flip("ticks")}>
+                <button role="menuitemcheckbox" aria-checked={pf.ticks} disabled={!pf.sound} onClick={() => flip("ticks")}>
                   <Timer size={18} />
                   {t("ticks")}
                   <span className="sw">{pf.ticks ? t("sw.on") : t("sw.off")}</span>

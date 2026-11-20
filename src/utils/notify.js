@@ -196,15 +196,16 @@ export function notifyTurn() {
 	if (p.sound) chime()
 	if (p.vibe) buzz()
 }
-// Turn timer cues: one soft heads-up at 10s (different from the turn chime), optional quiet ticks in the last 3s, a gentle "time's up".
+// Turn timer cues: one soft heads-up at the warning threshold (different from the turn chime), optional ticks in the
+// last 5s (the final one a little higher), a gentle "time's up".
 export function warn() {
 	const p = getPrefs()
 	if (p.sound) tone(494, 0, 0.6, 0.16, 'triangle')
 	if (p.vibe) buzz(70)
 }
-export function tick() {
+export function tick(last = false) {
 	const p = getPrefs()
-	if (p.sound && p.ticks) tone(1100, 0, 0.06, 0.05)
+	if (p.sound && p.ticks) tone(last ? 1320 : 1100, 0, 0.09, 0.12, 'triangle')
 }
 export function timeUp() {
 	const p = getPrefs()
