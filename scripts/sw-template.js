@@ -10,6 +10,10 @@
 //   pages     network-first with a short timeout, falling back to the cached shell, so deploys propagate and the app still opens
 //             offline
 //   updates   a new worker installs and WAITS; the page asks the player, and only then sends SKIP_WAITING (never mid-game)
+//
+// VERSION is a hash of this file's text and of every precached file, so a deploy that changes nothing users get (a
+// workflow-only change, a re-run) ships the same worker and shows no "new version" notice. To ship a new worker anyway
+// (e.g. to test that notice), change any line of this file, a comment included.
 const VERSION = '__VERSION__'
 const FILES = __FILES__
 const CACHE = 'rmk-' + VERSION
