@@ -13,7 +13,7 @@ export const en = {
 	rotate: 'Turn your device upright to play',
 	readRules: 'Read the rules',
 	needName: 'Please enter your name first',
-	soloD: 'Practice right away, no connection needed',
+	soloD: 'Practice instantly, offline',
 	createD: 'Get a room code to share with friends',
 	orOnline: 'or play online',
 	featBots: 'Five bot levels and a step-by-step tutorial',
@@ -65,8 +65,7 @@ export const en = {
 	lvl4: 'Expert',
 	lvl5: 'Master',
 	lvlD1: 'Plays cautiously, ignores jokers and often draws.',
-	lvlD2:
-		'Plays its best sets and adds tiles to the table, but ignores jokers.',
+	lvlD2: 'Plays its best sets and adds tiles to the table, but ignores jokers.',
 	lvlD3: 'Uses jokers and can rearrange a little of the table.',
 	lvlD4: 'Rearranges the whole table and saves its jokers. Tough!',
 	lvlD5: 'Searches the table much deeper. Brutal!',
@@ -255,8 +254,7 @@ export const en = {
 	'tut.tAdd.t': 'Add it to the run',
 	'tut.tAdd.b': 'Tap the + on the black run 1-2-3 to make 1-2-3-4.',
 	'tut.tEnd.t': 'End your turn',
-	'tut.tEnd.b':
-		'Tap “End turn”. You played a tile and still hold your joker.',
+	'tut.tEnd.b': 'Tap “End turn”. You played a tile and still hold your joker.',
 	'tut.tWatch.t': 'Watch the table',
 	'tut.tWatch.b':
 		'Keep an eye on the pile counter and what the others are holding back. When the pile runs out and nobody can play, the round ends and the lowest rack wins.',
@@ -351,8 +349,7 @@ export const en = {
 		"Can't reach the relay server. Check your internet connection or ad blocker, then try again.",
 	'l.starts': p => `${p.name} starts`,
 	'l.drew': p => `${p.name} drew ${p.n} tile${s1(p.n)}`,
-	'l.timeout': p =>
-		`${p.name} ran out of time and drew ${p.n} tile${s1(p.n)}`,
+	'l.timeout': p => `${p.name} ran out of time and drew ${p.n} tile${s1(p.n)}`,
 	'l.passed': p => `${p.name} passed (pool empty)`,
 	'l.played': p => `${p.name} played ${p.n} tile${s1(p.n)}`,
 	'l.over': 'Game over',
