@@ -500,10 +500,6 @@
 }
 
 /* ---- solo pickers: mode, lesson and bot level (modal on the light/dark dialog card) ---- */
-.card .lvltitle {
-	margin: 0 2.75rem var(--space-4) 0.125rem;
-	font-size: 1.25rem;
-}
 .lvlopts {
 	display: flex;
 	flex-direction: column;

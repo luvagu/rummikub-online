@@ -22,7 +22,33 @@ export function RoundSummary({ s, net, copy, share, whatsappUrl, inRoom, hostRoo
       : t(s.result.blocked ? "winsPool" : "wins", { name: winner?.name || "" }),
     [roomOpen, setRoomOpen] = useState(() => hostRoom && s.players.length < 4);
   return (
-    <Modal felt={inRoom} title={title}>
+    <Modal
+      felt={inRoom}
+      title={title}
+      bare
+      size="lg"
+      footer={
+        <div className="endact">
+          {me === 0 ? (
+            <button
+              className="primary big"
+              data-autofocus
+              disabled={s.players.length < 2}
+              onClick={() => net.send({ t: "start" })}
+            >
+              {t("next")}
+            </button>
+          ) : (
+            <p>{t("waitNext")}</p>
+          )}
+          {me === 0 && s.players.length < 2 && <p className="sub">{t("need2")}</p>}
+          <button className="link" onClick={onLeave}>
+            <LogOut size={16} />
+            {t("leave")}
+          </button>
+        </div>
+      }
+    >
       <div className="center summary">
         <header className="sum-hero">
           <Trophy size={44} className="gold" />
@@ -53,27 +79,6 @@ export function RoundSummary({ s, net, copy, share, whatsappUrl, inRoom, hostRoo
             <Seats s={s} net={net} host={hostRoom} />
           </details>
         )}
-        <div className="endact">
-          {me === 0 ? (
-            <button
-              className="primary big"
-              data-autofocus
-              disabled={s.players.length < 2}
-              onClick={() => net.send({ t: "start" })}
-            >
-              {t("next")}
-            </button>
-          ) : (
-            <p>{t("waitNext")}</p>
-          )}
-          {me === 0 && s.players.length < 2 && (
-            <p className="sub">{t("need2")}</p>
-          )}
-          <button className="link" onClick={onLeave}>
-            <LogOut size={16} />
-            {t("leave")}
-          </button>
-        </div>
       </div>
     </Modal>
   );

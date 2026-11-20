@@ -1,6 +1,9 @@
 import { useContext } from 'react'
-import { LangCtx, useT } from '../../i18n/index.js'
+import { BookOpen, ChevronDown } from 'lucide-react'
+import { LangCtx } from '../../i18n/index.js'
 import { Modal } from '../../components/Modal.jsx'
+import { Tile } from '../../components/Tile.jsx'
+import { T } from '../../engine/game.js'
 const R = {
 	en: {
 		h: 'Rummikub rules',
@@ -105,25 +108,60 @@ const R = {
 		],
 	},
 }
+// Example sets drawn with the real tiles: a tile id by number and colour (c: 0 black, 1 red, 2 blue, 3 orange), or a joker.
+const tid = (n, c) => {
+	for (let i = 0; i < 106; i++) {
+		const x = T(i)
+		if (n == null ? x.j : !x.j && x.n === n && x.c === c) return i
+	}
+}
+const EXAMPLES = {
+	1: [
+		[tid(7, 0), tid(7, 1), tid(7, 2)], // a group
+		[tid(4, 3), tid(5, 3), tid(6, 3)], // a run
+	],
+	5: [[tid(9, 2), [tid(), 10], tid(11, 2)]], // a joker standing in for the blue 10
+}
+const Example = ({ sets }) => (
+	<div className='rl-tiles' aria-hidden='true' inert>
+		{sets.map((set, k) => (
+			<span key={k}>
+				{set.map(x => (Array.isArray(x) ? <Tile key={x[0]} id={x[0]} num={x[1]} /> : <Tile key={x} id={x} />))}
+			</span>
+		))}
+	</div>
+)
+
+// The rules as an accordion of short sections (one open at a time: <details name>), under a header that stays put with
+// the close button. Native: no script, and find-in-page opens the section that holds the match.
 export default function Rules({ close }) {
 	const { lang } = useContext(LangCtx),
-		t = useT(),
 		r = R[lang] || R.en
 	return (
-		<Modal title={r.h} onClose={close}>
-			<h2>{r.h}</h2>
-			{r.items.map(([h, b]) => (
-				<p key={h}>
-					<b>{h}</b> {b}
-				</p>
-			))}
-			<h3>{r.c}</h3>
-			<ul>
-				{r.ctl.map(x => (
-					<li key={x}>{x}</li>
+		<Modal title={r.h} icon={BookOpen} size='lg' onClose={close}>
+			<div className='rules'>
+				{r.items.map(([h, b], i) => (
+					<details key={h} name='rules' className='rl' open={i === 0 || undefined}>
+						<summary>
+							{h.replace(/\.$/, '')}
+							<ChevronDown size={18} aria-hidden='true' />
+						</summary>
+						<p>{b}</p>
+						{EXAMPLES[i] && <Example sets={EXAMPLES[i]} />}
+					</details>
 				))}
-			</ul>
-			<button onClick={close}>{t('close')}</button>
+				<details name='rules' className='rl'>
+					<summary>
+						{r.c}
+						<ChevronDown size={18} aria-hidden='true' />
+					</summary>
+					<ul>
+						{r.ctl.map(x => (
+							<li key={x}>{x}</li>
+						))}
+					</ul>
+				</details>
+			</div>
 		</Modal>
 	)
 }

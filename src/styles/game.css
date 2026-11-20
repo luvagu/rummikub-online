@@ -1668,12 +1668,6 @@
 	}
 
 	/* ---- between-rounds summary (RoundSummary.jsx) ---- */
-	.summary {
-		--pad: 22px;
-		@media (width <= 520px) {
-			--pad: 14px; /* the card's own padding on phones (components.css) */
-		}
-	}
 	.sum-hero {
 		display: grid;
 		justify-items: center;
@@ -1779,20 +1773,14 @@
 			}
 		}
 	}
-	/* actions stay in reach: a footer stuck to the bottom of the scrolling card */
-	.summary .endact {
-		position: sticky;
-		bottom: calc(-1 * var(--pad));
-		z-index: 1;
-		align-self: stretch; /* .center centres its items: the footer's backdrop must still span the card */
+	/* the next-game actions: the dialog's footer (surfaces.css keeps it in reach while the body scrolls) */
+	.sf-foot > .endact {
 		display: flex;
+		flex: 1;
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
 		gap: 8px 16px;
-		margin: 4px calc(-1 * var(--pad)) calc(-1 * var(--pad));
-		padding: 14px var(--pad) calc(var(--pad) - 2px);
-		background: linear-gradient(#1f5f2400, #1f5f24 30%);
 		& p {
 			margin: 0;
 		}
@@ -1800,9 +1788,6 @@
 			flex-direction: column;
 			gap: 6px;
 		}
-	}
-	.card:not(.felt) .summary .endact {
-		background: linear-gradient(var(--card-bg-clear), var(--card-bg) 30%);
 	}
 }
 

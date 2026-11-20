@@ -464,6 +464,93 @@
 	}
 }
 
+/* ================================================================== rules: an accordion of short sections */
+@layer rules {
+	.rules {
+		display: grid;
+		gap: 8px;
+	}
+	.rl {
+		border-radius: 14px;
+		background: var(--card-row);
+		interpolate-size: allow-keywords; /* lets the section open to its natural height */
+		& > summary {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-height: var(--target);
+			padding: 10px 14px;
+			border-radius: inherit;
+			cursor: pointer;
+			font: 700 1rem / 1.3 var(--disp);
+			list-style: none;
+			&::-webkit-details-marker {
+				display: none;
+			}
+			& > svg {
+				flex: none;
+				margin-inline-start: auto;
+				opacity: 0.7;
+				transition: rotate var(--dur-2) var(--ease-out);
+			}
+		}
+		&[open] > summary > svg {
+			rotate: 180deg;
+		}
+		@media (hover: hover) {
+			& > summary:hover {
+				background: color-mix(in oklab, currentColor 6%, transparent);
+			}
+		}
+		& p,
+		& ul {
+			margin: 0;
+			padding: 0 14px 14px;
+		}
+		& ul {
+			display: grid;
+			gap: 6px;
+			padding-inline-start: 34px;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			&::details-content {
+				block-size: 0;
+				overflow: clip;
+				transition:
+					block-size var(--dur-3) var(--ease-out),
+					content-visibility var(--dur-3) allow-discrete;
+			}
+			&[open]::details-content {
+				block-size: auto;
+			}
+		}
+	}
+	/* example sets on a strip of felt: a group, a run, a joker standing in */
+	.rl-tiles {
+		--tw: 28px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin: 0 14px 14px;
+		padding: 10px;
+		border-radius: 12px;
+		background: radial-gradient(circle at 50% 0, var(--felt2), var(--felt));
+		& > span {
+			display: flex;
+			gap: 3px;
+			padding: 4px;
+			border-radius: 9px;
+			background: var(--felt-tray);
+		}
+		& .tile {
+			pointer-events: none;
+			/* a tile is a button: keep its paper face, not the card's button style */
+			border-color: var(--paper-edge);
+			background: linear-gradient(var(--paper), var(--paper-2));
+		}
+	}
+}
+
 /* ================================================================== toast: bottom stack, dismissible, pausable */
 @layer toast {
 	/* the always-mounted region (Toasts.jsx). Bottom of the screen; in a game, just above the action dock. */

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
 	Bot,
 	Users,
@@ -23,6 +23,7 @@ import { Logo } from './Logo.jsx'
 import { NameField } from './NameField.jsx'
 import { TimerPick } from '../../components/TimerPick.jsx'
 import { getTimer, getLvl } from './preferences.js'
+import { focusForInput } from '../../utils/modality.js'
 
 // A pasted invite link (…/#ABCDE) or a code inside other text: take the code, not the first 5 characters.
 const codeFromPaste = txt => (/#([A-Za-z0-9]{5})\b/.exec(txt) || /\b([A-Za-z0-9]{5})\b/.exec(txt))?.[1]
@@ -47,89 +48,79 @@ export function Home({
 }) {
 	const t = useT(),
 		nf = { name, setName, nameErr, names, onForgetName },
-		[pick, setPick] = useState(false),
 		[timed, setTimed] = useState(getTimer),
-		[mode, setMode] = useState(false),
-		[lessons, setLessons] = useState(false) // solo: choose between a bot game and the tutorial
+		// solo setup, one dialog in steps: 'mode' (bot game or tutorial) → 'bot' (difficulty) or 'lessons'
+		[step, setStep] = useState(null),
+		[dir, setDir] = useState('fwd'),
+		go = (to, d = 'fwd') => {
+			setDir(d)
+			setStep(to)
+		}
+	// a new step replaces the focused button: move focus to the step's own starting point (Modal does it on open)
+	useEffect(() => {
+		if (step) focusForInput(document.querySelector('dialog[open] .sf-step [data-autofocus]'))
+	}, [step])
 	const playSolo = n => {
 		local.set('rmkLvl5', n)
-		setPick(false)
+		setStep(null)
 		start('solo')
 	}
 	// solo needs a name first: let start() show the "name required" error instead of opening the picker
-	const soloClick = () => (name.trim() ? setMode(true) : start('solo'))
+	const soloClick = () => (name.trim() ? go('mode') : start('solo'))
 	// a real <form>: Enter on a desktop keyboard and "Go" on a phone keyboard both submit natively
 	const submitJoin = e => {
 		e.preventDefault()
 		if (invite || code.length === 5) start('join')
 	}
 
-	const modeModal = mode && (
-		<Modal title={t('soloT')} onClose={() => setMode(false)}>
-			<h2 className='lvltitle'>{t('soloT')}</h2>
-			<div className='lvlopts'>
+	const modeStep = (
+		<div className='lvlopts'>
+			<button data-autofocus onClick={() => go('bot')}>
+				<span className='lv-ico' aria-hidden='true'>
+					<Bot size={22} />
+				</span>
+				<span className='lv-txt'>
+					<b>{t('soloBot')}</b>
+					<small>{t('soloBotD')}</small>
+				</span>
+				<ChevronRight size={18} aria-hidden='true' />
+			</button>
+			<button onClick={() => go('lessons')}>
+				<span className='lv-ico' aria-hidden='true'>
+					<GraduationCap size={22} />
+				</span>
+				<span className='lv-txt'>
+					<b>{t('soloTut')}</b>
+					<small>{t('soloTutD')}</small>
+				</span>
+				<ChevronRight size={18} aria-hidden='true' />
+			</button>
+		</div>
+	)
+	const lessonsStep = (
+		<div className='lvlopts'>
+			{LESSON_ORDER.map((l, n) => (
 				<button
-					data-autofocus
+					key={l}
+					data-autofocus={n === 0 ? true : undefined}
 					onClick={() => {
-						setMode(false)
-						setPick(true)
+						setStep(null)
+						start('tutorial', { lesson: l })
 					}}
 				>
-					<span className='lv-ico' aria-hidden='true'>
-						<Bot size={22} />
-					</span>
+					{/* the number stays in the accessible name: "1 The basics" */}
+					<span className='lv-num'>{n + 1}</span>
 					<span className='lv-txt'>
-						<b>{t('soloBot')}</b>
-						<small>{t('soloBotD')}</small>
+						<b>{t('les.' + l)}</b>
+						<small>{t('les.' + l + 'D')}</small>
 					</span>
 					<ChevronRight size={18} aria-hidden='true' />
 				</button>
-				<button
-					onClick={() => {
-						setMode(false)
-						setLessons(true)
-					}}
-				>
-					<span className='lv-ico' aria-hidden='true'>
-						<GraduationCap size={22} />
-					</span>
-					<span className='lv-txt'>
-						<b>{t('soloTut')}</b>
-						<small>{t('soloTutD')}</small>
-					</span>
-					<ChevronRight size={18} aria-hidden='true' />
-				</button>
-			</div>
-		</Modal>
+			))}
+		</div>
 	)
-	const lessonsModal = lessons && (
-		<Modal title={t('lessonsT')} onClose={() => setLessons(false)}>
-			<h2 className='lvltitle'>{t('lessonsT')}</h2>
-			<div className='lvlopts'>
-				{LESSON_ORDER.map((l, n) => (
-					<button
-						key={l}
-						data-autofocus={n === 0 ? true : undefined}
-						onClick={() => {
-							setLessons(false)
-							start('tutorial', { lesson: l })
-						}}
-					>
-						{/* the number stays in the accessible name: "1 The basics" */}
-						<span className='lv-num'>{n + 1}</span>
-						<span className='lv-txt'>
-							<b>{t('les.' + l)}</b>
-							<small>{t('les.' + l + 'D')}</small>
-						</span>
-						<ChevronRight size={18} aria-hidden='true' />
-					</button>
-				))}
-			</div>
-		</Modal>
-	)
-	const lvlModal = pick && (
-		<Modal title={t('botLvl')} onClose={() => setPick(false)}>
-			<h2 className='lvltitle'>{t('botLvl')}</h2>
+	const botStep = (
+		<>
 			<TimerPick
 				value={timed}
 				onChange={n => {
@@ -159,10 +150,23 @@ export function Home({
 					</button>
 				))}
 			</div>
+		</>
+	)
+	// one dialog for the whole solo setup: the steps slide in place (a Back button returns to the first one), instead of
+	// one modal closing and another opening
+	const soloModal = step && (
+		<Modal
+			title={t(step === 'bot' ? 'botLvl' : step === 'lessons' ? 'lessonsT' : 'soloT')}
+			onClose={() => setStep(null)}
+			onBack={step === 'mode' ? undefined : () => go('mode', 'back')}
+		>
+			<div key={step} className='sf-step' data-dir={dir}>
+				{step === 'bot' ? botStep : step === 'lessons' ? lessonsStep : modeStep}
+			</div>
 		</Modal>
 	)
 	const busyModal = busy && (
-		<Modal title={t('connecting')}>
+		<Modal title={t('connecting')} bare size='sm'>
 			<div className='center'>
 				<LoaderCircle className='spin' size={34} aria-hidden='true' />
 				<p>{t('busy.' + busy)}</p>
@@ -321,9 +325,7 @@ export function Home({
 				</section>
 			</div>
 			{busyModal}
-			{lvlModal}
-			{modeModal}
-			{lessonsModal}
+			{soloModal}
 		</main>
 	)
 }

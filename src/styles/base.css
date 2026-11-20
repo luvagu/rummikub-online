@@ -43,3 +43,38 @@ p {
 	line-height: 1.45;
 	text-wrap: pretty;
 }
+
+/* last-resort crash screen (ErrorBoundary.jsx): only base tokens, nothing from the component layers */
+.crash {
+	display: grid;
+	place-items: center;
+	min-height: 100dvh;
+	padding: 24px;
+	color: #fff;
+	text-align: center;
+}
+.crash-card {
+	display: grid;
+	gap: 12px;
+	justify-items: center;
+	max-width: 26rem;
+	padding: 24px;
+	border: 1px solid #ffffff33;
+	border-radius: 20px;
+	background: color-mix(in oklab, var(--felt-deep) 85%, transparent);
+	box-shadow: 0 18px 48px #0006;
+	& p {
+		margin: 0;
+		opacity: 0.85;
+	}
+}
+.crash-btn {
+	min-height: 44px;
+	padding: 10px 20px;
+	border: 1px solid var(--amber-edge);
+	border-radius: 12px;
+	background: var(--amber);
+	color: var(--ink);
+	font: 700 16px var(--font);
+	cursor: pointer;
+}
