@@ -16,6 +16,22 @@
 	--paper-edge: #d6c690;
 	--tile-edge: #b9a77a;
 	--tw: 40px;
+	/* ---- layout scales + felt surfaces (used by the lobby; the table itself stays on the palette above) ---- */
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.5rem;
+	--space-6: 2rem;
+	--radius-sm: 0.625rem;
+	--radius-md: 0.875rem;
+	--radius-lg: 1.25rem;
+	--surface-1: color-mix(in oklab, var(--felt-deep) 66%, transparent);
+	--surface-2: color-mix(in oklab, black 24%, transparent);
+	--surface-hover: color-mix(in oklab, white 12%, transparent);
+	--stroke: color-mix(in oklab, white 24%, transparent);
+	--stroke-strong: color-mix(in oklab, white 48%, transparent);
+	--text-muted: color-mix(in oklab, white 80%, transparent);
 	/* ---- colour scheme ----
 	   The table, rack, tiles, menus and toasts are game objects: they look the same in both schemes. What follows the scheme
 	   is the "chrome" that sits on top: dialog cards, text fields, the tutorial coach and native controls.

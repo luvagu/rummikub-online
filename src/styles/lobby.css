@@ -1,0 +1,631 @@
+/* Room lobby (src/features/lobby). Lives in its own cascade layer, after `components`, so it wins over the generic
+   button/.row/.sub rules without specificity games. Spacing, radii and felt surfaces come from tokens.css.
+
+   Layout is container-driven: `.lobby` is the page container and every panel is a container of its own, so the same
+   panels re-flow by the space they get (phone / tablet / desktop) rather than by the viewport. Media queries are
+   kept for what a container cannot know: input type and reduced motion. */
+
+.lobby {
+	container: lobby / inline-size;
+	min-block-size: 100dvh;
+}
+html:has(.lobby) {
+	scroll-padding-block-end: 9rem; /* a focused control never hides behind the sticky action bar */
+}
+.lb-shell {
+	inline-size: min(100%, 36rem);
+	margin-inline: auto;
+	min-block-size: 100dvh;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	padding-inline: var(--space-4);
+	padding-block: max(var(--space-3), env(safe-area-inset-top, 0px)) max(var(--space-4), env(safe-area-inset-bottom, 0px));
+}
+
+/* ---- top bar: the secondary actions, out of the way of the content ---- */
+.lb-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
+.lb-bar-end {
+	margin-inline-start: auto;
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.lobby .lb-ghost {
+	min-block-size: 2.5rem;
+	padding: var(--space-2) var(--space-3);
+	background: transparent;
+	border-color: transparent;
+	border-radius: var(--radius-sm);
+}
+.lobby .lang {
+	position: static;
+	inset: auto;
+	z-index: auto;
+	min-block-size: 2.5rem;
+	padding: var(--space-2) var(--space-3);
+	background: var(--surface-2);
+	border-color: var(--stroke);
+	border-radius: var(--radius-sm);
+}
+@media (hover: hover) {
+	.lobby .lb-ghost:hover:not(:disabled),
+	.lobby .lang:hover:not(:disabled) {
+		background: var(--surface-hover);
+	}
+}
+@container lobby (inline-size < 26rem) {
+	.lb-rules span {
+		display: none;
+	}
+}
+
+/* ---- page grid: one column, two from 52rem (invite + timer left, players right) ---- */
+.lb-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-4);
+}
+.lb-panel {
+	container: lbpanel / inline-size;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-4);
+	text-align: start;
+	background: var(--surface-1);
+	border: 1px solid var(--stroke);
+	border-radius: var(--radius-lg);
+	box-shadow:
+		inset 0 1px 0 color-mix(in oklab, white 14%, transparent),
+		0 12px 32px color-mix(in oklab, black 28%, transparent);
+	backdrop-filter: blur(10px);
+}
+.lb-eyebrow {
+	margin: 0;
+	font: 700 0.75rem/1.2 var(--font);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+.lb-hint {
+	margin: 0;
+	font-size: 0.875rem;
+	color: var(--text-muted);
+}
+.lb-panelhead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+}
+@container lobby (inline-size >= 52rem) {
+	.lb-shell {
+		inline-size: min(100%, 62rem);
+		padding-inline: var(--space-5);
+		justify-content: center;
+	}
+	.lb-grid {
+		grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+		grid-template-areas:
+			'invite players'
+			'timer  players';
+	}
+	.lb-invite {
+		grid-area: invite;
+	}
+	.lb-players {
+		grid-area: players;
+	}
+	.lb-timer {
+		grid-area: timer;
+	}
+}
+
+/* ---- invite: the code as game tiles, one big copy target ---- */
+.lb-code {
+	inline-size: 100%;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+	background: var(--surface-2);
+	border-color: var(--stroke);
+	border-radius: var(--radius-md);
+}
+.lb-tiles {
+	flex: 1;
+	min-inline-size: 0;
+	display: flex;
+	justify-content: center;
+	gap: clamp(0.25rem, 2cqi, 0.5rem);
+}
+.lb-tile {
+	flex: 1 1 0;
+	min-inline-size: 0;
+	max-inline-size: 3.75rem;
+	aspect-ratio: 4 / 5;
+	display: grid;
+	place-items: center;
+	font: 800 clamp(1.25rem, 8cqi, 2.25rem) var(--disp);
+	color: #222;
+	background: linear-gradient(var(--paper), var(--paper-2));
+	border: 1px solid var(--tile-edge);
+	border-radius: 0.5rem;
+	box-shadow:
+		0 2px 0 var(--tile-edge),
+		0 6px 10px color-mix(in oklab, black 30%, transparent);
+}
+/* the four Rummikub numeral colours, cycling */
+.lb-tile:nth-child(4n + 2) {
+	color: #c62828;
+}
+.lb-tile:nth-child(4n + 3) {
+	color: #1565c0;
+}
+.lb-tile:nth-child(4n) {
+	color: #d84315;
+}
+.lb-codeicon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	inline-size: 2.5rem;
+	aspect-ratio: 1;
+	border-radius: var(--radius-sm);
+	background: var(--surface-hover);
+	border: 1px solid var(--stroke);
+}
+@media (hover: hover) {
+	.lobby .lb-code:hover:not(:disabled) {
+		background: color-mix(in oklab, black 36%, transparent);
+	}
+}
+.lb-actions {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+	gap: var(--space-2);
+}
+.lb-actions > :is(button, a) {
+	min-block-size: 2.75rem;
+}
+.lb-actions > .primary,
+.lb-actions > :nth-child(2):last-child {
+	grid-column: 1 / -1; /* copy link is the primary action: full row; WhatsApp + Share pair up below */
+}
+.lb-actions > button:not(.primary) {
+	background: var(--surface-2);
+	border-color: var(--stroke-strong);
+}
+.lb-invite .lb-hint {
+	text-align: center;
+}
+
+/* ---- players ---- */
+.lb-count {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	font: 700 0.875rem var(--font);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-muted);
+}
+.lb-dots {
+	display: inline-flex;
+	gap: 0.25rem;
+}
+.lb-dots i {
+	inline-size: 0.5rem;
+	aspect-ratio: 1;
+	border-radius: 50%;
+	border: 1px solid var(--stroke-strong);
+}
+.lb-dots i[data-on] {
+	background: var(--amber);
+	border-color: var(--amber);
+}
+.lb-seats {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: var(--space-2);
+}
+.lb-seat {
+	position: relative; /* keeps an open level menu above the rows below */
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-block-size: 3.5rem;
+	padding: var(--space-2) var(--space-3);
+	background: var(--surface-2);
+	border: 1px solid var(--stroke);
+	border-radius: var(--radius-md);
+}
+.lb-seat .av {
+	box-shadow:
+		0 0 0 2px var(--felt-deep),
+		0 0 0 3.5px var(--stroke-strong);
+}
+.lb-name {
+	flex: 1;
+	min-inline-size: 0;
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+.lb-name em {
+	font-weight: 400;
+	color: var(--text-muted);
+}
+.lb-pills {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.375rem;
+}
+.lb-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.2rem 0.6rem;
+	font: 600 0.75rem/1.3 var(--font);
+	border-radius: 999px;
+	background: var(--surface-hover);
+	border: 1px solid var(--stroke);
+}
+.lb-pill.host {
+	color: var(--amber-hi);
+	background: color-mix(in oklab, var(--amber) 18%, transparent);
+	border-color: color-mix(in oklab, var(--amber) 60%, transparent);
+}
+.lb-pill.off {
+	color: #ffd2cc;
+	border-color: color-mix(in oklab, #ff8a80 55%, transparent);
+}
+.lb-seat[data-off] :is(.av, .lb-name) {
+	opacity: 0.6;
+}
+.lobby .lb-rm {
+	background: var(--surface-hover);
+	border-color: transparent;
+	border-radius: 50%;
+}
+
+/* open seats stay quiet; only the first one carries the host's bot controls */
+.lb-seat.empty {
+	background: transparent;
+	border-style: dashed;
+	color: var(--text-muted);
+}
+.lb-seat.empty .av.ghost {
+	background: transparent;
+	border-color: var(--stroke-strong);
+	box-shadow: none;
+}
+.lb-seat[data-add] {
+	border-color: var(--stroke-strong);
+}
+.lb-open {
+	flex: 1;
+}
+.lb-split {
+	flex: 1;
+	min-inline-size: 0;
+	display: flex;
+}
+.lb-split .lvlmenu {
+	flex: 1 1 auto;
+	min-inline-size: 0;
+	display: flex;
+}
+.lobby .lb-split :is(.lvlbtn, .lb-addbot) {
+	min-block-size: 2.75rem;
+}
+.lobby .lb-split .lvlbtn {
+	inline-size: 100%;
+	background: var(--surface-hover);
+	border-color: var(--stroke-strong);
+	border-inline-end-width: 0;
+	border-start-end-radius: 0;
+	border-end-end-radius: 0;
+	border-start-start-radius: var(--radius-sm);
+	border-end-start-radius: var(--radius-sm);
+}
+.lobby .lb-addbot {
+	flex: none;
+	color: var(--amber-hi);
+	background: color-mix(in oklab, var(--amber) 20%, transparent);
+	border-color: color-mix(in oklab, var(--amber) 70%, transparent);
+	border-start-start-radius: 0;
+	border-end-start-radius: 0;
+	border-start-end-radius: var(--radius-sm);
+	border-end-end-radius: var(--radius-sm);
+	font-weight: 700;
+}
+@media (hover: hover) {
+	.lobby .lb-addbot:hover:not(:disabled) {
+		background: color-mix(in oklab, var(--amber) 32%, transparent);
+	}
+	.lobby .lb-split .lvlbtn:hover:not(:disabled) {
+		background: color-mix(in oklab, white 22%, transparent);
+	}
+}
+@container lbpanel (inline-size < 20rem) {
+	.lb-seat.empty .av.ghost {
+		display: none;
+	}
+}
+
+/* ---- turn timer: native radios drawn as a segmented control ---- */
+.lb-seg {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	gap: 0.25rem;
+	padding: 0.25rem;
+	background: var(--surface-2);
+	border: 1px solid var(--stroke);
+	border-radius: var(--radius-md);
+}
+.lb-seg label {
+	position: relative;
+	display: grid;
+}
+.lb-seg input {
+	position: absolute;
+	inset: 0;
+	inline-size: 100%;
+	block-size: 100%;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+.lb-seg span {
+	display: grid;
+	place-items: center;
+	min-block-size: 2.5rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	border-radius: calc(var(--radius-md) - 0.25rem);
+}
+.lb-seg input:checked + span {
+	color: var(--ink);
+	font-weight: 800;
+	background: linear-gradient(var(--amber-hi), var(--amber));
+	box-shadow: 0 2px 0 var(--amber-deep);
+}
+.lb-seg input:focus-visible + span {
+	outline: 3px solid var(--amber);
+	outline-offset: 2px;
+}
+.lb-seg input:disabled {
+	cursor: default;
+}
+.lb-seg input:disabled:not(:checked) + span {
+	color: var(--text-muted);
+}
+@media (hover: hover) {
+	.lb-seg input:not(:disabled):not(:checked):hover + span {
+		background: var(--surface-hover);
+	}
+}
+@media (pointer: coarse) {
+	.lb-seg span {
+		min-block-size: 2.75rem;
+	}
+}
+
+/* ---- sticky action bar: the one primary action, always reachable ---- */
+.lb-actionbar {
+	margin-block-start: auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-4);
+	background: color-mix(in oklab, var(--felt-deep) 90%, transparent);
+	border: 1px solid var(--stroke);
+	border-radius: var(--radius-lg);
+	box-shadow: 0 12px 32px color-mix(in oklab, black 40%, transparent);
+	backdrop-filter: blur(12px);
+}
+/* sticky only when the screen is tall enough that the bar does not eat the content (short phones keep it in flow) */
+@media (min-height: 700px) {
+	.lb-actionbar {
+		position: sticky;
+		inset-block-end: max(var(--space-3), env(safe-area-inset-bottom, 0px));
+	}
+}
+.lb-status {
+	margin: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	font-size: 0.9rem;
+	text-align: center;
+	color: var(--text-muted);
+}
+.lobby .lb-start {
+	inline-size: 100%;
+}
+/* a disabled Start stays legible and says why (the status line is its description) */
+.lobby .lb-start:disabled {
+	opacity: 1;
+	color: var(--text-muted);
+	background: var(--surface-2);
+	border: 1px solid var(--stroke);
+	box-shadow: none;
+	cursor: not-allowed;
+}
+@container lobby (inline-size >= 40rem) {
+	.lb-actionbar {
+		flex-direction: row;
+		align-items: center;
+	}
+	.lb-status {
+		flex: 1;
+		justify-content: flex-start;
+		text-align: start;
+	}
+	.lobby .lb-start {
+		inline-size: auto;
+		min-inline-size: 14rem;
+	}
+}
+@container lobby (inline-size >= 52rem) {
+	.lb-actionbar {
+		margin-block-start: 0;
+	}
+}
+
+/* ---- motion (progressive: @starting-style is simply skipped where unsupported) ---- */
+@media (prefers-reduced-motion: no-preference) {
+	.lb-seat {
+		transition:
+			opacity 0.3s ease,
+			translate 0.3s ease;
+		@starting-style {
+			opacity: 0;
+			translate: 0 0.5rem;
+		}
+	}
+	.lb-seg span,
+	.lb-code,
+	.lb-dots i {
+		transition:
+			background-color 0.15s,
+			color 0.15s,
+			box-shadow 0.15s;
+	}
+}
+
+/* ---- compact: phones (narrow) and landscape phones (short) ----
+   Goal: every feature visible in one screen. Only non-interactive chrome shrinks (padding, empty rows, avatars,
+   tiles, hints); touch targets keep the global 44px minimum. Sizes are fluid in viewport height (dvh), so a tall
+   phone breathes and a short one tightens. A media query rather than a container query because the trigger
+   includes viewport HEIGHT, which the inline-size container cannot see. Wider/taller screens are untouched. */
+@media (width < 40rem), (height < 30rem) {
+	.lb-shell {
+		/* linear in height between ~667px (tightest) and ~870px (roomiest), clamped at both ends */
+		--gap: clamp(0.5rem, 5.2dvh - 1.6rem, 1.25rem);
+		--pad: clamp(0.625rem, 4.9dvh - 1.425rem, 1.125rem);
+		--row: clamp(2.5rem, 7.9dvh - 0.79rem, 3.5rem);
+		gap: var(--gap);
+		padding-block: max(var(--gap), env(safe-area-inset-top, 0px)) max(var(--gap), env(safe-area-inset-bottom, 0px));
+	}
+	.lb-grid {
+		flex: 1; /* leftover height is shared out around the panels; top bar and action bar stay on the edges */
+		align-content: space-evenly;
+		gap: var(--gap);
+	}
+	.lb-panel {
+		padding: var(--pad);
+		gap: var(--gap);
+	}
+
+	/* labels and hints that the controls already explain stay for screen readers only */
+	.lb-invite :is(.lb-eyebrow, .lb-hint),
+	.lb-timer .lb-hint {
+		position: absolute;
+		inline-size: 1px;
+		block-size: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	/* invite: the panel is the box; code + copy on one row, actions on the next */
+	.lb-code {
+		padding: 0;
+		background: transparent;
+		border-color: transparent;
+		border-radius: 0;
+	}
+	@media (hover: hover) {
+		.lobby .lb-code:hover:not(:disabled) {
+			background: transparent;
+		}
+	}
+	.lb-tile {
+		max-inline-size: 2.5rem;
+	}
+	.lb-actions {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.lb-actions > .primary,
+	.lb-actions > :nth-child(2):last-child {
+		grid-column: auto;
+	}
+	.lb-actions > .primary {
+		flex: 1 1 9rem;
+		white-space: nowrap;
+	}
+	.lb-actions > :not(.primary) {
+		flex: none;
+		inline-size: 2.75rem;
+		padding-inline: 0;
+	}
+	.lb-lbl {
+		display: none;
+	}
+	@container lbpanel (inline-size < 18rem) {
+		.lb-actions > .primary {
+			flex-basis: 100%;
+		}
+	}
+
+	/* players */
+	.lb-seats {
+		gap: 0.375rem;
+	}
+	.lb-seat {
+		min-block-size: var(--row);
+		padding: 0.25rem 0.625rem;
+		gap: 0.625rem;
+	}
+	.lb-seat .av {
+		inline-size: 28px;
+		font-size: 13px;
+	}
+	.lb-seat.empty:not([data-add]) {
+		min-block-size: 2.25rem;
+	}
+	.lb-seat.empty .av.ghost {
+		inline-size: 24px;
+	}
+
+	/* timer hint comes back when the screen is tall enough to afford its two lines */
+	@media (min-height: 54rem) {
+		.lb-timer .lb-hint {
+			position: static;
+			inline-size: auto;
+			block-size: auto;
+			overflow: visible;
+			clip-path: none;
+			white-space: normal;
+		}
+	}
+
+	/* action bar */
+	.lb-actionbar {
+		padding: 0.625rem;
+		gap: 0.375rem;
+	}
+	.lobby .lb-start {
+		padding-block: 0.75rem;
+	}
+	.lb-status {
+		font-size: 0.8125rem;
+	}
+}
+@media (width < 40rem), (height < 30rem) {
+	.lb-actions .wa svg {
+		inline-size: 1.5rem; /* icon-only button: give the mark room to read */
+		block-size: 1.5rem;
+	}
+}

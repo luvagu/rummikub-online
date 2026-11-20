@@ -93,6 +93,7 @@ button.link:hover:not(:disabled) {
 }
 .sr {
 	position: absolute;
+	inset: 0 auto auto 0; /* without offsets it sits at its static position: below a full-height screen, i.e. 1px of page scroll */
 	width: 1px;
 	height: 1px;
 	overflow: hidden;
@@ -1804,7 +1805,6 @@ button.primary:disabled {
 
 /* ---- room screens on the felt (lobby + the between-rounds dialog) ----
    Dark tint + a clear light edge instead of faint white: the old 8-20% whites almost vanished on the green. */
-.lobby,
 .card.felt {
 	--panel: #00000047;
 	--edge: #ffffff73;
@@ -1821,77 +1821,68 @@ button.primary:disabled {
 .card.felt h3 {
 	color: #fff;
 }
-:is(.lobby, .card.felt) .lseat {
+.card.felt .lseat {
 	background: var(--panel);
 	border-color: var(--edge);
 }
-:is(.lobby, .card.felt) .lseat.empty {
+.card.felt .lseat.empty {
 	background: #00000024;
 	border-color: #ffffff99;
 	opacity: 1;
 }
-:is(.lobby, .card.felt) .av.ghost {
+.card.felt .av.ghost {
 	background: #00000030;
 	border-color: #ffffff99;
 }
-:is(.lobby, .card.felt) button:not(.primary):not(.link) {
+.card.felt button:not(.primary):not(.link) {
 	background: var(--btn);
 	border-color: var(--btn-edge);
 	color: #fff;
 }
 @media (hover: hover) {
-:is(.lobby, .card.felt) button:not(.primary):not(.link):hover:not(:disabled) {
+.card.felt button:not(.primary):not(.link):hover:not(:disabled) {
 	background: var(--btn-hover);
 }
 }
-:is(.lobby, .card.felt) button:not(.primary):not(.link):active:not(:disabled) {
+.card.felt button:not(.primary):not(.link):active:not(:disabled) {
 	background: #000000a6;
 }
-:is(.lobby, .card.felt) button:focus-visible {
+.card.felt button:focus-visible {
 	outline: 3px solid var(--amber);
 	outline-offset: 2px;
 }
-:is(.lobby, .card.felt) .menu button {
+.card.felt .menu button {
 	background: none;
 	border-color: transparent;
 }
 @media (hover: hover) {
-:is(.lobby, .card.felt) .menu button:hover:not(:disabled) {
+.card.felt .menu button:hover:not(:disabled) {
 	background: #ffffff26;
 }
 }
-:is(.lobby, .card.felt) .lvlpop button[aria-selected='true'] {
+.card.felt .lvlpop button[aria-selected='true'] {
 	background: #ffffff38;
 }
-:is(.lobby, .card.felt) .codechip {
+.card.felt .codechip {
 	background: #00000066;
 	border-color: #ffffffb3;
 }
-:is(.lobby, .card.felt) .codechip button.icon {
+.card.felt .codechip button.icon {
 	background: #ffffff2e;
 	border-color: #ffffffb3;
 }
 @media (hover: hover) {
-:is(.lobby, .card.felt) .codechip button.icon:hover:not(:disabled) {
+.card.felt .codechip button.icon:hover:not(:disabled) {
 	background: #ffffff47;
 }
 }
-.lobby .switch .tr {
-	background: #0000005c;
-	box-shadow: inset 0 0 0 1px #ffffffb3;
-}
-.lobby .switch input:checked + .tr {
-	background: var(--amber);
-	box-shadow: none;
-}
-:is(.lobby, .card.felt) .sub,
-.lobby .switch small,
-:is(.lobby, .card.felt) .lvltag,
-:is(.lobby, .card.felt) .lseat em {
+.card.felt .sub,
+.card.felt .lvltag,
+.card.felt .lseat em {
 	opacity: 0.92;
 }
 /* a disabled primary stays legible but clearly inactive (no 45% fade) */
-:is(.lobby, .card.felt) button.primary:disabled {
+.card.felt button.primary:disabled {
 	opacity: 1;
 	background: #0000004d;
 	color: #ffffffcc;
@@ -1927,18 +1918,18 @@ button.primary:disabled {
 
 
 /* dropdown rows stay flat: the generic felt button style above has equal-or-higher specificity, so repeat it here */
-:is(.lobby, .card.felt) .menu button:not(.primary):not(.link) {
+.card.felt .menu button:not(.primary):not(.link) {
 	background: none;
 	border-color: transparent;
 }
 @media (hover: hover) {
-:is(.lobby, .card.felt)
+.card.felt
 	.menu
 	button:not(.primary):not(.link):hover:not(:disabled) {
 	background: #ffffff26;
 }
 }
-:is(.lobby, .card.felt)
+.card.felt
 	.menu
 	button[aria-selected='true']:not(.primary):not(.link) {
 	background: #ffffff38;
