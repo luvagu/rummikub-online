@@ -101,7 +101,9 @@ export default function App() {
 		const nm = (o.name || name).trim()
 		if (!nm) {
 			setNameErr(true)
-			toast({ k: 'needName' })
+			// no toast: the field's own message says it. Focus the field once the error has rendered, so aria-describedby
+			// is set and a screen reader reads "Your name, invalid, Please enter your name first" (and the keyboard opens)
+			requestAnimationFrame(() => document.getElementById('rmk-name')?.focus())
 			return
 		}
 		setNameErr(false)

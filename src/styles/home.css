@@ -1,0 +1,619 @@
+/* Home screen (src/features/home): the start page, the invite-link variant and the solo pickers that open from it.
+   Lives in its own cascade layer after `components`, so it overrides the generic button rules without specificity games.
+
+   Layout is container-driven, like the lobby: `.home` is the page container (one column; two from 52rem, brand left and
+   actions right), and the hero and panel are containers of their own, so the logo and the option cards size themselves
+   from the space they get rather than from the viewport. Media queries are kept for input type and reduced motion. */
+
+.home {
+	container: home / inline-size;
+	min-block-size: 100dvh;
+	display: flex;
+	flex-direction: column;
+	/* safe-area insets are physical, so the side padding is too */
+	padding-left: max(var(--space-4), env(safe-area-inset-left, 0px));
+	padding-right: max(var(--space-4), env(safe-area-inset-right, 0px));
+	padding-block: max(var(--space-3), env(safe-area-inset-top, 0px)) max(var(--space-5), env(safe-area-inset-bottom, 0px));
+}
+
+/* ---- top bar: rules + language, out of the way of the content ---- */
+.hm-bar,
+.hm-shell {
+	inline-size: min(100%, 28rem);
+	margin-inline: auto;
+}
+.hm-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
+.hm-ghost,
+.home .lang {
+	min-block-size: var(--target);
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-sm);
+}
+.hm-ghost {
+	background: transparent;
+	border-color: transparent;
+	color: var(--text-muted);
+}
+.home .lang {
+	background: var(--surface-2);
+	border-color: var(--stroke);
+}
+@media (hover: hover) {
+	.hm-ghost:hover:not(:disabled),
+	.home .lang:hover:not(:disabled) {
+		background: var(--surface-hover);
+		color: #fff;
+	}
+}
+@container home (inline-size < 22rem) {
+	.hm-rules span {
+		display: none; /* the button keeps its aria-label */
+	}
+}
+
+/* ---- page grid ---- */
+.hm-shell {
+	flex: 1;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	align-content: center;
+	gap: var(--space-5);
+	padding-block: var(--space-5) var(--space-2);
+}
+
+/* ---- hero: logo, tagline, highlights ---- */
+.hm-hero {
+	container: hmhero / inline-size;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-3);
+	text-align: center;
+}
+.logo {
+	--logo-gap: clamp(0.2rem, 1.2cqi, 0.45rem);
+	display: flex;
+	gap: var(--logo-gap);
+	margin: 0;
+}
+.ltile {
+	/* eight tiles and seven gaps fill the hero, within sensible bounds */
+	--tile-w: clamp(1.75rem, (88cqi - 7 * var(--logo-gap)) / 8, 4.5rem);
+	display: grid;
+	place-items: center;
+	inline-size: var(--tile-w);
+	aspect-ratio: 3 / 4;
+	border-radius: calc(var(--tile-w) * 0.2);
+	font: 800 calc(var(--tile-w) * 0.68) / 1 var(--disp);
+	background: linear-gradient(var(--paper), var(--paper-2));
+	border: 1px solid var(--paper-edge);
+	box-shadow:
+		inset 0 1px 0 #fff,
+		0 3px 0 var(--tile-edge),
+		0 8px 14px color-mix(in oklab, black 33%, transparent);
+}
+.hm-tagline {
+	margin: 0;
+	max-inline-size: 32ch;
+	font-size: 1.0625rem;
+	color: var(--text-muted);
+	text-wrap: balance;
+}
+.hm-feats {
+	display: none; /* phones: the panel matters more than the pitch; shown in the two-column layout */
+	list-style: none;
+	margin: var(--space-2) 0 0;
+	padding: 0;
+	gap: var(--space-3);
+	& li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		color: var(--text-muted);
+	}
+	& svg {
+		flex: none;
+		box-sizing: content-box;
+		padding: var(--space-2);
+		border-radius: var(--radius-sm);
+		background: var(--surface-2);
+		color: var(--amber);
+	}
+}
+.codechip.small {
+	padding: var(--space-1) var(--space-5);
+	& .codetxt {
+		font-size: clamp(1.75rem, 9cqi, 2.25rem);
+	}
+}
+
+/* ---- action panel ---- */
+.hm-panel {
+	container: hmpanel / inline-size;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-4);
+	text-align: start;
+	background: var(--surface-1);
+	border: 1px solid var(--stroke);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--sheen), var(--shadow-lg);
+	backdrop-filter: blur(10px);
+}
+.hm-stack {
+	display: flex;
+	flex-direction: column;
+	gap: inherit;
+}
+
+/* name field: the input is the box and keeps every state (border, focus outline, error ring, shake); the label floats
+   on top of it without catching clicks, so a tap anywhere in the box lands on the input */
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.field-box {
+	position: relative;
+	& input {
+		min-block-size: 3.5rem;
+		padding: 1.5rem var(--space-4) 0.5rem;
+	}
+	& > label {
+		position: absolute;
+		inset-inline: var(--space-4);
+		inset-block-start: 0.5rem;
+		/* sentence case on purpose: text-transform leaks into the accessible name ("YOUR NAME") */
+		font: 600 0.75rem/1.2 var(--font);
+		color: var(--field-label);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		pointer-events: none;
+		transform-origin: 0 0;
+		transition: color 0.15s; /* the move is added under prefers-reduced-motion: no-preference */
+	}
+	/* empty and not focused: full size and centred in the 3.5rem box, like a placeholder */
+	&:has(> input:placeholder-shown:not(:focus)) > label {
+		translate: 0 0.65rem;
+		scale: 1.3333;
+	}
+	&:has(> input:focus) > label {
+		color: var(--field-caret);
+	}
+	&:has(> input[aria-invalid='true']) > label {
+		color: var(--field-danger-ink);
+	}
+}
+@media (hover: hover) {
+	.field-box input:hover:not(:focus, [aria-invalid='true']) {
+		border-color: var(--field-edge-hover);
+	}
+}
+:where(.field input, .codein) {
+	inline-size: 100%;
+	min-block-size: 3rem;
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-md);
+	border: 1px solid var(--field-edge);
+	background: var(--field-bg);
+	color: var(--field-ink);
+	caret-color: var(--field-caret);
+	font: 500 1rem var(--font); /* 16px: iOS does not zoom into the field */
+	transition:
+		border-color 0.15s,
+		box-shadow 0.15s;
+	&::placeholder {
+		color: var(--field-placeholder);
+	}
+}
+.field input[aria-invalid='true'] {
+	border-color: var(--danger);
+	box-shadow: 0 0 0 3px color-mix(in oklab, var(--danger) 30%, transparent);
+}
+.errtxt {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--danger-ink);
+}
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+.nchip {
+	display: inline-flex;
+	border-radius: 99px;
+	background: var(--surface-2);
+	border: 1px solid var(--stroke);
+	overflow: hidden;
+	& button {
+		min-block-size: max(2rem, var(--target) - 0.5rem);
+		border: 0;
+		border-radius: 0;
+		background: none;
+		padding: var(--space-1) var(--space-3);
+		font-size: 0.8125rem;
+		font-weight: 500;
+	}
+	& button:last-child {
+		padding-inline: var(--space-1) var(--space-3);
+		color: var(--text-muted);
+	}
+}
+@media (hover: hover) {
+	.nchip button:hover:not(:disabled) {
+		background: var(--surface-hover);
+	}
+}
+
+/* option rows: the amber call to action (solo) and the quieter online options */
+.hm-cta,
+.hm-opt {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: var(--space-3);
+	inline-size: 100%;
+	min-block-size: 4rem;
+	padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+	border-radius: var(--radius-lg);
+	text-align: start;
+}
+.hm-cta {
+	background: linear-gradient(var(--amber-hi), var(--amber));
+	color: var(--ink);
+	border: 1px solid var(--amber-edge);
+	box-shadow:
+		0 3px 0 var(--amber-deep),
+		0 10px 24px var(--cta-glow);
+	& .hm-ico {
+		background: color-mix(in oklab, var(--ink) 10%, transparent);
+	}
+	/* no icon (invite "Join"): a centred label with the arrow beside it */
+	&:not(:has(.hm-ico)) {
+		justify-content: center;
+		padding-inline: var(--space-4);
+		& .hm-txt {
+			flex: none;
+		}
+	}
+}
+.hm-opt {
+	background: var(--surface-2);
+	border: 1px solid var(--stroke);
+	color: #fff;
+	& .hm-ico {
+		background: var(--surface-hover);
+		color: var(--amber);
+	}
+}
+@media (hover: hover) {
+	.hm-cta:hover:not(:disabled) {
+		background: linear-gradient(color-mix(in oklab, var(--amber-hi), white 14%), var(--amber-hi));
+	}
+	button.hm-opt:hover:not(:disabled) {
+		background: var(--surface-hover);
+		border-color: var(--stroke-strong);
+	}
+}
+.hm-ico {
+	flex: none;
+	display: grid;
+	place-items: center;
+	inline-size: 2.75rem;
+	aspect-ratio: 1;
+	border-radius: var(--radius-md);
+}
+.hm-txt {
+	flex: 1;
+	min-inline-size: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+	& b {
+		font: 700 1.0625rem/1.25 var(--disp);
+	}
+	& small {
+		font-size: 0.875rem;
+		line-height: 1.35;
+		font-weight: 400;
+		opacity: 0.85;
+		text-wrap: pretty;
+	}
+}
+.hm-chev {
+	flex: none;
+	opacity: 0.75;
+}
+@container hmpanel (inline-size < 17rem) {
+	.hm-panel .hm-ico {
+		display: none; /* smallest phones: the words need the room more than the icons do */
+	}
+	.hm-join .codein {
+		padding-inline: var(--space-2);
+		font-size: 1.125rem;
+		letter-spacing: 0.18em;
+		text-indent: 0.18em;
+	}
+	.hm-join .hm-joinrow button {
+		min-inline-size: 0;
+		padding-inline: var(--space-3);
+	}
+}
+
+/* "or play online" */
+.hm-divider {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin: var(--space-1) 0;
+	font: 600 0.75rem/1 var(--font);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	&::before,
+	&::after {
+		content: '';
+		flex: 1;
+		border-block-start: 1px solid var(--stroke);
+	}
+}
+
+/* join with a code: the input and button wrap onto their own row */
+.hm-join {
+	flex-wrap: wrap;
+	transition: border-color 0.15s;
+	&:has(.codein:focus-visible) {
+		border-color: var(--stroke-strong);
+	}
+	/* five valid characters typed: the card says it is ready */
+	&:has(.codein:not(:placeholder-shown):valid) {
+		border-color: var(--amber);
+	}
+}
+.hm-joinrow {
+	display: flex;
+	gap: var(--space-2);
+	flex-basis: 100%;
+	& button {
+		flex: none;
+		min-inline-size: 6rem;
+		white-space: nowrap;
+		border-radius: var(--radius-md);
+	}
+}
+.codein {
+	text-align: center;
+	text-indent: 0.35em; /* letter-spacing trails the last letter: balance it so the code sits centred */
+	letter-spacing: 0.35em;
+	font: 700 1.25rem var(--disp);
+	text-transform: uppercase;
+}
+
+/* resume a saved game: first in the panel, it is the most likely next step */
+.hm-resume {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto auto;
+	grid-template-areas: 'ico txt btn x';
+	align-items: center;
+	gap: var(--space-2) var(--space-3);
+	padding: var(--space-3);
+	border-radius: var(--radius-lg);
+	background: color-mix(in oklab, var(--amber) 15%, transparent);
+	border: 1px solid var(--amber);
+	& > svg {
+		grid-area: ico;
+		color: var(--amber);
+	}
+	& .hm-txt {
+		grid-area: txt;
+	}
+	& .primary {
+		grid-area: btn;
+	}
+	& .icon {
+		grid-area: x;
+		min-inline-size: var(--target);
+		min-block-size: var(--target);
+		background: transparent;
+		border-color: transparent;
+	}
+}
+
+@media (hover: hover) {
+	.hm-resume .icon:hover:not(:disabled) {
+		background: var(--surface-hover);
+	}
+}
+/* narrow panel: the text keeps the whole row, Resume gets a full-width row of its own */
+@container hmpanel (inline-size < 24rem) {
+	.hm-resume {
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-areas:
+			'ico txt x'
+			'btn btn btn';
+	}
+}
+
+.hm-link {
+	align-self: center;
+	min-block-size: var(--target);
+	background: none;
+	border: 0;
+	color: var(--text-muted);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+@media (hover: hover) {
+	.hm-link:hover:not(:disabled) {
+		background: none;
+		color: #fff;
+	}
+}
+
+/* ---- wide: brand on the left, actions on the right ---- */
+@container home (inline-size >= 52rem) {
+	.hm-bar,
+	.hm-shell {
+		inline-size: min(100%, 64rem);
+	}
+	.hm-shell {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 27rem);
+		align-items: center;
+		column-gap: clamp(var(--space-6), 6cqi, 6rem);
+	}
+	.hm-hero {
+		align-items: flex-start;
+		gap: var(--space-4);
+		text-align: start;
+	}
+	.hm-tagline {
+		font: 600 clamp(1.375rem, 4.5cqi, 1.875rem) / 1.25 var(--disp);
+		color: #fff;
+	}
+	.hm-feats {
+		display: grid;
+	}
+	.ltile {
+		--tile-w: clamp(2.5rem, (100cqi - 7 * var(--logo-gap)) / 8, 4.5rem); /* the hero is the left column: use all of it */
+	}
+}
+
+/* ---- solo pickers: mode, lesson and bot level (modal on the light/dark dialog card) ---- */
+.card .lvltitle {
+	margin: 0 2.75rem var(--space-4) 0.125rem;
+	font-size: 1.25rem;
+}
+.lvlopts {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	inline-size: 100%;
+}
+.card .lvlopts button {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: var(--space-3);
+	inline-size: 100%;
+	text-align: start;
+	padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+	border-radius: var(--radius-md);
+	background: var(--card-opt-bg);
+	color: var(--card-ink);
+	border: 2px solid var(--card-opt-edge); /* only its colour changes on hover/selection, so nothing shifts */
+	box-shadow: 0 1px 0 color-mix(in oklab, black 5%, transparent);
+	& > svg {
+		flex: none;
+		color: var(--card-link);
+	}
+	&:active:not(:disabled) {
+		background: var(--card-opt-active);
+	}
+	&.sel {
+		background: var(--card-opt-sel);
+		border-color: var(--amber-edge);
+	}
+}
+@media (hover: hover) {
+	.card .lvlopts button:hover:not(:disabled) {
+		background: var(--card-opt-hover);
+		border-color: var(--card-opt-hover-edge);
+	}
+	.card .lvlopts button.sel:hover:not(:disabled) {
+		background: var(--card-opt-sel-hover);
+	}
+}
+.lv-txt {
+	flex: 1;
+	min-inline-size: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	& b {
+		font-size: 1.0625rem;
+		line-height: 1.2;
+	}
+	& small {
+		font-size: 0.875rem;
+		line-height: 1.4;
+		font-weight: 400;
+		color: var(--card-sub-ink);
+		text-wrap: pretty;
+	}
+}
+.lv-ico,
+.lv-num {
+	flex: none;
+	display: grid;
+	place-items: center;
+	inline-size: 2.5rem;
+	aspect-ratio: 1;
+	border-radius: var(--radius-sm);
+	background: var(--card-btn-bg);
+	color: #fff;
+}
+.lv-num {
+	border-radius: 50%;
+	font: 700 1rem/1 var(--disp);
+}
+.lv-pips {
+	flex: none;
+	display: flex;
+	gap: 0.1875rem;
+	& i {
+		inline-size: 0.5rem;
+		aspect-ratio: 1;
+		border-radius: 50%;
+		background: var(--card-rule);
+	}
+	& i.on {
+		background: var(--amber-edge);
+	}
+}
+
+/* ---- finish ---- */
+@supports (corner-shape: squircle) {
+	.hm-panel,
+	.hm-cta,
+	.hm-opt,
+	.hm-resume,
+	.hm-ico,
+	.lv-ico {
+		corner-shape: squircle;
+	}
+}
+/* The panel rises into place on first paint. Where @starting-style is unsupported it simply appears. */
+@media (prefers-reduced-motion: no-preference) {
+	.hm-panel,
+	.hm-resume {
+		transition:
+			opacity 0.45s ease-out,
+			translate 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+		@starting-style {
+			opacity: 0;
+			translate: 0 0.75rem;
+		}
+	}
+	.field-box > label {
+		transition:
+			translate 0.15s ease-out,
+			scale 0.15s ease-out,
+			color 0.15s;
+	}
+	.hm-chev {
+		transition: translate 0.15s;
+	}
+	@media (hover: hover) {
+		:is(.hm-cta, button.hm-opt):hover:not(:disabled) .hm-chev {
+			translate: 0.1875rem 0;
+		}
+	}
+}

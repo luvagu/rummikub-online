@@ -32,6 +32,14 @@
 	--stroke: color-mix(in oklab, white 24%, transparent);
 	--stroke-strong: color-mix(in oklab, white 48%, transparent);
 	--text-muted: color-mix(in oklab, white 80%, transparent);
+	/* ---- home screen (src/styles/home.css) ---- */
+	--radius-xl: 1.75rem;
+	--shadow-lg: 0 18px 48px color-mix(in oklab, black 32%, transparent);
+	--sheen: inset 0 1px 0 color-mix(in oklab, white 14%, transparent);
+	--cta-glow: color-mix(in oklab, var(--amber) 38%, transparent);
+	--danger: #ff5252;
+	--danger-ink: #ffb4ab;
+	--target: 2.5rem; /* minimum control size; 44px on touch screens (below) */
 	/* ---- colour scheme ----
 	   The table, rack, tiles, menus and toasts are game objects: they look the same in both schemes. What follows the scheme
 	   is the "chrome" that sits on top: dialog cards, text fields, the tutorial coach and native controls.
@@ -70,6 +78,11 @@
 	--field-bg: light-dark(#fff, #0d2a12);
 	--field-ink: light-dark(#1b1b1b, #f1f5ef);
 	--field-placeholder: light-dark(#757575, #9db3a0);
+	--field-caret: light-dark(var(--felt), var(--amber));
+	--field-edge: light-dark(#0000001f, #ffffff2e);
+	--field-edge-hover: light-dark(#0000004d, #ffffff59);
+	--field-label: light-dark(#5f6b60, #a9bfac); /* the floating label sits on --field-bg, not on the felt */
+	--field-danger-ink: light-dark(#c62828, #ffb4ab);
 	--coach-bg: light-dark(var(--paper), #14301a);
 	--coach-ink: light-dark(#222, #f1f5ef);
 	--xbtn-bg: light-dark(#0000000f, #00000059);
@@ -83,6 +96,11 @@
 	}
 	&:has(> head > meta[name='color-scheme'][content='light']) {
 		color-scheme: light;
+	}
+}
+@media (pointer: coarse) {
+	:root {
+		--target: 2.75rem;
 	}
 }
 @media (width <= 520px) {
