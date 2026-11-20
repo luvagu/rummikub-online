@@ -10,6 +10,7 @@ export const en = {
 	join: 'Join room',
 	connecting: 'Connecting…',
 	rules: 'Rules',
+	rotate: 'Turn your device upright to play',
 	readRules: 'Read the rules',
 	needName: 'Please enter your name first',
 	soloD: 'Practice right away, no connection needed',

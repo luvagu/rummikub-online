@@ -1230,8 +1230,13 @@ dialog.card::backdrop {
 	overscroll-behavior: contain;
 }
 button,
+.tile,
+.rack,
+.board {
+	touch-action: manipulation; /* also the gaps between tiles: a quick second tap there must not arm double-tap zoom */
+}
 .tile {
-	touch-action: manipulation;
+	-webkit-touch-callout: none; /* no iOS long-press preview over a tile */
 }
 .board.adding {
 	padding-bottom: 68px; /* room for the floating "New set" button */
@@ -2195,4 +2200,47 @@ a.btn.wa {
 }
 a.btn.wa:active {
 	transform: scale(0.97);
+}
+
+/* ---- installed app (display-mode: standalone) ---- */
+/* iOS 26 top-edge blur: a flat, opaque, hit-testable strip >10px tall on the top edge makes WebKit skip it (EdgeCap.jsx).
+   Same colour as theme-color and the game header. No backdrop-filter, alpha or pointer-events: none, or WebKit blurs again. */
+.edgecap {
+	display: none;
+}
+@media (display-mode: standalone) {
+	.edgecap {
+		display: block;
+		position: fixed;
+		inset: 0 0 auto;
+		z-index: 4;
+		block-size: calc(env(safe-area-inset-top, 0px) + var(--edgecap));
+		background: var(--felt-edge);
+	}
+}
+/* Portrait only: shown by RotateHint.jsx while an installed app on a touch device is sideways (iOS ignores the manifest lock) */
+.rotate-hint {
+	position: fixed;
+	inset: 0;
+	width: auto;
+	height: auto;
+	margin: 0;
+	border: 0;
+	padding: max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px))
+		max(24px, env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+	background: var(--felt-edge);
+	color: #fff;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	text-align: center;
+	font: 600 1.125rem/1.4 var(--font);
+}
+.rotate-hint:popover-open {
+	display: flex;
+}
+.rotate-hint p {
+	margin: 0;
+	max-width: 22rem;
 }

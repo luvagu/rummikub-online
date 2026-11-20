@@ -13,7 +13,7 @@
 	/* safe-area insets are physical, so the side padding is too */
 	padding-left: max(var(--space-4), env(safe-area-inset-left, 0px));
 	padding-right: max(var(--space-4), env(safe-area-inset-right, 0px));
-	padding-block: max(var(--space-3), env(safe-area-inset-top, 0px)) max(var(--space-5), env(safe-area-inset-bottom, 0px));
+	padding-block: calc(max(var(--space-3), env(safe-area-inset-top, 0px)) + var(--edgecap)) max(var(--space-5), env(safe-area-inset-bottom, 0px));
 }
 
 /* ---- top bar: rules + language, out of the way of the content ---- */
@@ -183,6 +183,9 @@
 	&:has(> input:placeholder-shown:not(:focus)) > label {
 		translate: 0 0.65rem;
 		scale: 1.3333;
+		/* scaled from the start edge: 3/4 of the width keeps the painted label inside the box, else the page overflows sideways */
+		inset-inline-end: auto;
+		max-inline-size: calc((100% - 2 * var(--space-4)) * 0.75);
 	}
 	&:has(> input:focus) > label {
 		color: var(--field-caret);

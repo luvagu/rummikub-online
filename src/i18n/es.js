@@ -10,6 +10,7 @@ export const es = {
 	join: 'Unirse',
 	connecting: 'Conectando…',
 	rules: 'Reglas',
+	rotate: 'Gira tu dispositivo en vertical para jugar',
 	readRules: 'Leer las reglas',
 	needName: 'Primero escribe tu nombre',
 	soloD: 'Practica al instante, sin conexión',
