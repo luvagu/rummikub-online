@@ -200,7 +200,7 @@
 		animation: pop 0.5s both;
 		animation-delay: calc(var(--i) * 60ms);
 	}
-	.field input.err {
+	.field-box:has(> input[aria-invalid='true']) {
 		animation: shake 0.3s;
 	}
 	.seat.bump {
