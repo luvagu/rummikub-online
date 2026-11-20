@@ -17,6 +17,8 @@ import { Modal } from './components/Modal.jsx'
 import { TopLayer } from './components/TopLayer.jsx'
 import { LeaveDialog } from './components/LeaveDialog.jsx'
 import { UpdateBanner } from './components/UpdateBanner.jsx'
+import { RotateHint } from './components/RotateHint.jsx'
+import { EdgeCap } from './components/EdgeCap.jsx'
 import { Home } from './features/home/Home.jsx'
 import { Lobby } from './features/lobby/Lobby.jsx'
 import Game from './features/game/Game.jsx'
@@ -336,6 +338,8 @@ export default function App() {
 				</TopLayer>
 			)}
 			<UpdateBanner hidden={!conn} />
+			<RotateHint />
+			{!(inRoom && s.phase !== 'lobby') && <EdgeCap />}
 			{!inRoom ? (
 				<Home
 					{...{

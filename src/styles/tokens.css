@@ -98,6 +98,16 @@
 		color-scheme: light;
 	}
 }
+/* Height of the solid strip that keeps iOS 26's top-edge blur off Home and Lobby in the installed app (see EdgeCap.jsx).
+   WebKit only honours a fixed edge bar taller than 10px. Zero in a browser tab, where there is no such blur. */
+:root {
+	--edgecap: 0px;
+}
+@media (display-mode: standalone) {
+	:root {
+		--edgecap: 14px;
+	}
+}
 @media (pointer: coarse) {
 	:root {
 		--target: 2.75rem;

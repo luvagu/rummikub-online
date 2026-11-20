@@ -575,6 +575,7 @@ export default function Game({
     [say, setSay] = useState(""), // polite announcement of the last move, for screen readers
     actions = useRef(),
     suppressClick = useRef(false),
+    touchUp = useRef(-1e9), // when the last touch was lifted: the click iOS synthesizes after it is ignored (see onTouchTap)
     abortDrag = useRef(null);
   // Round-winner celebration (confetti + highlighted name) between "the round ended" and the summary dialog. It is decided
   // while rendering, so the summary never shows for a frame first. A mount that is already "over" (reload, late join) has
@@ -609,9 +610,49 @@ export default function Game({
     };
   }, []);
   const dnd = my && canDnd;
-  actions.current = { newSet, addTo, back }; // the latest closures: the drop outlives the render that started the drag
+  actions.current = { newSet, addTo, back, toggle }; // the latest closures: the drop (or finger-up) outlives the render that started it
+  // Touch selects on finger-up, from the raw pointer. The click iOS synthesizes instead is unreliable for quick taps on
+  // tiles 3-5px apart: WebKit retargets it to the "best" nearby clickable (often the tile just selected, which sits lifted
+  // into its neighbours' space, so it got deselected instead), and a fast second tap in a gap can be eaten as a double tap.
+  const tileNear = (target, x, y) => {
+    const btn = target.closest?.("button");
+    if (btn) return btn.classList.contains("tile") ? btn : null; // the set's "+" badge and other buttons keep their own taps
+    const box = target.closest?.(".rack, .set");
+    if (!box) return null;
+    let best = null,
+      bd = 9; // px: a tap in a gap, or in the space a lifted (selected) tile left, still goes to the tile it was meant for
+    for (const el of box.querySelectorAll(".tile")) {
+      const r = el.getBoundingClientRect(),
+        d = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+      if (d < bd) {
+        bd = d;
+        best = el;
+      }
+    }
+    return best;
+  };
+  const onTouchTap = (e) => {
+    const tile = tileNear(e.target, e.clientX, e.clientY),
+      pid = e.pointerId,
+      x0 = e.clientX,
+      y0 = e.clientY,
+      ac = new AbortController(),
+      sig = { signal: ac.signal };
+    window.addEventListener(
+      "pointerup",
+      (ev) => {
+        if (ev.pointerId !== pid) return;
+        ac.abort();
+        touchUp.current = performance.now();
+        if (tile && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 10) actions.current.toggle(+tile.dataset.id); // further: a swipe
+      },
+      sig,
+    );
+    window.addEventListener("pointercancel", (ev) => ev.pointerId === pid && ac.abort(), sig); // the rack/board scrolled instead
+  };
   const onTilePointerDown = (e) => {
-    if (!dnd || e.button !== 0 || e.pointerType === "touch") return;
+    if (e.pointerType === "touch" || (e.pointerType === "pen" && !dnd)) return onTouchTap(e);
+    if (!dnd || e.button !== 0) return;
     const tile = e.target.closest(".tile");
     if (!tile) return;
     const id = +tile.dataset.id,
@@ -694,7 +735,9 @@ export default function Game({
   };
   const onTileClick = (e) => {
     const tile = e.target.closest(".tile");
-    if (tile && !suppressClick.current) toggle(+tile.dataset.id);
+    if (!tile || suppressClick.current) return;
+    if (e.detail !== 0 && performance.now() - touchUp.current < 800) return; // a touch tap, already handled on finger-up (keyboard clicks have detail 0)
+    toggle(+tile.dataset.id);
   };
 
   // ---- keyboard: each tile group (rack, table) is a single tab stop; arrow keys move between its tiles ----
