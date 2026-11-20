@@ -170,7 +170,8 @@
 			& .tr-fill {
 				stroke: var(--ring-c);
 				stroke-dasharray: 100;
-				stroke-dashoffset: calc(100 - var(--left));
+				/* a LENGTH (x * 1px): Firefox rejects a bare number inside calc() here, which left the ring full */
+				stroke-dashoffset: calc((100 - var(--left)) * 1px);
 				transition: stroke var(--dur-2);
 			}
 		}
