@@ -122,7 +122,7 @@
 			background-color var(--dur-2),
 			border-color var(--dur-2),
 			opacity var(--dur-2),
-			--sweep 1s linear; /* the turn ring drains smoothly between the once-a-second updates */
+			--left 1s linear; /* the turn timer drains smoothly between the once-a-second updates */
 		&.act {
 			border-color: var(--amber);
 			background: color-mix(in oklab, var(--amber) 15%, transparent);
@@ -148,17 +148,33 @@
 			margin-right: 5px; /* the rack-count badge overhangs the avatar; keep it off the name */
 			box-shadow: inset 0 -2px 0 oklch(0% 0 0 / 0.12);
 		}
-		/* the turn ring around the active player's avatar: the time left of a timed turn, a full ring otherwise */
-		&.act .av::before {
-			content: '';
-			position: absolute;
-			inset: -4px;
-			border-radius: 50%;
-			background: conic-gradient(var(--ring-c) var(--sweep), oklch(100% 0 0 / 0.16) 0);
-			mask: radial-gradient(farthest-side, #0000 calc(100% - 2.5px), #000 calc(100% - 2px));
-			transition: background-color var(--dur-2);
+		/* the turn timer runs along the pill outline: a dim track plus a coloured stroke that drains clockwise (TimerRing.jsx).
+		   While it runs the static amber border steps back, so the amber phase of the timer is not amber on amber. */
+		&.act[data-t] {
+			border-color: oklch(100% 0 0 / 0.2);
 		}
-		& > svg {
+		& .tring {
+			position: absolute;
+			inset: -0.5px;
+			width: calc(100% + 1px);
+			height: calc(100% + 1px);
+			overflow: visible;
+			pointer-events: none;
+			& rect {
+				fill: none;
+				stroke-width: 3px;
+			}
+			& .tr-track {
+				stroke: oklch(100% 0 0 / 0.18);
+			}
+			& .tr-fill {
+				stroke: var(--ring-c);
+				stroke-dasharray: 100;
+				stroke-dashoffset: calc(100 - var(--left));
+				transition: stroke var(--dur-2);
+			}
+		}
+		& > svg:not(.tring) {
 			flex: none;
 			opacity: 0.8;
 		}
@@ -321,7 +337,7 @@
 			& .seat:not(.act) {
 				flex: 0 0 auto;
 				& .si b,
-				& > svg {
+				& > svg:not(.tring) {
 					display: none;
 				}
 			}

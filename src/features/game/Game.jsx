@@ -76,6 +76,8 @@ import {
   hidePopup,
 } from "../../components/Popup.jsx";
 import Celebration from "./Celebration.jsx";
+import { timeoutDue } from "./countdown.js";
+import TimerRing from "./TimerRing.jsx";
 import {
   RoundSummary,
 } from "./RoundSummary.jsx";
@@ -391,9 +393,9 @@ export default function Game({
       e.warn = 1;
       warn();
     } else if (my && secs > 0 && secs <= 5) tick(secs === 1); // never in the same second as the warning
-    if (my && secs === 0 && !e.sent) {
+    if (timeoutDue({ my, secs, dl, now: Date.now(), sent: e.sent })) {
       e.sent = 1;
-      net.send({ t: "timeout" });
+      net.send({ t: "timeout", q: s.seq });
     }
   });
   useEffect(() => {
@@ -899,7 +901,7 @@ export default function Game({
               data-t={act && timed ? cls : undefined}
               style={{
                 anchorName: "--seat-" + i, // reaction bubbles anchor here
-                ...(act && timed && secs != null && { "--sweep": (Math.max(0, secs) / tot) * 360 + "deg" }),
+                ...(act && timed && secs != null && { "--left": (Math.max(0, secs) / tot) * 100 }),
               }}
               className={
                 "seat" +
@@ -909,6 +911,7 @@ export default function Game({
                 (celebrate?.id === p.id ? " win" : "")
               }
             >
+              {act && timed && <TimerRing />}
               <Avatar
                 name={p.name}
                 i={i}

@@ -417,7 +417,13 @@ export class Game {
 		if (s.phase !== 'play' || i !== s.turn) return E('e.notTurn')
 		if (this.hold()) return E('e.dealing')
 		if (m.t === 'draw') return this.draw(i, 1)
-		if (m.t === 'timeout') return this.draw(i, this.dirty(i) ? 3 : 1, true)
+		if (m.t === 'timeout') {
+			// The host is the authority on the clock: a client's timeout only counts for the turn it was sent for (`q`, optional for
+			// older clients) and once the turn has really run out. Client deadlines are host `tl` + arrival time, so a legit one is
+			// never earlier than this (300ms of slack for rounding).
+			if (!s.opts.timer || (m.q != null && m.q !== s.seq) || Date.now() < s.t0 + s.opts.timer * 1000 - 300) return
+			return this.draw(i, this.dirty(i) ? 3 : 1, true)
+		}
 		if (m.t !== 'end') return
 		const { board, rack } = m
 		if (

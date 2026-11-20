@@ -159,11 +159,11 @@
 	}
 }
 /* Typed custom properties, so they interpolate in transitions and keyframes (unregistered ones jump). */
-@property --sweep {
-	/* the active seat's turn ring: how much of the turn is left */
-	syntax: '<angle>';
+@property --left {
+	/* the active seat's turn timer: the percentage of the turn that is left */
+	syntax: '<number>';
 	inherits: true;
-	initial-value: 360deg;
+	initial-value: 100;
 }
 @property --spin {
 	/* rotating sheen on the winner card */
