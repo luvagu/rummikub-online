@@ -1,0 +1,1171 @@
+/* Surfaces: everything that floats above a screen. Dialogs (Modal.jsx) and their phone bottom sheets, confirmations, the
+   rules accordion, toasts (Toasts.jsx), the connection / update banners (TopLayer.jsx), menus and pickers (Popup.jsx),
+   the copy bubble (CopyBubble.jsx), the rotate notice and the tutorial coach.
+
+   Its own cascade layer after `game`, so it overrides the generic button rules and the table without specificity games.
+   Top-layer surfaces size against the viewport, so phone layouts use media queries here (a container cannot hold them).
+   Placement that needs anchor positioning is gated with @supports and has a usable fallback, never a popover stranded at
+   (0, 0). Every surface animates in and out; spatial motion is opt-in (prefers-reduced-motion: no-preference). */
+
+@layer dialog, sheet, confirm, rules, toast, banner, popover, coach;
+
+/* ================================================================== dialog: anatomy, colour, motion */
+@layer dialog {
+	/* the <dialog> itself: fixed and centred by the UA. Open, it is a column: header and footer stay put while the
+	   body scrolls (so the close button never scrolls away). */
+	dialog.card {
+		--pad: var(--sf-pad);
+		width: min(560px, 100%);
+		max-width: calc(100% - 32px);
+		max-height: 88dvh;
+		padding: 0;
+		overflow: hidden;
+		overscroll-behavior: contain; /* with the backdrop rule below: scrolling never reaches the page behind */
+		border: 0;
+		border-radius: var(--sf-radius);
+		background: var(--card-bg);
+		color: var(--card-ink);
+		line-height: 1.5;
+		box-shadow: var(--elev-4);
+		timeline-scope: --sf-body; /* the header / footer shadows follow the body's scroll position */
+		&[data-size='sm'] {
+			width: min(440px, 100%);
+		}
+		&[data-size='lg'] {
+			width: min(680px, 100%);
+		}
+		/* motion: rises in; leaves the same way (Modal.jsx sets data-closing, waits for it, then unmounts) */
+		transition-property: opacity, translate, scale;
+		transition-duration: var(--dur-3);
+		transition-timing-function: var(--ease-out);
+		@media (prefers-reduced-motion: reduce) {
+			transition-duration: var(--dur-2);
+		}
+	}
+	dialog.card[open] {
+		display: flex; /* only while open: an unconditional display would override the closed state */
+		flex-direction: column;
+		opacity: 1;
+		@starting-style {
+			opacity: 0;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			@starting-style {
+				translate: 0 14px;
+				scale: 0.97;
+			}
+		}
+	}
+	dialog.card[data-closing] {
+		opacity: 0;
+		transition-duration: var(--dur-2);
+		transition-timing-function: var(--ease-in);
+		@media (prefers-reduced-motion: no-preference) {
+			translate: 0 10px;
+			scale: 0.98;
+		}
+	}
+	dialog.card::backdrop {
+		overflow: hidden; /* ::backdrop is not a scroll container by default, so it would ignore overscroll-behavior */
+		overscroll-behavior: contain;
+		background-color: var(--scrim);
+		backdrop-filter: blur(3px);
+		transition: background-color var(--dur-3) var(--ease-out);
+		@starting-style {
+			background-color: oklch(0% 0 0 / 0);
+		}
+	}
+	dialog.card[data-closing]::backdrop {
+		background-color: oklch(0% 0 0 / 0);
+	}
+
+	/* ---- header: icon badge, title, close ---- */
+	.sf-head {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: var(--pad) var(--pad) 12px;
+		& h2 {
+			flex: 1;
+			min-width: 0;
+			margin: 0;
+			font-size: 1.25rem;
+			line-height: 1.25;
+		}
+		/* a soft shadow under the header once the body has scrolled */
+		&::after {
+			content: '';
+			position: absolute;
+			inset-inline: 0;
+			top: 100%;
+			z-index: 1;
+			height: 12px;
+			pointer-events: none;
+			opacity: 0;
+			background: radial-gradient(farthest-side at 50% 0, oklch(0% 0 0 / 0.16), transparent);
+		}
+	}
+	.sf-ico {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 12px;
+		background: color-mix(in oklab, var(--card-link) 14%, transparent);
+		color: var(--card-link);
+	}
+	dialog.card[data-tone='danger'] .sf-ico {
+		background: color-mix(in oklab, var(--tone-danger-solid) 16%, transparent);
+		color: light-dark(#c62828, var(--tone-danger));
+	}
+	/* quiet header controls (more specific than the card's solid button style) */
+	.card :is(.xbtn, .sf-back) {
+		flex: none;
+		border: 0;
+		border-radius: 50%;
+		background: var(--xbtn-bg);
+		color: var(--xbtn-ink);
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: color-mix(in oklab, var(--xbtn-ink) 14%, transparent);
+			}
+		}
+	}
+	.card .sf-back {
+		margin-inline-start: -6px;
+		background: transparent;
+	}
+
+	/* ---- body: the only part that scrolls ---- */
+	.sf-body {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow: auto;
+		overscroll-behavior: contain;
+		padding: 4px var(--pad) var(--pad);
+		scroll-timeline: --sf-body block;
+		&:first-child {
+			padding-top: var(--pad); /* a dialog without a header (round summary, connecting) */
+		}
+		&:has(+ .sf-foot) {
+			padding-bottom: 8px;
+		}
+	}
+
+	/* ---- footer: the actions, always in reach ---- */
+	.sf-foot {
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 10px;
+		padding: 12px var(--pad) var(--pad);
+		/* a soft shadow above the footer while there is more body below */
+		&::before {
+			content: '';
+			position: absolute;
+			inset-inline: 0;
+			bottom: 100%;
+			height: 12px;
+			pointer-events: none;
+			opacity: 0;
+			background: radial-gradient(farthest-side at 50% 100%, oklch(0% 0 0 / 0.16), transparent);
+		}
+	}
+	@supports (animation-timeline: scroll()) {
+		.sf-head::after,
+		.sf-foot::before {
+			animation: sf-shade linear both;
+			animation-timeline: --sf-body;
+		}
+		.sf-head::after {
+			animation-range: 0 1.5rem;
+		}
+		.sf-foot::before {
+			animation-direction: reverse;
+			animation-range: calc(100% - 1.5rem) 100%;
+		}
+	}
+
+	/* ---- content inside cards ---- */
+	.card h3 {
+		margin: 14px 0 6px;
+	}
+	.card a {
+		color: var(--card-link);
+	}
+	.card .row {
+		margin-top: 14px;
+	}
+	.card :focus-visible {
+		outline-color: var(--card-focus);
+	}
+	/* buttons on the light card (the generic translucent-white button is made for the dark table) */
+	.card button {
+		background: var(--card-btn-bg);
+		border-color: var(--card-btn-edge);
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: var(--card-btn-hover);
+			}
+		}
+		&:active:not(:disabled) {
+			background: var(--card-btn-active);
+		}
+		&:focus-visible {
+			outline: 3px solid var(--card-focus);
+			outline-offset: 2px;
+		}
+	}
+	.card button.primary {
+		background: linear-gradient(var(--amber-hi), var(--amber));
+		color: var(--ink);
+		border-color: var(--amber-edge);
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: linear-gradient(#ffcb52, #ffbb1a);
+			}
+		}
+		&:active:not(:disabled) {
+			background: linear-gradient(#f0a800, var(--amber-edge));
+		}
+		&:focus-visible {
+			outline-color: var(--ink);
+		}
+	}
+	.card button.primary.danger {
+		background: linear-gradient(#ef6c5f, var(--tone-danger-solid));
+		color: #fff;
+		border-color: #b71c1c;
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: linear-gradient(#f4786c, #ec4a46);
+			}
+		}
+	}
+	.card button.link {
+		background: none;
+		color: var(--card-link);
+		border: 0;
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: none;
+				color: var(--card-link-hover);
+			}
+		}
+		&:active:not(:disabled) {
+			background: none;
+			color: var(--card-link-hover);
+		}
+	}
+	.card .switch .tr {
+		background: var(--card-switch-off);
+		box-shadow: inset 0 0 0 1px var(--card-switch-ring);
+	}
+	.card .switch input:checked + .tr {
+		background: var(--card-switch-on);
+		box-shadow: none;
+	}
+	.card .switch input:focus-visible + .tr {
+		outline-color: var(--card-focus);
+		outline-offset: 2px;
+	}
+	.card .codechip {
+		background: var(--card-chip-bg);
+		border-color: var(--card-chip-edge);
+		& button.icon {
+			background: var(--card-chip-btn);
+			border-color: var(--card-chip-btn-edge);
+			@media (hover: hover) {
+				&:hover:not(:disabled) {
+					background: var(--card-chip-btn-hover);
+				}
+			}
+		}
+		& button:focus-visible {
+			outline-color: var(--amber);
+		}
+	}
+
+	/* ---- the felt card: room screens (the between-rounds summary in a room) ----
+	   Dark tint + a clear light edge instead of faint white: the old 8-20% whites almost vanished on the green. */
+	.card.felt {
+		--panel: #00000047;
+		--edge: #ffffff73;
+		--btn: #0000005c;
+		--btn-hover: #00000080;
+		--btn-edge: #ffffffb3;
+		--card-bg: #1f5f24; /* the footer and the sheet handle read the card colour */
+		background: radial-gradient(circle at 50% 0%, #3b7f3f, #1f5f24 78%);
+		color: #fff;
+		border: 1px solid #ffffff33;
+		& h2,
+		& h3 {
+			color: #fff;
+		}
+		& .xbtn {
+			background: #00000059;
+			color: #fff;
+			border: 1px solid #ffffff59;
+		}
+		& .lseat {
+			background: var(--panel);
+			border-color: var(--edge);
+		}
+		& .lseat.empty {
+			background: #00000024;
+			border-color: #ffffff99;
+			opacity: 1;
+		}
+		& .av.ghost {
+			background: #00000030;
+			border-color: #ffffff99;
+		}
+		& button:not(.primary, .link) {
+			background: var(--btn);
+			border-color: var(--btn-edge);
+			color: #fff;
+			@media (hover: hover) {
+				&:hover:not(:disabled) {
+					background: var(--btn-hover);
+				}
+			}
+			&:active:not(:disabled) {
+				background: #000000a6;
+			}
+		}
+		& button:focus-visible {
+			outline: 3px solid var(--amber);
+			outline-offset: 2px;
+		}
+		/* a disabled primary stays legible but clearly inactive (no 45% fade) */
+		& button.primary:disabled {
+			opacity: 1;
+			background: #0000004d;
+			color: #ffffffcc;
+			border: 1px dashed #ffffff99;
+			box-shadow: none;
+			cursor: not-allowed;
+		}
+		& button.link,
+		& button.link:active:not(:disabled) {
+			background: none;
+			color: #fff;
+			border: 0;
+		}
+		@media (hover: hover) {
+			& button.link:hover:not(:disabled) {
+				background: none;
+				color: #fff;
+			}
+		}
+		& .codechip {
+			background: #00000066;
+			border-color: #ffffffb3;
+			& button.icon {
+				background: #ffffff2e;
+				border-color: #ffffffb3;
+			}
+		}
+		& :is(.sub, .lvltag, .lseat em) {
+			opacity: 0.92;
+		}
+		/* dropdown rows stay flat inside the felt card */
+		& .menu button:not(.primary, .link) {
+			background: none;
+			border-color: transparent;
+			@media (hover: hover) {
+				&:hover:not(:disabled) {
+					background: #ffffff26;
+				}
+			}
+			&[aria-selected='true'] {
+				background: #ffffff38;
+			}
+		}
+	}
+
+	/* ---- a step of a multi-step dialog (the solo setup): slides in from the side it comes from ---- */
+	.sf-step {
+		@media (prefers-reduced-motion: no-preference) {
+			animation: sf-step-in var(--dur-3) var(--ease-out) both;
+			&[data-dir='back'] {
+				--from: -24px;
+			}
+		}
+	}
+}
+
+/* ================================================================== sheet: phones get bottom sheets */
+@layer sheet {
+	@media (width <= 520px) {
+		dialog.card:modal {
+			--pad: 18px;
+			width: 100%;
+			max-width: 100%;
+			max-height: 92dvh;
+			margin: auto 0 0; /* docked to the bottom edge */
+			padding-top: 10px; /* room for the handle */
+			padding-bottom: env(safe-area-inset-bottom, 0px);
+			border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+			/* the handle: a sheet affordance (closing is the close button, Escape, back gesture or a tap outside) */
+			&::before {
+				content: '';
+				position: absolute;
+				top: 8px;
+				left: 50%;
+				translate: -50% 0;
+				width: 40px;
+				height: 5px;
+				border-radius: 999px;
+				background: currentColor;
+				opacity: 0.22;
+			}
+		}
+		dialog.card:modal[open] {
+			@media (prefers-reduced-motion: no-preference) {
+				@starting-style {
+					translate: 0 100%;
+					scale: 1;
+				}
+			}
+		}
+		dialog.card:modal[data-closing] {
+			@media (prefers-reduced-motion: no-preference) {
+				translate: 0 100%;
+				scale: 1;
+			}
+		}
+		/* actions: full width and stacked in DOM order, so the safe answer (last: Stay) sits nearest the thumb */
+		.sf-foot {
+			flex-direction: column;
+			align-items: stretch;
+			& > button {
+				justify-content: center;
+				min-height: 48px;
+			}
+		}
+	}
+}
+
+/* ================================================================== confirm: Leave / End round */
+@layer confirm {
+	dialog.card[data-size='sm'] {
+		& .sf-head {
+			padding-bottom: 8px;
+		}
+		& .sf-body p {
+			margin: 0;
+			color: var(--card-sub-ink);
+		}
+	}
+}
+
+/* ================================================================== rules: an accordion of short sections */
+@layer rules {
+	.rules {
+		display: grid;
+		gap: 8px;
+	}
+	.rl {
+		border-radius: 14px;
+		background: var(--card-row);
+		interpolate-size: allow-keywords; /* lets the section open to its natural height */
+		& > summary {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-height: var(--target);
+			padding: 10px 14px;
+			border-radius: inherit;
+			cursor: pointer;
+			font: 700 1rem / 1.3 var(--disp);
+			list-style: none;
+			&::-webkit-details-marker {
+				display: none;
+			}
+			& > svg {
+				flex: none;
+				margin-inline-start: auto;
+				opacity: 0.7;
+				transition: rotate var(--dur-2) var(--ease-out);
+			}
+		}
+		&[open] > summary > svg {
+			rotate: 180deg;
+		}
+		@media (hover: hover) {
+			& > summary:hover {
+				background: color-mix(in oklab, currentColor 6%, transparent);
+			}
+		}
+		& p,
+		& ul {
+			margin: 0;
+			padding: 0 14px 14px;
+		}
+		& ul {
+			display: grid;
+			gap: 6px;
+			padding-inline-start: 34px;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			&::details-content {
+				block-size: 0;
+				overflow: clip;
+				transition:
+					block-size var(--dur-3) var(--ease-out),
+					content-visibility var(--dur-3) allow-discrete;
+			}
+			&[open]::details-content {
+				block-size: auto;
+			}
+		}
+	}
+	/* example sets on a strip of felt: a group, a run, a joker standing in */
+	.rl-tiles {
+		--tw: 28px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin: 0 14px 14px;
+		padding: 10px;
+		border-radius: 12px;
+		background: radial-gradient(circle at 50% 0, var(--felt2), var(--felt));
+		& > span {
+			display: flex;
+			gap: 3px;
+			padding: 4px;
+			border-radius: 9px;
+			background: var(--felt-tray);
+		}
+		& .tile {
+			pointer-events: none;
+			/* a tile is a button: keep its paper face, not the card's button style */
+			border-color: var(--paper-edge);
+			background: linear-gradient(var(--paper), var(--paper-2));
+		}
+	}
+}
+
+/* ================================================================== toast: bottom stack, dismissible, pausable */
+@layer toast {
+	/* the always-mounted region (Toasts.jsx). Bottom of the screen; in a game, just above the action dock. */
+	.toaster {
+		position: fixed;
+		inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 16px);
+		width: min(calc(100% - 24px), 420px);
+		margin: 0 auto;
+		padding: 0;
+		overflow: visible;
+		border: 0;
+		background: none;
+		color: #fff;
+		&:popover-open {
+			display: block;
+		}
+		& ol {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			margin: 0;
+			padding: 0;
+			list-style: none;
+		}
+	}
+	@supports (bottom: anchor(top)) {
+		.game .bar {
+			anchor-name: --dock;
+		}
+		:root:has(.game .bar) .toaster {
+			position-anchor: --dock;
+			bottom: calc(anchor(top) + 10px);
+		}
+	}
+	.toast {
+		--tone: var(--tone-info);
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		overflow: hidden;
+		padding: 8px 6px 8px 10px;
+		border: 1px solid oklch(100% 0 0 / 0.14);
+		border-radius: 14px;
+		background: var(--toast-bg);
+		box-shadow: var(--elev-3);
+		interpolate-size: allow-keywords; /* collapses smoothly when it leaves */
+		transition:
+			opacity var(--dur-2) var(--ease-out),
+			translate var(--dur-2) var(--ease-out),
+			block-size var(--dur-2) var(--ease-out),
+			padding var(--dur-2) var(--ease-out);
+		@starting-style {
+			opacity: 0;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			@starting-style {
+				translate: 0 12px;
+			}
+		}
+		&.ok {
+			--tone: var(--tone-ok);
+		}
+		&.warn {
+			--tone: var(--tone-warn);
+		}
+		&.err {
+			--tone: var(--tone-danger);
+		}
+		&[data-leaving] {
+			block-size: 0;
+			padding-block: 0;
+			border-width: 0;
+			opacity: 0;
+			@media (prefers-reduced-motion: no-preference) {
+				translate: 0 8px;
+			}
+		}
+	}
+	.tchip {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		background: color-mix(in oklab, var(--tone) 20%, transparent);
+		color: var(--tone);
+	}
+	.tmsg {
+		flex: 1;
+		min-width: 0;
+		font-size: 14px;
+		font-weight: 600;
+		line-height: 1.35;
+		& .tn {
+			margin-inline-start: 6px;
+			padding: 0 6px;
+			border-radius: 999px;
+			background: oklch(100% 0 0 / 0.14);
+			font-size: 12px;
+			font-variant-numeric: tabular-nums;
+		}
+	}
+	.toast .tclose {
+		flex: none;
+		padding: 6px;
+		border-color: transparent;
+		background: transparent;
+		color: #fff;
+		opacity: 0.8;
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: oklch(100% 0 0 / 0.12);
+				opacity: 1;
+			}
+		}
+	}
+	/* the time left, as a draining line. Its animationend removes the toast, so pausing it (hover, keyboard focus)
+	   pauses the dismissal too. A countdown, not decoration: it runs with reduced motion as well. */
+	.tbar {
+		position: absolute;
+		inset: auto 0 0;
+		height: 3px;
+		background: var(--tone);
+		opacity: 0.85;
+		transform-origin: left;
+		animation: tlife var(--life, 3s) linear forwards;
+	}
+	.toaster:is(:hover, :focus-within) .tbar {
+		animation-play-state: paused;
+	}
+}
+
+/* ================================================================== banner: connection pill, update card */
+@layer banner {
+	/* "Reconnecting…": a pill under the game header (anchored to it where supported), at the bottom elsewhere. */
+	.banner {
+		position: fixed;
+		inset: auto;
+		top: calc(env(safe-area-inset-top, 0px) + 12px);
+		left: 50%;
+		width: max-content;
+		max-width: calc(100% - 24px);
+		margin: 0;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 7px 14px 7px 10px;
+		border: 1px solid color-mix(in oklab, var(--amber) 60%, transparent);
+		border-radius: 999px;
+		background: color-mix(in oklab, var(--amber) 22%, var(--felt-deep));
+		box-shadow: var(--elev-3);
+		color: #fff;
+		font: 700 13px var(--font);
+		translate: -50% 0;
+		opacity: 0;
+		transition-property: opacity, translate, display, overlay;
+		transition-duration: var(--dur-2);
+		transition-timing-function: var(--ease-out);
+		transition-behavior: allow-discrete;
+		&:popover-open {
+			display: flex;
+			opacity: 1;
+			@starting-style {
+				opacity: 0;
+			}
+			@media (prefers-reduced-motion: no-preference) {
+				@starting-style {
+					translate: -50% -6px;
+				}
+			}
+		}
+		& svg {
+			flex: none;
+			color: var(--amber);
+		}
+	}
+	/* in a game: below the header (never over it, never over the turn timer) */
+	:root:has(.game .top) .banner:not(.update) {
+		top: calc(env(safe-area-inset-top, 0px) + 80px);
+	}
+	@supports (top: anchor(bottom)) {
+		.game .top {
+			anchor-name: --hud;
+		}
+		:root:has(.game .top) .banner:not(.update) {
+			position-anchor: --hud;
+			top: calc(anchor(bottom) + 10px);
+		}
+	}
+	/* home and lobby: their top bars hold buttons, so the pill sits at the bottom instead */
+	:root:not(:has(.game)) .banner:not(.update) {
+		top: auto;
+		bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+	}
+
+	/* "A new version is ready": a persistent card at the bottom, styled like a toast */
+	.banner.update {
+		top: auto;
+		bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+		flex-wrap: wrap;
+		gap: 10px;
+		width: min(calc(100% - 24px), 420px);
+		padding: 10px 10px 10px 16px;
+		border-radius: 16px;
+		background: var(--toast-bg);
+		font: 600 14px var(--font);
+		& button {
+			min-height: 44px; /* tap target */
+			padding-inline: 16px;
+			font-size: 14px;
+			font-weight: 700;
+			color: #fff;
+			background: #ffffff1f;
+			border: 1px solid #ffffff80;
+			border-radius: 10px;
+		}
+		& button.primary {
+			margin-inline-start: auto;
+			color: #1d1300;
+			background: var(--amber);
+			border-color: var(--amber-edge);
+		}
+	}
+	@supports (bottom: anchor(top)) {
+		:root:has(.game .bar) .banner.update {
+			position-anchor: --dock;
+			bottom: calc(anchor(top) + 10px);
+		}
+	}
+
+	/* Portrait only: shown by RotateHint.jsx while an installed app on a touch device is sideways (iOS ignores the manifest lock) */
+	.rotate-hint {
+		position: fixed;
+		inset: 0;
+		width: auto;
+		height: auto;
+		margin: 0;
+		border: 0;
+		padding: max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px))
+			max(24px, env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+		background: var(--felt-edge);
+		color: #fff;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 16px;
+		text-align: center;
+		font: 600 1.125rem/1.4 var(--font);
+		&:popover-open {
+			display: flex;
+		}
+		& p {
+			margin: 0;
+			max-width: 22rem;
+		}
+	}
+}
+
+/* ================================================================== popover: menus, pickers, the copy bubble */
+@layer popover {
+	.menu {
+		flex-direction: column;
+		min-width: 270px;
+		max-width: calc(100vw - 20px);
+		max-height: calc(100dvh - 84px);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 6px;
+		border: 1px solid #ffffff30;
+		border-radius: 16px;
+		background: var(--felt-deep);
+		box-shadow: var(--elev-4);
+		color: #fff;
+		&:popover-open {
+			display: flex; /* never unconditional: it would override the closed (display: none) state */
+		}
+		& button {
+			justify-content: flex-start;
+			width: 100%;
+			border: 0;
+			border-radius: 10px;
+			background: none;
+			text-align: start;
+		}
+		/* a value (pattern, language, theme); on/off items draw a switch instead (game.css .gmenu) */
+		& :not([role='menuitemcheckbox']) > .sw {
+			margin-inline-start: auto;
+			font-size: 0.75rem;
+			font-weight: 700;
+			letter-spacing: 0.05em;
+			opacity: 0.85;
+		}
+		& hr {
+			width: calc(100% - 12px);
+			margin: 4px 6px;
+			border: 0;
+			border-top: 1px solid #ffffff22;
+		}
+	}
+	/* game menu groups: Game, Settings, Room (Room's actions read as the destructive ones) */
+	.mgroup {
+		display: flex;
+		flex-direction: column;
+		& + .mgroup {
+			margin-top: 4px;
+			padding-top: 4px;
+			border-top: 1px solid #ffffff1c;
+		}
+		& > p {
+			margin: 0;
+			padding: 8px 12px 4px;
+			font: 700 11px/1 var(--font);
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			opacity: 0.6;
+		}
+		&.mdanger button {
+			color: var(--tone-danger);
+		}
+	}
+	.lvlpop {
+		min-width: 250px;
+		background: var(--felt-deep);
+		& button {
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+		}
+		& button[aria-selected='true'] {
+			background: #ffffff1f;
+		}
+		& :is(b, small) {
+			display: block;
+		}
+		& small {
+			font-weight: 400;
+			opacity: 0.85;
+		}
+	}
+
+	/* placement: against the trigger where anchor positioning exists (flipping when it would overflow); without it, a
+	   sheet along the bottom edge. Never `inset: auto` unconditionally, or the popover is stranded at (0, 0). */
+	@supports (position-area: block-end) {
+		.menu {
+			inset: auto;
+			margin: 6px 0;
+			position-area: block-end span-inline-start;
+			position-try-fallbacks: flip-block, flip-inline;
+		}
+		.lvlpop {
+			position-area: block-end span-inline-end;
+		}
+		.rpick {
+			inset: auto;
+			margin: 8px 0;
+			position-area: block-start span-inline-start;
+			position-try-fallbacks: flip-block, flip-inline; /* flips instead of being clipped on narrow phones */
+		}
+	}
+	@supports not (position-area: block-end) {
+		.menu,
+		.rpick {
+			inset: auto 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
+			width: auto;
+			max-width: none;
+			margin: 0;
+		}
+	}
+
+	/* phones: the game menu and the bot level list are bottom sheets */
+	@media (width <= 520px) {
+		.gmenu,
+		.lvlpop {
+			position-area: none;
+			position-try-fallbacks: none;
+			inset: auto 0 0;
+			width: 100%;
+			min-width: 0;
+			max-width: none;
+			max-height: 80dvh;
+			margin: 0;
+			padding: 18px 8px calc(env(safe-area-inset-bottom, 0px) + 8px);
+			border-width: 1px 0 0;
+			border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+			&::before {
+				content: '';
+				position: absolute;
+				top: 7px;
+				left: 50%;
+				translate: -50% 0;
+				width: 40px;
+				height: 5px;
+				border-radius: 999px;
+				background: #fff;
+				opacity: 0.25;
+			}
+			&::backdrop {
+				background: var(--scrim);
+			}
+		}
+	}
+
+	/* the reaction picker's tail, pointing down at the smiley button (anchored placement only). The picker sits above the
+	   rack and flips below it only without room above, which the rack's position makes rare. (A flip-aware tail needs
+	   anchored container queries, which the CSS minifier cannot parse yet.) */
+	@supports (position-area: block-start) {
+		.rpick::after {
+			content: '';
+			position: absolute;
+			bottom: -6px;
+			inset-inline-end: 18px;
+			width: 12px;
+			height: 12px;
+			rotate: 45deg;
+			border: solid oklch(100% 0 0 / 0.18);
+			border-width: 0 1px 1px 0;
+			background: inherit;
+		}
+	}
+
+	/* ---- motion: fade + slide in and out of the top layer ----
+	   `display` and `overlay` transition discretely so the closing popover stays in the top layer while it fades. Where they
+	   cannot (Firefox; Safari has no `overlay`) the entrance still runs and the exit is instant. */
+	.menu,
+	.rpick,
+	.cbubble {
+		opacity: 0;
+		transition-property: opacity, translate, scale, display, overlay;
+		transition-duration: var(--dur-2);
+		transition-timing-function: var(--ease-out);
+		transition-behavior: allow-discrete; /* separate from the shorthand: older engines drop a whole shorthand they cannot parse */
+		@media (prefers-reduced-motion: no-preference) {
+			translate: 0 -6px;
+		}
+		@media (prefers-reduced-motion: reduce) {
+			transition-duration: var(--dur-1);
+		}
+	}
+	.rpick,
+	.cbubble {
+		transform-origin: bottom right;
+		@media (prefers-reduced-motion: no-preference) {
+			translate: 0 6px;
+			scale: 0.96;
+		}
+	}
+	.menu:popover-open,
+	.rpick:popover-open,
+	.cbubble:popover-open {
+		opacity: 1;
+		translate: 0;
+		scale: 1;
+		@starting-style {
+			opacity: 0;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			@starting-style {
+				translate: 0 -6px;
+			}
+		}
+	}
+	:is(.rpick, .cbubble):popover-open {
+		@media (prefers-reduced-motion: no-preference) {
+			@starting-style {
+				translate: 0 6px;
+				scale: 0.96;
+			}
+		}
+	}
+	@media (width <= 520px) {
+		:is(.gmenu, .lvlpop) {
+			@media (prefers-reduced-motion: no-preference) {
+				translate: 0 100%;
+			}
+		}
+		:is(.gmenu, .lvlpop):popover-open {
+			@media (prefers-reduced-motion: no-preference) {
+				@starting-style {
+					translate: 0 100%;
+				}
+			}
+		}
+	}
+
+	/* ---- "Copied" / "Couldn't copy": a bubble on the copy button (CopyBubble.jsx) ---- */
+	.cbubble {
+		position: fixed;
+		width: max-content;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 12px 6px 9px;
+		border: 1px solid oklch(100% 0 0 / 0.16);
+		border-radius: 999px;
+		background: var(--toast-bg);
+		box-shadow: var(--elev-3);
+		color: #fff;
+		font: 700 13px var(--font);
+		pointer-events: none;
+		&:popover-open {
+			display: inline-flex;
+		}
+		& svg {
+			color: var(--tone-ok);
+		}
+		&[data-tone='err'] svg {
+			color: var(--tone-danger);
+		}
+	}
+	@supports (position-area: block-start) {
+		.cbubble {
+			inset: auto;
+			margin: 0 0 8px;
+			position-area: block-start;
+			position-try-fallbacks: flip-block;
+		}
+	}
+	@supports not (position-area: block-start) {
+		.cbubble {
+			inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 24px);
+			margin: 0 auto;
+		}
+	}
+}
+
+/* ================================================================== coach: the tutorial's guide */
+@layer coach {
+	.coach {
+		position: fixed;
+		z-index: 40;
+		top: calc(env(safe-area-inset-top, 0px) + 58px);
+		left: 50%;
+		translate: -50% 0;
+		display: grid;
+		gap: 8px;
+		width: min(calc(100% - 24px), 420px);
+		padding: 12px 14px;
+		border: 2px solid var(--amber);
+		border-radius: 16px;
+		background: var(--coach-bg);
+		box-shadow: var(--elev-4);
+		color: var(--coach-ink);
+		& p {
+			margin: 0;
+			font-size: 0.92rem;
+			line-height: 1.35;
+		}
+		& .row {
+			flex-wrap: wrap;
+			justify-content: flex-end;
+		}
+	}
+	.coachhead {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		& b {
+			flex: 1;
+		}
+	}
+	.coachn {
+		font-size: 0.75rem;
+		font-variant-numeric: tabular-nums;
+		opacity: 0.85;
+	}
+	/* the highlighted target of the current step */
+	.tut-hl {
+		z-index: 3;
+		outline: 3px solid var(--sky);
+		outline-offset: 2px;
+		@media (prefers-reduced-motion: no-preference) {
+			animation: tutpulse 1s ease-in-out infinite;
+		}
+	}
+	/* with a target on screen, the coach sits beside it (below, or above when there is no room) instead of covering
+	   it; several highlighted tiles: the last one is the anchor. A step without a target (e.g. "it's marked in red")
+	   sits just above the action dock, away from the table's sets, which fill from the top. Without anchor
+	   positioning: the top, as before. */
+	@supports (position-area: block-end) {
+		.tut-hl {
+			anchor-name: --tut;
+		}
+		:root:has(.game .bar) .coach {
+			position-anchor: --dock; /* named in the toast layer */
+			position-area: block-start span-all;
+			inset: auto;
+			top: auto;
+			left: auto;
+			translate: none;
+			justify-self: center; /* centred in the full-width area beside its anchor */
+			margin: 12px 0;
+		}
+		:root:has(.tut-hl) .coach {
+			position-anchor: --tut;
+			position-area: block-end span-all;
+			position-try-fallbacks: flip-block;
+		}
+	}
+}
+
+/* ================================================================== keyframes */
+@keyframes sf-shade {
+	to {
+		opacity: 1;
+	}
+}
+@keyframes sf-step-in {
+	from {
+		opacity: 0;
+		translate: var(--from, 24px) 0;
+	}
+}
+@keyframes tlife {
+	to {
+		transform: scaleX(0);
+	}
+}

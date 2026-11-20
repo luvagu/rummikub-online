@@ -1,9 +1,10 @@
 import { memo } from 'react'
-import { COLORS, T } from '../engine/game.js'
+import { T } from '../engine/game.js'
 import { useT } from '../i18n/index.js'
 
 // A tile is a plain <button> with only primitive props and no handlers, so React.memo can skip it unless its own state
-// changed. Clicks and drags are handled once, by delegation, on the game root (see Game.jsx).
+// changed. Clicks and drags are handled once, by delegation, on the game root (see Game.jsx). Its ink comes from data-c
+// (game.css), so there is no inline style: src/utils/viewTransition.js sets view-transition-name on it during a move.
 export const Tile = memo(function Tile({ id, sel, num, fresh, placed, ghost, enter, hide, rove }) {
 	const t = useT(),
 		x = T(id)
@@ -21,7 +22,6 @@ export const Tile = memo(function Tile({ id, sel, num, fresh, placed, ghost, ent
 			}
 			data-c={x.c}
 			data-id={id}
-			style={{ '--tc': x.j ? '#7b1fa2' : COLORS[x.c] }}
 			tabIndex={rove ? 0 : -1}
 			aria-pressed={!!sel}
 			aria-label={x.j ? (num ? `${t('joker')} ${num}` : t('joker')) : `${x.n} ${t('c' + x.c)}`}

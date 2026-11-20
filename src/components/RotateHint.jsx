@@ -20,7 +20,7 @@ export function RotateHint() {
 	}, [])
 	if (!on) return null
 	return (
-		<TopLayer className='rotate-hint' role='alert'>
+		<TopLayer className='rotate-hint' role='alert' keepOnTop>
 			<RotateCw size={48} aria-hidden='true' />
 			<p>{t('rotate')}</p>
 		</TopLayer>

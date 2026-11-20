@@ -1,10 +1,13 @@
-import { Modal } from './Modal.jsx'
+import { LogOut } from 'lucide-react'
+import { ConfirmDialog } from './ConfirmDialog.jsx'
 import { useT } from '../i18n/index.js'
 
-// Confirmation before leaving (or, for the host, ending) a room, a solo game or the tutorial. The wording depends on the mode.
+// Confirmation before leaving (or, for the host, ending) a room, a solo game or the tutorial. The wording depends on the
+// mode: a solo game or a lesson is not a "room".
 export function LeaveDialog({ mode, phase, onYes, onNo }) {
 	const t = useT(),
-		lobby = phase === 'lobby'
+		lobby = phase === 'lobby',
+		offline = mode === 'solo' || mode === 'tutorial'
 	const msg =
 		mode === 'tutorial'
 			? 'lv.tutorial'
@@ -18,17 +21,14 @@ export function LeaveDialog({ mode, phase, onYes, onNo }) {
 						? 'lv.guestLobby'
 						: 'lv.guestPlay'
 	return (
-		<Modal title={t('leaveT')} onClose={onNo}>
-			<h2>{t('leaveT')}</h2>
-			<p>{t(msg)}</p>
-			<div className='row'>
-				<button data-autofocus onClick={onNo}>
-					{t('stay')}
-				</button>
-				<button className='primary danger' onClick={onYes}>
-					{mode === 'host' ? t('endAll') : t('confirmLeave')}
-				</button>
-			</div>
-		</Modal>
+		<ConfirmDialog
+			title={offline ? t('leaveGameT') : t('leaveT')}
+			body={t(msg)}
+			icon={LogOut}
+			cancel={t('stay')}
+			confirm={mode === 'host' ? t('endAll') : t('confirmLeave')}
+			onCancel={onNo}
+			onConfirm={onYes}
+		/>
 	)
 }

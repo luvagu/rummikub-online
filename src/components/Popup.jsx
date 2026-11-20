@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { focusForInput } from '../utils/modality.js'
 
 // Native popover for menus and pickers: light dismiss, Escape, top layer and focus return to the trigger come from the
 // browser; the trigger opens it declaratively (command="toggle-popover" commandfor=id) and anchor positioning places it.
@@ -11,7 +12,7 @@ export function Popup({ id, className, role = 'menu', label, onOpenChange, child
 		const el = ref.current,
 			on = e => {
 				onOpenChange?.(e.newState === 'open')
-				if (e.newState === 'open') el.querySelector(ITEM)?.focus({ preventScroll: true }) // land on the first item
+				if (e.newState === 'open') focusForInput(el.querySelector(ITEM)) // land on the first item (a ring only from the keyboard)
 			}
 		el.addEventListener('toggle', on)
 		return () => el.removeEventListener('toggle', on)

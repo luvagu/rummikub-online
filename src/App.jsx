@@ -86,14 +86,26 @@ export default function App() {
 	const sess = useRef(null),
 		netRef = useRef(null)
 
-	const toast = (m, type = 'err') => {
-		const id = Math.random()
-		setToasts(l => [...l.slice(-2), { id, m, type }])
-		setTimeout(
-			() => setToasts(l => l.filter(x => x.id !== id)),
-			type === 'err' ? 5000 : 3200,
-		)
+	// Toasts (Toasts.jsx): at most 3 on screen, the oldest makes room; a repeat of a visible one counts up (×2) and
+	// restarts its countdown instead of stacking. `quiet` ones are only announced to screen readers (their feedback is
+	// already on screen, like the copy bubble). Lifetimes run in CSS, so hovering or focusing the stack pauses them.
+	const toast = (m, type = 'err', { quiet = false } = {}) => {
+		const id = Math.random(),
+			key = type + JSON.stringify(m)
+		setToasts(l => {
+			const dup = !quiet && l.find(x => x.key === key && !x.leaving && !x.quiet)
+			if (dup) return l.map(x => (x === dup ? { ...x, n: x.n + 1 } : x))
+			const shown = l.filter(x => !x.leaving && !x.quiet),
+				oldest = shown.length >= 3 ? shown[0].id : null
+			return [
+				...l.map(x => (x.id === oldest ? { ...x, leaving: true } : x)),
+				{ id, key, m, type, n: 1, quiet, life: type === 'err' ? 6000 : 3600 },
+			]
+		})
+		if (quiet) setTimeout(() => setToasts(l => l.filter(x => x.id !== id)), 4000)
 	}
+	const dismissToast = id => setToasts(l => l.map(x => (x.id === id ? { ...x, leaving: true } : x)))
+	const dropToasts = ids => setToasts(l => l.filter(x => !ids.includes(x.id)))
 	const forget = mode => {
 		clearSess(mode)
 		setSaved(null)
@@ -238,14 +250,16 @@ export default function App() {
 		history.replaceState(null, '', location.pathname + location.search)
 		hash0.current = ''
 		setInvite(false)
-		toast({ k: 'n.youLeft' }, 'info')
+		if (mode === 'host' || mode === 'join') toast({ k: 'n.youLeft' }, 'info') // a solo game or a lesson is not a room
 	}
 
 	// Connection banner + "back online" toast
 	const wasOff = useRef(false)
 	useEffect(() => {
-		if (!conn) wasOff.current = true
-		else if (wasOff.current) {
+		if (!conn) {
+			wasOff.current = true
+			toast({ k: 'reconnecting' }, 'warn', { quiet: true }) // the pill shows it; this announces it
+		} else if (wasOff.current) {
 			wasOff.current = false
 			toast({ k: 'n.online' }, 'ok')
 		}
@@ -304,6 +318,7 @@ export default function App() {
 				k: ok ? (what === 'code' ? 'n.codeCopied' : 'n.copied') : 'n.copyFail',
 			},
 			ok ? 'ok' : 'err',
+			{ quiet: true }, // seen on the button itself (CopyBubble.jsx); announced from here
 		)
 		return ok
 	}
@@ -331,12 +346,10 @@ export default function App() {
 
 	return (
 		<LangCtx.Provider value={{ lang, setLang }}>
-			{!conn && inRoom && (
-				<TopLayer className='banner' role='status'>
-					<LoaderCircle className='spin' size={16} />
-					{t('reconnecting')}
-				</TopLayer>
-			)}
+			<TopLayer open={!conn && inRoom} keepOnTop className='banner' role='status'>
+				<LoaderCircle className='spin' size={16} aria-hidden='true' />
+				{t('reconnecting')}
+			</TopLayer>
 			<UpdateBanner hidden={!conn} />
 			<RotateHint />
 			{!(inRoom && s.phase !== 'lobby') && <EdgeCap />}
@@ -435,7 +448,7 @@ export default function App() {
 					onNo={() => setLeaving(false)}
 				/>
 			)}
-			<Toasts list={toasts} t={t} />
+			<Toasts list={toasts} t={t} onDismiss={dismissToast} onGone={dropToasts} />
 		</LangCtx.Provider>
 	)
 }
