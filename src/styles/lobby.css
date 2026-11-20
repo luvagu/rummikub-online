@@ -281,7 +281,8 @@ html:has(.lobby) {
 	flex: 1;
 	min-inline-size: 0;
 	font-weight: 700;
-	overflow-wrap: anywhere;
+	overflow-wrap: break-word; /* breaks between words ("Intermediate / Bot"), not inside one ("Intermediat / e Bot") */
+	text-wrap: balance;
 }
 .lb-name em {
 	font-weight: 400;

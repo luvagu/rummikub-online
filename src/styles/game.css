@@ -1303,18 +1303,11 @@
 				background: oklch(100% 0 0 / 0.12);
 			}
 		}
-		/* phones: an emoji grid with the labels hidden, so it no longer covers the status line (a popover in the top
-		   layer, so the viewport is what it sizes against) */
-		@media (width <= 520px) {
-			width: min(300px, calc(100% - 20px));
-			grid-template-columns: repeat(5, 1fr);
-			& button small {
-				display: none;
-			}
-		}
-		@media (height <= 480px) and (orientation: landscape) {
-			width: min(430px, calc(100% - 20px));
-			grid-template-columns: repeat(5, 1fr);
+		/* phones and short landscape: a compact 3 x 3 emoji grid. The labels are hidden here, but every item keeps its
+		   name (aria-label in Game.jsx), so screen readers still hear "Clap", not just the emoji. A popover in the top
+		   layer, so the viewport is what it sizes against. */
+		@media (width <= 520px), (height <= 480px) and (orientation: landscape) {
+			width: min(228px, calc(100% - 20px));
 			& button small {
 				display: none;
 			}

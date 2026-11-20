@@ -961,6 +961,9 @@ export default function Game({
             <EllipsisVertical size={20} />
           </button>
           <Popup id="game-menu" className="menu gmenu" label={t("menu")} onOpenChange={setMenu}>
+            {/* grouped: the game (scores, rules), settings, and leaving (the destructive group, set apart) */}
+            <div className="mgroup" role="group" aria-labelledby="mg-game">
+              <p id="mg-game">{t("mGame")}</p>
               <button
                 role="menuitem"
                 onClick={() => {
@@ -981,6 +984,9 @@ export default function Game({
                 <BookOpen size={18} />
                 {t("rules")}
               </button>
+            </div>
+            <div className="mgroup" role="group" aria-labelledby="mg-set">
+              <p id="mg-set">{t("mSettings")}</p>
               <button role="menuitemcheckbox" aria-checked={pf.sound} onClick={() => flip("sound")}>
                 {pf.sound ? <Bell size={18} /> : <BellOff size={18} />}
                 {t("snd")}
@@ -1036,7 +1042,8 @@ export default function Game({
                     : t(theme === "dark" ? "themeDark" : "themeLight")}
                 </span>
               </button>
-              <hr />
+            </div>
+            <div className="mgroup mdanger" role="group" aria-label={t("leave")}>
               {hostRoom && s.phase === "play" && (
                 <button
                   role="menuitem"
@@ -1057,8 +1064,9 @@ export default function Game({
                 }}
               >
                 <LogOut size={18} />
-                {t("leave")}
+                {inRoom ? t("leave") : t("leaveGame")}
               </button>
+            </div>
           </Popup>
         </div>
       </header>
@@ -1280,11 +1288,12 @@ export default function Game({
                   <button
                     key={r.k}
                     role="menuitem"
+                    aria-label={t("r." + r.k)}
                     disabled={cool}
                     onClick={() => sendR(r.k)}
                   >
-                    <span>{r.e}</span>
-                    <small>{t("r." + r.k)}</small>
+                    <span aria-hidden="true">{r.e}</span>
+                    <small aria-hidden="true">{t("r." + r.k)}</small>
                   </button>
                 ))}
             </Popup>
