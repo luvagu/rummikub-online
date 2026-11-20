@@ -15,7 +15,7 @@ export function Standings({ s, result, tiles }) {
         const v = done ? result.delta?.[p.id] || 0 : 0,
           won = done && winId === p.id;
         return (
-          <li key={p.id} className={won ? "won" : undefined}>
+          <li key={p.id} className={won ? "won" : undefined} data-rank={rank + 1}>
             <span className="rk">{rank + 1}</span>
             <b>
               {p.name}
