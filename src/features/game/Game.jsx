@@ -123,6 +123,7 @@ import {
   prefersReducedMotion,
   scrollBehavior,
 } from "../../utils/motion.js";
+import { withTileTransition, tilesMoving } from "../../utils/viewTransition.js";
 
 export default function Game({
   s,
@@ -533,40 +534,52 @@ export default function Game({
     setSel((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
   };
   const fromRack = (r, ids) => r.filter((i) => !ids.includes(i));
+  // Tiles glide to their new places (View Transitions) when moved with a tap or a button; a drop applies at once,
+  // because the drag preview has already shown the move.
+  const dropping = useRef(false),
+    move = (fn) => (dropping.current ? fn() : withTileTransition(fn));
   const newSet = (ids = sel) => {
     if (my) sfx("newSet");
     setSay(t("a.new", { n: ids.length }));
-    setD({ b: norm([...strip(d.b, ids), ids]), r: fromRack(d.r, ids) });
-    setSel([]);
+    move(() => {
+      setD({ b: norm([...strip(d.b, ids), ids]), r: fromRack(d.r, ids) });
+      setSel([]);
+    });
   };
   const addTo = (k, ids = sel) => {
     if (my) sfx("addTo");
     setSay(t("a.set", { n: ids.length, k: k + 1 }));
     const b = strip(d.b, ids);
     b[k] = [...b[k], ...ids];
-    setD({ b: norm(b), r: fromRack(d.r, ids) });
-    setSel([]);
+    move(() => {
+      setD({ b: norm(b), r: fromRack(d.r, ids) });
+      setSel([]);
+    });
   };
   const back = (ids = sel) => {
     const bk = ids.filter((i) => s.rack.includes(i) && !d.r.includes(i));
     if (!bk.length) return setSel([]);
     setSay(t("a.rack", { n: bk.length }));
-    setD({
-      b: norm(d.b.map((x) => x.filter((i) => !bk.includes(i)))),
-      r: orderRack([...d.r, ...bk], sm),
+    move(() => {
+      setD({
+        b: norm(d.b.map((x) => x.filter((i) => !bk.includes(i)))),
+        r: orderRack([...d.r, ...bk], sm),
+      });
+      setSel([]);
     });
-    setSel([]);
   };
   const reset = () => {
-    setD({ b: s.board, r: orderRack(s.rack, sm) });
-    setSel([]);
+    move(() => {
+      setD({ b: s.board, r: orderRack(s.rack, sm) });
+      setSel([]);
+    });
   };
   const setSort = (m) => {
     const v = sm === m ? null : m;
     setSm(v); // tap the active option again to go back to manual order
     if (v) local.set("rmkSort", v);
     else local.remove("rmkSort");
-    setD((x) => ({ ...x, r: orderRack(x.r, v) }));
+    move(() => setD((x) => ({ ...x, r: orderRack(x.r, v) })));
   };
 
   // ---- drag & drop with Pointer Events (mouse/pen on large screens; tap-to-select works everywhere) ----
@@ -698,9 +711,14 @@ export default function Game({
         suppressClick.current = true; // the click that follows a drag must not also toggle a tile
         setTimeout(() => (suppressClick.current = false), 0);
         const a = actions.current;
-        if (z === "n") a.newSet(drag.ids);
-        else if (z === "r") a.back(drag.ids);
-        else if (z != null) a.addTo(+z, drag.ids);
+        dropping.current = true;
+        try {
+          if (z === "n") a.newSet(drag.ids);
+          else if (z === "r") a.back(drag.ids);
+          else if (z != null) a.addTo(+z, drag.ids);
+        } finally {
+          dropping.current = false;
+        }
       };
     window.addEventListener(
       "pointermove",
@@ -713,6 +731,7 @@ export default function Game({
             pv = tile.cloneNode(true),
             ids = sel.includes(id) ? sel : [id];
           pv.className = "tile drag-preview"; // its data-c keeps the tile's ink
+          pv.style.viewTransitionName = ""; // names must stay unique (a move may still be animating)
           for (const a of ["data-id", "aria-label", "aria-pressed"]) pv.removeAttribute(a);
           pv.setAttribute("aria-hidden", "true");
           pv.tabIndex = -1;
@@ -736,7 +755,7 @@ export default function Game({
     abortDrag.current = () => end(false);
   };
   const onTileClick = (e) => {
-    const tile = e.target.closest(".tile");
+    const tile = e.target.closest(".tile") || (tilesMoving() && tileNear(e.target, e.clientX, e.clientY));
     if (!tile || suppressClick.current) return;
     if (e.detail !== 0 && performance.now() - touchUp.current < 800) return; // a touch tap, already handled on finger-up (keyboard clicks have detail 0)
     toggle(+tile.dataset.id);
