@@ -347,57 +347,6 @@
 		}
 	}
 
-	/* ---- game menu: toggles render as switches (the On/Off text stays for screen readers) ---- */
-	.gmenu {
-		min-width: 270px;
-		border-radius: 16px;
-		background: color-mix(in oklab, var(--felt-deep) 94%, black);
-		box-shadow: var(--elev-4);
-		& button {
-			gap: 12px;
-			& > svg {
-				flex: none;
-				opacity: 0.85;
-			}
-		}
-		@media (hover: hover) {
-			& button:hover:not(:disabled) {
-				background: oklch(100% 0 0 / 0.1);
-			}
-		}
-		& [role='menuitemcheckbox'] .sw {
-			position: relative;
-			flex: none;
-			inline-size: 34px;
-			block-size: 20px;
-			border-radius: 999px;
-			background: oklch(100% 0 0 / 0.22);
-			box-shadow: inset 0 0 0 1px oklch(100% 0 0 / 0.2);
-			font-size: 0; /* the On/Off label is still read out; the switch shows it */
-			opacity: 1;
-			transition: background-color var(--dur-2);
-			&::after {
-				content: '';
-				position: absolute;
-				inset-block-start: 3px;
-				inset-inline-start: 3px;
-				inline-size: 14px;
-				block-size: 14px;
-				border-radius: 50%;
-				background: #fff;
-				box-shadow: var(--elev-1);
-				transition: translate var(--dur-2) var(--ease-out);
-			}
-		}
-		& [role='menuitemcheckbox'][aria-checked='true'] .sw {
-			background: var(--amber);
-			box-shadow: none;
-			&::after {
-				translate: 14px 0;
-			}
-		}
-	}
-
 	/* ---- turn timer: a thin draining bar under the HUD ----
 	   The bar drains by scaling (compositor only) over the time left that the host sent with this state, instead of
 	   re-rendering React and animating width 5x a second. --p0 = fraction left, --dur = ms left, --hold = deal still running. */

@@ -10,16 +10,6 @@
 		transform: none;
 	}
 }
-@keyframes slide {
-	from {
-		opacity: 0;
-		transform: translateY(-8px);
-	}
-	to {
-		opacity: 1;
-		transform: none;
-	}
-}
 @keyframes fadein {
 	from {
 		opacity: 0;
