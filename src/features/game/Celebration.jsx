@@ -56,7 +56,7 @@ export default function Celebration({ c, onDone }) {
 		<TopLayer className='celebrate' onClick={onDone}>
 			<div className='confetti' ref={layer} aria-hidden='true' />
 			<div className='cel-card' aria-hidden='true'>
-				<Trophy size={44} className='gold' />
+				<Trophy size={44} className='cel-trophy' />
 				{!c.mine && <small>{t('roundWinner')}</small>}
 				<b className='cel-name'>{c.mine ? t('youWin') : c.name}</b>
 				<span>{c.blocked ? t('celebPool') : t('celebRummikub')}</span>

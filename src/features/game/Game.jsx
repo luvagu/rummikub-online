@@ -72,18 +72,9 @@ import {
   Avatar,
 } from "../../components/Avatar.jsx";
 import {
-  Modal,
-} from "../../components/Modal.jsx";
-import {
-  Invite,
-} from "../../components/Invite.jsx";
-import {
   Popup,
   hidePopup,
 } from "../../components/Popup.jsx";
-import {
-  Seats,
-} from "../../components/Seats.jsx";
 import Celebration from "./Celebration.jsx";
 import {
   RoundSummary,
@@ -1137,7 +1128,7 @@ export default function Game({
               )}
             </div>
           ))}
-          {!d.b.length && <p className="sub">{t("empty")}</p>}
+          {!d.b.length && <p className="board-empty">{t("empty")}</p>}
         </main>
         {showAdd && (
           <button

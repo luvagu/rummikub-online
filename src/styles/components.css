@@ -71,26 +71,6 @@ button.link:hover:not(:disabled) {
 	opacity: 1;
 }
 }
-.row {
-	display: flex;
-	gap: 10px;
-	flex-wrap: wrap;
-	justify-content: center;
-	align-items: center;
-}
-.sub {
-	opacity: 0.85;
-	margin: 0;
-	text-wrap: balance;
-}
-.center {
-	text-align: center;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 12px;
-	text-wrap: balance;
-}
 .sr {
 	position: absolute;
 	inset: 0 auto auto 0; /* without offsets it sits at its static position: below a full-height screen, i.e. 1px of page scroll */
@@ -99,61 +79,6 @@ button.link:hover:not(:disabled) {
 	overflow: hidden;
 	clip-path: inset(50%);
 	white-space: nowrap;
-}
-.gold {
-	color: var(--amber);
-}
-
-.codechip {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 8px 10px 8px 22px;
-	border-radius: 18px;
-	background: #0000004a;
-	border: 1px solid #ffffff2a;
-}
-.codetxt {
-	font: 800 clamp(34px, 10vw, 48px) var(--disp);
-	letter-spacing: 0.22em;
-	color: var(--amber);
-}
-.lseats {
-	list-style: none;
-	padding: 0;
-	margin: 4px 0;
-	width: 100%;
-	max-width: 440px;
-	display: grid;
-	gap: 8px;
-}
-.lseat {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 10px 14px;
-	border-radius: 14px;
-	background: #ffffff14;
-	border: 1px solid #ffffff1f;
-	text-align: start;
-}
-.lseat b {
-	flex: 1;
-}
-.lseat em {
-	font-weight: 400;
-	opacity: 0.85;
-}
-.lseat.off {
-	opacity: 0.55;
-}
-.lseat.empty {
-	border-style: dashed;
-	background: transparent;
-	opacity: 0.85;
-}
-.lseat.empty > span:nth-child(2) {
-	flex: 1;
 }
 .av.ghost {
 	background: #ffffff1a;
@@ -179,31 +104,6 @@ button.link:hover:not(:disabled) {
 	position: relative;
 	flex: none;
 }
-.seg {
-	display: flex;
-	margin-inline-start: auto;
-}
-.seg button {
-	border-radius: 0;
-	padding: 8px 10px;
-}
-.seg button:first-child {
-	border-start-start-radius: 12px;
-	border-end-start-radius: 12px;
-}
-.seg button:last-child {
-	border-start-end-radius: 12px;
-	border-end-end-radius: 12px;
-	border-inline-start: 0;
-}
-
-/* sort toggle (selected state) */
-.seg button[aria-pressed='true'] {
-	background: linear-gradient(var(--amber-hi), var(--amber));
-	color: var(--ink);
-	border-color: var(--amber-edge);
-}
-
 /* bot difficulty dropdown */
 .lvlbtn {
 	display: flex;
@@ -222,15 +122,6 @@ button.link:hover:not(:disabled) {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-}
-.lvltag {
-	opacity: 0.85;
-	font-weight: 500;
-}
-
-/* keep the open difficulty popup above the seat rows below it (rows are stacking contexts via opacity) */
-.lseat {
-	position: relative;
 }
 /* ---- audit fixes ---- */
 button {
@@ -253,7 +144,8 @@ button.primary:disabled {
 	box-shadow: none;
 	opacity: 1; /* reads as "disabled", not as a muddy half-transparent gold */
 }
-@media (width <= 420px) {
+/* a narrow seat list (the room's players panel): the difficulty button drops its icon */
+@container lbpanel (inline-size < 22rem) {
 	.lvlbtn {
 		padding: 8px 9px;
 		gap: 4px;
@@ -261,35 +153,6 @@ button.primary:disabled {
 	.lvlbtn > svg:first-child {
 		display: none;
 	}
-}
-
-/* turn timer picker (lobby / solo setup) */
-.timerpick {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	align-items: stretch;
-	text-align: start;
-	/* separated from the level list that follows it in the solo dialog */
-	margin-bottom: 14px;
-	padding-bottom: 14px;
-	border-bottom: 1px solid var(--card-rule);
-}
-.timerpick > span {
-	display: flex;
-	flex-direction: column;
-}
-.timerpick small {
-	opacity: 0.85;
-}
-.timerpick .seg {
-	margin-inline-start: 0;
-	flex-wrap: nowrap;
-}
-.timerpick .seg button {
-	flex: 1 1 0;
-	min-width: 0;
-	padding: 8px 4px;
 }
 
 /* WhatsApp invite: an anchor styled like the row buttons, with the brand green */

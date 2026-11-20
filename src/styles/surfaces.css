@@ -197,8 +197,19 @@
 	.card a {
 		color: var(--card-link);
 	}
-	.card .row {
-		margin-top: 14px;
+	/* a centred column of dialog content (scores, the connecting notice) and its quiet secondary line */
+	.sf-stack {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 12px;
+		text-align: center;
+		text-wrap: balance;
+	}
+	.sf-sub {
+		margin: 0;
+		color: var(--card-sub-ink);
+		text-wrap: balance;
 	}
 	.card :focus-visible {
 		outline-color: var(--card-focus);
@@ -261,28 +272,20 @@
 			color: var(--card-link-hover);
 		}
 	}
-	.card .codechip {
-		background: var(--card-chip-bg);
-		border-color: var(--card-chip-edge);
-		& button.icon {
-			background: var(--card-chip-btn);
-			border-color: var(--card-chip-btn-edge);
-			@media (hover: hover) {
-				&:hover:not(:disabled) {
-					background: var(--card-chip-btn-hover);
-				}
-			}
-		}
-		& button:focus-visible {
-			outline-color: var(--amber);
-		}
+	/* the room components (lobby.css: seat list, invite, timer) are drawn with the felt surface tokens; a light card
+	   re-points them, so the same components read well there (the felt card keeps the felt values) */
+	dialog.card:not(.felt) {
+		--surface-1: transparent;
+		--surface-2: light-dark(#0000000d, color-mix(in oklab, black 24%, transparent));
+		--surface-hover: light-dark(#00000014, color-mix(in oklab, white 12%, transparent));
+		--stroke: var(--card-rule);
+		--stroke-strong: light-dark(#0000004d, color-mix(in oklab, white 48%, transparent));
+		--text-muted: var(--card-sub-ink);
 	}
 
 	/* ---- the felt card: room screens (the between-rounds summary in a room) ----
 	   Dark tint + a clear light edge instead of faint white: the old 8-20% whites almost vanished on the green. */
 	.card.felt {
-		--panel: #00000047;
-		--edge: #ffffff73;
 		--btn: #0000005c;
 		--btn-hover: #00000080;
 		--btn-edge: #ffffffb3;
@@ -298,19 +301,6 @@
 			background: #00000059;
 			color: #fff;
 			border: 1px solid #ffffff59;
-		}
-		& .lseat {
-			background: var(--panel);
-			border-color: var(--edge);
-		}
-		& .lseat.empty {
-			background: #00000024;
-			border-color: #ffffff99;
-			opacity: 1;
-		}
-		& .av.ghost {
-			background: #00000030;
-			border-color: #ffffff99;
 		}
 		& button:not(.primary, .link) {
 			background: var(--btn);
@@ -349,17 +339,6 @@
 				background: none;
 				color: #fff;
 			}
-		}
-		& .codechip {
-			background: #00000066;
-			border-color: #ffffffb3;
-			& button.icon {
-				background: #ffffff2e;
-				border-color: #ffffffb3;
-			}
-		}
-		& :is(.sub, .lvltag, .lseat em) {
-			opacity: 0.92;
 		}
 		/* dropdown rows stay flat inside the felt card */
 		& .menu button:not(.primary, .link) {
@@ -1138,10 +1117,13 @@
 			font-size: 0.92rem;
 			line-height: 1.35;
 		}
-		& .row {
-			flex-wrap: wrap;
-			justify-content: flex-end;
-		}
+	}
+	.coach-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 10px;
 	}
 	.coachhead {
 		display: flex;

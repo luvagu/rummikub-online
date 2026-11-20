@@ -1,12 +1,14 @@
 import { useState, useId } from 'react'
 import { Copy, Check, Link2, Share2 } from 'lucide-react'
 import { useT } from '../../i18n/index.js'
-import { WhatsApp } from '../../components/Invite.jsx'
+import { WhatsApp } from '../../components/WhatsApp.jsx'
+import { CodeTiles } from '../../components/CodeTiles.jsx'
 import { CopyBubble, useAnchorName } from '../../components/CopyBubble.jsx'
 
 // Invite panel: the room code as one big copy target (each character on a paper tile, like the game pieces),
 // then the share actions. Copy feedback is a bubble on the button (CopyBubble.jsx); the app's live region announces it.
-export function LobbyInvite({ net, copy, share, whatsappUrl }) {
+// `bare`: inside the round summary's Room section (no panel chrome, no eyebrow).
+export function LobbyInvite({ net, copy, share, whatsappUrl, bare }) {
 	const t = useT(),
 		h = useId(),
 		aCode = useAnchorName(),
@@ -17,8 +19,8 @@ export function LobbyInvite({ net, copy, share, whatsappUrl }) {
 		setTimeout(() => setDone(''), 1800)
 	}
 	return (
-		<section className='lb-panel lb-invite' aria-labelledby={h}>
-			<h2 id={h} className='lb-eyebrow'>
+		<section className={'lb-panel lb-invite' + (bare ? ' bare' : '')} aria-labelledby={h}>
+			<h2 id={h} className={bare ? 'sr' : 'lb-eyebrow'}>
 				{t('roomCode')}
 			</h2>
 			<button
@@ -28,13 +30,7 @@ export function LobbyInvite({ net, copy, share, whatsappUrl }) {
 				style={{ anchorName: aCode }}
 				onClick={() => doCopy('code')}
 			>
-				<span className='lb-tiles' aria-hidden='true'>
-					{[...net.code].map((c, i) => (
-						<span key={i} className='lb-tile'>
-							{c}
-						</span>
-					))}
-				</span>
+				<CodeTiles code={net.code} />
 				<span className='lb-codeicon' aria-hidden='true'>
 					{done === 'code' ? <Check size={20} /> : <Copy size={20} />}
 				</span>

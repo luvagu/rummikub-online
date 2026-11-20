@@ -87,7 +87,7 @@ export default function Tutorial({
 				</button>
 			</div>
 			<p>{showWait ? t('tut.wait.b') : t('tut.' + step.k + '.b')}</p>
-			<div className='row'>
+			<div className='coach-actions'>
 				{step.last ? (
 					<>
 						{nextL && (

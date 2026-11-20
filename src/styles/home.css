@@ -135,11 +135,11 @@
 		color: var(--amber);
 	}
 }
-.codechip.small {
-	padding: var(--space-1) var(--space-5);
-	& .codetxt {
-		font-size: clamp(1.75rem, 9cqi, 2.25rem);
-	}
+/* the invited room's code, on tiles as in the lobby (lobby.css .lb-code / .lb-tiles); decorative, not a button */
+.hm-code {
+	display: flex;
+	inline-size: min(100%, 20rem);
+	justify-content: center;
 }
 
 /* ---- action panel ---- */

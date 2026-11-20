@@ -487,11 +487,11 @@
 			padding-bottom: 8px;
 		}
 		/* empty table: a centred drop hint instead of a stray line of text */
-		&:has(> .sub:only-child) {
+		&:has(> .board-empty) {
 			align-content: center;
 			justify-content: center;
 		}
-		& > .sub:only-child {
+		& > .board-empty {
 			display: grid;
 			justify-items: center;
 			gap: 10px;
@@ -1462,6 +1462,9 @@
 				sheen 3s linear infinite;
 		}
 	}
+	.cel-trophy {
+		color: var(--amber);
+	}
 	.cel-name {
 		max-width: 100%;
 		padding: 0.1em 0.5em;
@@ -1614,7 +1617,8 @@
 		display: grid;
 		justify-items: center;
 		gap: 6px;
-		& .gold {
+		& .sum-trophy {
+			color: var(--amber);
 			filter: drop-shadow(0 4px 14px color-mix(in oklab, var(--amber) 50%, transparent));
 		}
 		& h2 {
@@ -1667,24 +1671,10 @@
 				background: #ffffff14;
 			}
 		}
-		& .lseats {
-			grid-template-columns: minmax(0, 1fr); /* rows may shrink: long names ellipsize instead of overflowing */
-			margin: 0;
-			padding: 0 10px 10px;
-		}
-		& .lseat b {
-			min-width: 0;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-		& .codechip,
-		& .row,
-		& > .sub {
+		/* the lobby's invite and seat list, bare (lobby.css), inset from the disclosure's edges (margin: the lobby layer
+		   owns the panel's padding) */
+		& > .lb-panel {
 			margin: 0 10px 10px;
-		}
-		& > .sub {
-			text-align: center;
 		}
 		@media (prefers-reduced-motion: no-preference) {
 			&::details-content {
