@@ -1,3 +1,6 @@
+/* Buttons: one rule set, driven by the --btn-* tokens (tokens.css). A surface that needs other colours (a dialog card, the
+   felt card, the tutorial coach) re-points the tokens instead of re-declaring these rules; variants (.primary, .danger,
+   .link) do the same on the button itself. */
 button {
 	font: inherit;
 	display: inline-flex;
@@ -5,48 +8,56 @@ button {
 	justify-content: center;
 	gap: 8px;
 	cursor: pointer;
-	color: #fff;
-	border: 1px solid #ffffff2e;
+	color: var(--btn-ink);
+	border: 1px solid var(--btn-edge);
 	border-radius: 12px;
 	padding: 10px 14px;
-	background: #ffffff1f;
+	background: var(--btn-bg);
 	transition:
 		background 0.15s,
 		transform 0.1s,
 		box-shadow 0.15s;
-}
-@media (hover: hover) {
-button:hover:not(:disabled) {
-	background: #ffffff33;
-}
-}
-button:active:not(:disabled) {
-	transform: scale(0.97);
-}
-button:disabled {
-	opacity: 0.45;
-	cursor: default;
+	@media (hover: hover) {
+		&:hover:not(:disabled) {
+			background: var(--btn-bg-hover);
+		}
+	}
+	&:active:not(:disabled) {
+		background: var(--btn-bg-active);
+		transform: scale(0.97);
+	}
+	&:disabled {
+		opacity: 0.45;
+		cursor: default;
+	}
 }
 :focus-visible {
 	outline: 3px solid var(--amber);
 	outline-offset: 2px;
 }
 button.primary {
-	background: linear-gradient(var(--amber-hi), var(--amber));
-	color: var(--ink);
-	border-color: var(--amber-edge);
+	--btn-bg: var(--btn-primary-bg);
+	--btn-bg-hover: var(--btn-primary-bg-hover);
+	--btn-bg-active: var(--btn-primary-bg-active);
+	--btn-edge: var(--amber-edge);
+	--btn-ink: var(--ink);
 	font-weight: 700;
 	box-shadow: 0 2px 0 var(--amber-deep);
-}
-@media (hover: hover) {
-button.primary:hover:not(:disabled) {
-	background: linear-gradient(#ffcb52, #ffbb1a);
-}
+	/* reads as "disabled", not as a muddy half-transparent gold */
+	&:disabled {
+		--btn-bg: var(--btn-off-bg);
+		--btn-edge: var(--btn-off-edge);
+		--btn-ink: var(--btn-off-ink);
+		box-shadow: none;
+		opacity: 1;
+	}
 }
 button.primary.danger {
-	background: linear-gradient(#ef6c5f, #e53935);
-	color: #fff;
-	border-color: #b71c1c;
+	--btn-bg: var(--btn-danger-bg);
+	--btn-bg-hover: var(--btn-danger-bg-hover);
+	--btn-bg-active: var(--btn-danger-bg-hover);
+	--btn-edge: #b71c1c;
+	--btn-ink: #fff;
 	box-shadow: 0 2px 0 #8e1b1b;
 }
 button.big {
@@ -59,37 +70,19 @@ button.icon {
 	flex: none;
 }
 button.link {
-	background: none;
+	--btn-bg: none;
+	--btn-bg-hover: none;
+	--btn-bg-active: none;
+	--btn-edge: transparent;
 	border: 0;
+	color: var(--btn-link-ink);
 	text-decoration: underline;
 	text-underline-offset: 3px;
-	opacity: 0.9;
-}
-@media (hover: hover) {
-button.link:hover:not(:disabled) {
-	background: none;
-	opacity: 1;
-}
-}
-.row {
-	display: flex;
-	gap: 10px;
-	flex-wrap: wrap;
-	justify-content: center;
-	align-items: center;
-}
-.sub {
-	opacity: 0.85;
-	margin: 0;
-	text-wrap: balance;
-}
-.center {
-	text-align: center;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 12px;
-	text-wrap: balance;
+	@media (hover: hover) {
+		&:hover:not(:disabled) {
+			color: var(--btn-link-ink-hover);
+		}
+	}
 }
 .sr {
 	position: absolute;
@@ -100,128 +93,10 @@ button.link:hover:not(:disabled) {
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
-.gold {
-	color: var(--amber);
-}
-
-.codechip {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 8px 10px 8px 22px;
-	border-radius: 18px;
-	background: #0000004a;
-	border: 1px solid #ffffff2a;
-}
-.codetxt {
-	font: 800 clamp(34px, 10vw, 48px) var(--disp);
-	letter-spacing: 0.22em;
-	color: var(--amber);
-}
-.lseats {
-	list-style: none;
-	padding: 0;
-	margin: 4px 0;
-	width: 100%;
-	max-width: 440px;
-	display: grid;
-	gap: 8px;
-}
-.lseat {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 10px 14px;
-	border-radius: 14px;
-	background: #ffffff14;
-	border: 1px solid #ffffff1f;
-	text-align: start;
-}
-.lseat b {
-	flex: 1;
-}
-.lseat em {
-	font-weight: 400;
-	opacity: 0.85;
-}
-.lseat.off {
-	opacity: 0.55;
-}
-.lseat.empty {
-	border-style: dashed;
-	background: transparent;
-	opacity: 0.85;
-}
-.lseat.empty > span:nth-child(2) {
-	flex: 1;
-}
 .av.ghost {
 	background: #ffffff1a;
 	border: 1px dashed #ffffff55;
 }
-.switch {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	cursor: pointer;
-	text-align: start;
-	max-width: 440px;
-}
-.switch {
-	position: relative; /* anchors the visually-hidden checkbox so it cannot scroll the page when focused */
-}
-.switch input {
-	position: absolute;
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	margin: 0;
-	opacity: 0;
-	cursor: pointer;
-}
-.switch b {
-	display: block;
-}
-.switch small {
-	display: block;
-	opacity: 0.85;
-}
-.switch .tr {
-	flex: none;
-	width: 46px;
-	height: 26px;
-	border-radius: 99px;
-	background: #ffffff33;
-	position: relative;
-	transition: background-color 0.2s;
-}
-.switch .tr::after {
-	content: '';
-	position: absolute;
-	top: 3px;
-	left: 3px;
-	width: 20px;
-	height: 20px;
-	border-radius: 50%;
-	background: #fff;
-	transition: translate 0.2s;
-}
-.switch input:checked + .tr {
-	background: var(--amber);
-}
-.switch input:checked + .tr::after {
-	translate: 20px 0;
-}
-.switch input:focus-visible + .tr {
-	outline: 3px solid #fff;
-}
-.waitp {
-	display: flex;
-	gap: 8px;
-	align-items: center;
-	margin: 0;
-}
-
 /* ---- shared by the game seats and the lobby / room seat lists ---- */
 .av {
 	position: relative;
@@ -233,6 +108,18 @@ button.link:hover:not(:disabled) {
 	font: 700 16px var(--disp);
 	color: #1b1b1b;
 	flex: none;
+	&[data-seat='0'] {
+		background: var(--seat-0);
+	}
+	&[data-seat='1'] {
+		background: var(--seat-1);
+	}
+	&[data-seat='2'] {
+		background: var(--seat-2);
+	}
+	&[data-seat='3'] {
+		background: var(--seat-3);
+	}
 	& > svg {
 		width: 56%;
 		height: auto; /* a bot's robot scales with the avatar */
@@ -242,39 +129,7 @@ button.link:hover:not(:disabled) {
 	position: relative;
 	flex: none;
 }
-.seg {
-	display: flex;
-	margin-inline-start: auto;
-}
-.seg button {
-	border-radius: 0;
-	padding: 8px 10px;
-}
-.seg button:first-child {
-	border-start-start-radius: 12px;
-	border-end-start-radius: 12px;
-}
-.seg button:last-child {
-	border-start-end-radius: 12px;
-	border-end-end-radius: 12px;
-	border-inline-start: 0;
-}
-
-/* sort toggle (selected state) */
-.seg button[aria-pressed='true'] {
-	background: linear-gradient(var(--amber-hi), var(--amber));
-	color: var(--ink);
-	border-color: var(--amber-edge);
-}
-
 /* bot difficulty dropdown */
-.lvlrow {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 10px;
-	font-weight: 600;
-}
 .lvlbtn {
 	display: flex;
 	align-items: center;
@@ -293,15 +148,6 @@ button.link:hover:not(:disabled) {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-.lvltag {
-	opacity: 0.85;
-	font-weight: 500;
-}
-
-/* keep the open difficulty popup above the seat rows below it (rows are stacking contexts via opacity) */
-.lseat {
-	position: relative;
-}
 /* ---- audit fixes ---- */
 button {
 	touch-action: manipulation; /* a quick second tap must not arm double-tap zoom */
@@ -316,14 +162,8 @@ button {
 	}
 }
 
-button.primary:disabled {
-	background: #ffffff26;
-	color: #ffffffb3;
-	border-color: #ffffff2e;
-	box-shadow: none;
-	opacity: 1; /* reads as "disabled", not as a muddy half-transparent gold */
-}
-@media (width <= 420px) {
+/* a narrow seat list (the room's players panel): the difficulty button drops its icon */
+@container lbpanel (inline-size < 22rem) {
 	.lvlbtn {
 		padding: 8px 9px;
 		gap: 4px;
@@ -331,35 +171,6 @@ button.primary:disabled {
 	.lvlbtn > svg:first-child {
 		display: none;
 	}
-}
-
-/* turn timer picker (lobby / solo setup) */
-.timerpick {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	align-items: stretch;
-	text-align: start;
-	/* separated from the level list that follows it in the solo dialog */
-	margin-bottom: 14px;
-	padding-bottom: 14px;
-	border-bottom: 1px solid var(--card-rule);
-}
-.timerpick > span {
-	display: flex;
-	flex-direction: column;
-}
-.timerpick small {
-	opacity: 0.85;
-}
-.timerpick .seg {
-	margin-inline-start: 0;
-	flex-wrap: nowrap;
-}
-.timerpick .seg button {
-	flex: 1 1 0;
-	min-width: 0;
-	padding: 8px 4px;
 }
 
 /* WhatsApp invite: an anchor styled like the row buttons, with the brand green */

@@ -1,6 +1,5 @@
 // Rummikub rules engine. Runs only on the host; guests send moves and receive views.
 import { dealHold } from './deal.js'
-export const COLORS = ['#1b1b1b', '#d32f2f', '#1565c0', '#d97800']
 export const DECK = []
 {
 	let id = 0

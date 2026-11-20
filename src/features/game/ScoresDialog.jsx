@@ -9,8 +9,8 @@ export function ScoresDialog({ s, onClose }) {
   const t = useT();
   return (
     <Modal title={t("scores")} icon={Trophy} onClose={onClose}>
-      <div className="center">
-        <p className="sub">{t("roundN", { n: s.games + 1 })}</p>
+      <div className="sf-stack">
+        <p className="sf-sub">{t("roundN", { n: s.games + 1 })}</p>
         <Standings s={s} tiles />
       </div>
     </Modal>

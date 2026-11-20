@@ -21,7 +21,8 @@ import { Modal } from '../../components/Modal.jsx'
 import { local } from '../../utils/store.js'
 import { Logo } from './Logo.jsx'
 import { NameField } from './NameField.jsx'
-import { TimerPick } from '../../components/TimerPick.jsx'
+import { LobbyTimer } from '../lobby/LobbyTimer.jsx'
+import { CodeTiles } from '../../components/CodeTiles.jsx'
 import { getTimer, getLvl } from './preferences.js'
 import { focusForInput } from '../../utils/modality.js'
 
@@ -121,7 +122,10 @@ export function Home({
 	)
 	const botStep = (
 		<>
-			<TimerPick
+			{/* the lobby's timer control, without its panel chrome: one segmented control across the app */}
+			<LobbyTimer
+				bare
+				host
 				value={timed}
 				onChange={n => {
 					setTimed(n)
@@ -167,7 +171,7 @@ export function Home({
 	)
 	const busyModal = busy && (
 		<Modal title={t('connecting')} bare size='sm'>
-			<div className='center'>
+			<div className='sf-stack'>
 				<LoaderCircle className='spin' size={34} aria-hidden='true' />
 				<p>{t('busy.' + busy)}</p>
 				<button data-autofocus onClick={cancel}>
@@ -198,11 +202,10 @@ export function Home({
 					<section className='hm-hero'>
 						<Logo />
 						<p className='hm-tagline'>{t('invited', { code })}</p>
-						<div className='codechip small'>
-							<span className='codetxt' aria-label={code}>
-								{code}
-							</span>
-						</div>
+						{/* the code on tiles, as in the lobby; the tagline above already says it in words */}
+						<span className='lb-code hm-code'>
+							<CodeTiles code={code} />
+						</span>
 					</section>
 					<section className='hm-panel'>
 						<form className='hm-stack' onSubmit={submitJoin}>

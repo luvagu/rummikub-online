@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Trophy, LogOut, ChevronDown } from "lucide-react";
 import { Modal } from "../../components/Modal.jsx";
-import { Invite } from "../../components/Invite.jsx";
-import { Seats } from "../../components/Seats.jsx";
+import { LobbyInvite } from "../lobby/LobbyInvite.jsx";
+import { LobbySeats } from "../lobby/LobbySeats.jsx";
 import { Avatar } from "../../components/Avatar.jsx";
 import { useT } from "../../i18n/index.js";
 import { Standings } from "./Standings.jsx";
@@ -41,7 +41,7 @@ export function RoundSummary({ s, net, copy, share, whatsappUrl, inRoom, hostRoo
           ) : (
             <p>{t("waitNext")}</p>
           )}
-          {me === 0 && s.players.length < 2 && <p className="sub">{t("need2")}</p>}
+          {me === 0 && s.players.length < 2 && <p className="sf-sub">{t("need2")}</p>}
           <button className="link" onClick={onLeave}>
             <LogOut size={16} />
             {t("leave")}
@@ -49,13 +49,14 @@ export function RoundSummary({ s, net, copy, share, whatsappUrl, inRoom, hostRoo
         </div>
       }
     >
-      <div className="center summary">
+      <div className="sf-stack summary">
         <header className="sum-hero">
-          <Trophy size={44} className="gold" />
+          <Trophy size={44} className="sum-trophy" />
           <h2>{title}</h2>
           {gain > 0 && <span className="sum-delta">{SIGNED.format(gain)}</span>}
           {cx && <p>{t("roundEndedD")}</p>}
-          <p className="sub">{t("roundN", { n: s.games })}</p>
+          {/* a finished round has been counted already; one the host ended early has not */}
+          <p className="sf-sub">{t("roundN", { n: cx ? s.games + 1 : s.games })}</p>
         </header>
         <Standings s={s} result={s.result} />
         {inRoom && (
@@ -73,10 +74,11 @@ export function RoundSummary({ s, net, copy, share, whatsappUrl, inRoom, hostRoo
               </span>
               <ChevronDown size={18} aria-hidden="true" />
             </summary>
+            {/* the lobby's own invite and seat list, without their panel chrome */}
             {hostRoom && s.players.length < 4 && (
-              <Invite net={net} copy={copy} share={share} whatsappUrl={whatsappUrl} />
+              <LobbyInvite net={net} copy={copy} share={share} whatsappUrl={whatsappUrl} bare />
             )}
-            <Seats s={s} net={net} host={hostRoom} />
+            <LobbySeats s={s} net={net} host={hostRoom} bare />
           </details>
         )}
       </div>

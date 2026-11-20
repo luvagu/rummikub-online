@@ -1,5 +1,8 @@
-/* Room lobby (src/features/lobby). Lives in its own cascade layer, after `components`, so it wins over the generic
-   button/.row/.sub rules without specificity games. Spacing, radii and felt surfaces come from tokens.css.
+/* Room lobby (src/features/lobby) and the room components it is made of: the invite (code tiles + share), the seat
+   list and the turn-timer control. The components are also used inside dialogs (the round summary, the solo setup) as
+   `.lb-panel.bare`; their rules are therefore not scoped to `.lobby`, only the page's own chrome is. Lives in its own
+   cascade layer, after `components` and `surfaces`, so it wins over the generic button rules without specificity
+   games. Spacing, radii and felt surfaces come from tokens.css (a light dialog card re-points them, surfaces.css).
 
    Layout is container-driven: `.lobby` is the page container and every panel is a container of its own, so the same
    panels re-flow by the space they get (phone / tablet / desktop) rather than by the viewport. Media queries are
@@ -124,6 +127,85 @@ html:has(.lobby) {
 	font-size: 0.875rem;
 	color: var(--text-muted);
 }
+/* ---- inside a dialog (round summary, solo setup): the same components, without the panel chrome ----
+   A lighter, denser list that sets its own sizes: the lobby page's --gap / --row / --pad (on .lb-shell) do not exist
+   inside a dialog, and without them the phone rules above left the rows unspaced. */
+.lb-panel.bare {
+	--gap: 0.625rem;
+	--row: 2.75rem;
+	gap: var(--gap);
+	padding: 0;
+	background: none;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	backdrop-filter: none;
+	/* the code and its copy button as one framed chip */
+	& .lb-code {
+		gap: var(--space-2);
+		padding: 0.375rem 0.375rem 0.375rem 0.75rem;
+		background: var(--surface-2);
+		border: 1px solid var(--stroke);
+		border-radius: var(--radius-md);
+	}
+	& .lb-tile {
+		max-inline-size: 2.25rem;
+		font-size: clamp(1.1rem, 6cqi, 1.5rem);
+		box-shadow: 0 2px 0 var(--tile-edge);
+	}
+	& .lb-codeicon {
+		inline-size: 2.25rem;
+	}
+	/* copy link across the top, the share actions splitting the row below (no empty third column) */
+	& .lb-actions {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	/* seats: a flat list with dividers, not boxes inside the dialog's box */
+	& .lb-seats {
+		gap: 0;
+	}
+	& .lb-seat {
+		min-block-size: var(--row);
+		padding: 0.375rem 0.25rem;
+		gap: var(--space-2);
+		background: none;
+		border: 0;
+		border-bottom: 1px solid var(--stroke);
+		border-radius: 0;
+		&:last-child {
+			border-bottom: 0;
+		}
+		& .av {
+			inline-size: 28px;
+			font-size: 13px;
+		}
+	}
+	& .lb-seat.empty:not([data-add]) {
+		min-block-size: 2.25rem;
+	}
+	& .lb-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+/* the players follow the invite: a divider between the two */
+.lb-panel.bare.lb-invite + .lb-panel.bare.lb-players {
+	padding-top: var(--gap);
+	border-top: 1px solid var(--stroke);
+}
+/* a bot's level pill repeats its generated name ("Expert Bot"): dropped where the row is tight */
+@container lbpanel (inline-size < 26rem) {
+	.lb-panel.bare .lb-pill:not(.host, .off) {
+		display: none;
+	}
+}
+/* the solo setup: the timer is set apart from the level list that follows it */
+.card .lb-timer.bare {
+	padding-bottom: var(--space-4);
+	margin-bottom: var(--space-4);
+	border-bottom: 1px solid var(--card-rule);
+}
 .lb-panelhead {
 	display: flex;
 	align-items: center;
@@ -188,13 +270,13 @@ html:has(.lobby) {
 }
 /* the four Rummikub numeral colours, cycling */
 .lb-tile:nth-child(4n + 2) {
-	color: #c62828;
+	color: var(--tile-ink-1);
 }
 .lb-tile:nth-child(4n + 3) {
-	color: #1565c0;
+	color: var(--tile-ink-2);
 }
 .lb-tile:nth-child(4n) {
-	color: #d84315;
+	color: var(--tile-ink-3);
 }
 .lb-codeicon {
 	flex: none;
@@ -207,7 +289,7 @@ html:has(.lobby) {
 	border: 1px solid var(--stroke);
 }
 @media (hover: hover) {
-	.lobby .lb-code:hover:not(:disabled) {
+	.lb-code:hover:not(:disabled) {
 		background: color-mix(in oklab, black 36%, transparent);
 	}
 }
@@ -316,7 +398,7 @@ html:has(.lobby) {
 .lb-seat[data-off] :is(.av, .lb-name) {
 	opacity: 0.6;
 }
-.lobby .lb-rm {
+.lb-rm {
 	background: var(--surface-hover);
 	border-color: transparent;
 	border-radius: 50%;
@@ -349,10 +431,10 @@ html:has(.lobby) {
 	min-inline-size: 0;
 	display: flex;
 }
-.lobby .lb-split :is(.lvlbtn, .lb-addbot) {
+.lb-split :is(.lvlbtn, .lb-addbot) {
 	min-block-size: 2.75rem;
 }
-.lobby .lb-split .lvlbtn {
+.lb-split .lvlbtn {
 	inline-size: 100%;
 	background: var(--surface-hover);
 	border-color: var(--stroke-strong);
@@ -362,7 +444,7 @@ html:has(.lobby) {
 	border-start-start-radius: var(--radius-sm);
 	border-end-start-radius: var(--radius-sm);
 }
-.lobby .lb-addbot {
+.lb-addbot {
 	flex: none;
 	color: var(--amber-hi);
 	background: color-mix(in oklab, var(--amber) 20%, transparent);
@@ -374,10 +456,10 @@ html:has(.lobby) {
 	font-weight: 700;
 }
 @media (hover: hover) {
-	.lobby .lb-addbot:hover:not(:disabled) {
+	.lb-addbot:hover:not(:disabled) {
 		background: color-mix(in oklab, var(--amber) 32%, transparent);
 	}
-	.lobby .lb-split .lvlbtn:hover:not(:disabled) {
+	.lb-split .lvlbtn:hover:not(:disabled) {
 		background: color-mix(in oklab, white 22%, transparent);
 	}
 }
@@ -572,7 +654,7 @@ html:has(.lobby) {
 		border-radius: 0;
 	}
 	@media (hover: hover) {
-		.lobby .lb-code:hover:not(:disabled) {
+		.lb-code:hover:not(:disabled) {
 			background: transparent;
 		}
 	}
