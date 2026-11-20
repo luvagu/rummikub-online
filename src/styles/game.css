@@ -1,0 +1,2032 @@
+/* The game table (src/features/game): HUD, turn timer, board, action dock, rack, reactions, celebration and the
+   between-rounds standings. Its own cascade layer after `components`, so it overrides the generic button/card rules
+   without specificity games; inner layers keep each region's rules together.
+
+   Layout is container-driven: `.game` is the `game` container and `.top` the `hud` container, so seats, dock and rack
+   adapt to the space they get. Media queries remain only for what a container cannot know: viewport HEIGHT (short
+   landscape phones), input type, display mode and the motion preference. Decorative motion is opt-in
+   (prefers-reduced-motion: no-preference) and nested in the rule it belongs to. */
+
+@layer layout, hud, board, tiles, dock, rack, overlays, dialogs;
+
+/* ================================================================== layout */
+@layer layout {
+	.game {
+		container: game / inline-size;
+		display: grid;
+		grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+		grid-template-areas: 'hud' 'timer' 'board' 'dock' 'rack';
+		block-size: 100dvh;
+	}
+	.top {
+		grid-area: hud;
+	}
+	.tbar {
+		grid-area: timer;
+	}
+	.boardwrap {
+		grid-area: board;
+	}
+	.bar {
+		grid-area: dock;
+	}
+	.rackwrap {
+		grid-area: rack;
+	}
+
+	/* Tile size: fluid with the table's width (29-31px on phones, ~48px at 1200px, 60px max), replacing the old viewport
+	   ladder. `cqi` resolves against `.game` where the variable is used, i.e. on each tile. */
+	.board,
+	.rack {
+		--tw: clamp(31px, 2.15cqi + 22px, 60px);
+	}
+	@container game (inline-size <= 380px) {
+		.rack {
+			--tw: 29px;
+			gap: 3px;
+			max-height: 28dvh;
+		}
+	}
+	/* phones (portrait): table tiles a bit bigger than the rack's, with tighter gaps between groups */
+	@media (width <= 520px) and (height >= 481px) {
+		.board {
+			--tw: 33px;
+			gap: 8px;
+			row-gap: 16px;
+		}
+	}
+	@media (width <= 380px) and (height >= 481px) {
+		.board {
+			--tw: 31px;
+		}
+	}
+	@media (height <= 480px) and (orientation: landscape) {
+		.board,
+		.rack {
+			--tw: 28px;
+		}
+	}
+}
+
+/* ================================================================== hud: seats, pool, menu */
+@layer hud {
+	/* sticky (nothing scrolls here) so WebKit sees a header pinned to the top edge and uses its flat, opaque colour for
+	   the status bar; the soft shadow falls onto the felt below. */
+	.top {
+		container: hud / inline-size;
+		position: sticky;
+		top: 0;
+		z-index: 30;
+		display: flex;
+		align-items: center;
+		gap: clamp(6px, 0.4cqi + 4px, 10px);
+		padding: calc(8px + env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+		background: var(--felt-hud);
+		box-shadow:
+			0 1px 0 var(--felt-ink),
+			0 10px 20px -10px oklch(0% 0 0 / 0.55);
+		@media (height <= 480px) and (orientation: landscape) {
+			padding-block: calc(4px + env(safe-area-inset-top)) 4px;
+		}
+	}
+	.seats {
+		display: flex;
+		flex: 1;
+		min-width: 0;
+		gap: 8px;
+		overflow-x: auto;
+		scrollbar-width: none;
+		padding: 6px 6px 6px 2px;
+		&[title] {
+			cursor: pointer; /* during play a tap on the chips opens the standings */
+		}
+	}
+	.seat {
+		--ring-c: var(--amber);
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex: none;
+		padding: 5px 14px 5px 5px;
+		border-radius: 999px;
+		background: oklch(100% 0 0 / 0.07);
+		border: 1px solid oklch(100% 0 0 / 0.12);
+		transition:
+			background-color var(--dur-2),
+			border-color var(--dur-2),
+			opacity var(--dur-2),
+			--sweep 1s linear; /* the turn ring drains smoothly between the once-a-second updates */
+		&.act {
+			border-color: var(--amber);
+			background: color-mix(in oklab, var(--amber) 15%, transparent);
+		}
+		&.off {
+			opacity: 0.55;
+		}
+		&.win {
+			outline: 2px solid var(--amber);
+			outline-offset: 2px;
+		}
+		&[data-t='ok'] {
+			--ring-c: var(--ring-ok);
+		}
+		&[data-t='amber'] {
+			--ring-c: var(--ring-amber);
+		}
+		&[data-t='red'] {
+			--ring-c: var(--ring-red);
+		}
+		& .av {
+			width: 34px;
+			margin-right: 5px; /* the rack-count badge overhangs the avatar; keep it off the name */
+			box-shadow: inset 0 -2px 0 oklch(0% 0 0 / 0.12);
+		}
+		/* the turn ring around the active player's avatar: the time left of a timed turn, a full ring otherwise */
+		&.act .av::before {
+			content: '';
+			position: absolute;
+			inset: -4px;
+			border-radius: 50%;
+			background: conic-gradient(var(--ring-c) var(--sweep), oklch(100% 0 0 / 0.16) 0);
+			mask: radial-gradient(farthest-side, #0000 calc(100% - 2.5px), #000 calc(100% - 2px));
+			transition: background-color var(--dur-2);
+		}
+		& > svg {
+			flex: none;
+			opacity: 0.8;
+		}
+		& .seat-ok {
+			color: #a5d6a7;
+			opacity: 1;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			&.bump {
+				animation: seatbump 0.4s ease-out;
+			}
+			&.win {
+				animation: seatbump 0.5s ease-out 3;
+			}
+		}
+	}
+	/* the dealt / held tile count on each avatar */
+	.av .bd {
+		position: absolute;
+		right: -7px;
+		bottom: -6px;
+		z-index: 1;
+		padding: 1px 5px;
+		border-radius: 999px;
+		border: 1px solid oklch(0% 0 0 / 0.2);
+		background: #fff8e1;
+		color: #222;
+		font: 700 0.72rem var(--font);
+		font-variant-numeric: tabular-nums;
+		box-shadow: var(--elev-1);
+	}
+	.si {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		line-height: 1.15;
+		& b {
+			max-width: 110px;
+			overflow: hidden;
+			font-size: 14px;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		& em {
+			font-style: normal;
+			font-weight: 400;
+			opacity: 0.85;
+		}
+		& small {
+			display: flex;
+			align-items: center;
+			gap: 3px;
+			font-size: 0.75rem;
+			font-variant-numeric: tabular-nums;
+			opacity: 0.85;
+			white-space: nowrap;
+		}
+	}
+	/* the pool: how many tiles are left to draw */
+	.pill {
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 12px;
+		border-radius: 999px;
+		background: oklch(0% 0 0 / 0.22);
+		border: 1px solid oklch(100% 0 0 / 0.14);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ---- narrow tables: the seat chips share one row; only the active seat keeps its name and score ----
+	   The hud container is the header's content box (viewport minus ~20px of padding): 500/380/320px here match the
+	   520/400/340px viewport breakpoints these rules were tuned for. */
+	@container hud (inline-size <= 500px) {
+		.seats {
+			gap: 6px;
+			padding-right: 0;
+		}
+		.seat {
+			flex: 1 1 0;
+			min-width: 0;
+			gap: 6px;
+			padding: 4px 9px 4px 4px;
+			&.act {
+				flex: 1 0 auto; /* never collapses below its content (avatar + badge + name) */
+				min-width: 104px;
+			}
+			& .av {
+				width: 30px;
+				font-size: 14px;
+			}
+			& .si {
+				overflow: hidden;
+			}
+			& .si b {
+				max-width: 100%;
+				font-size: 13px;
+			}
+			& .si small {
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		}
+		.pill {
+			gap: 4px;
+			padding: 6px 9px;
+		}
+		/* 2 players: the other chip keeps its content width (name, score, bot + check icons) */
+		.seats:not([data-many]) .seat:not(.act) {
+			flex: 1 1 auto;
+		}
+		/* 3-4 players: the other chips are avatar + tile count; the active chip shows name + points (no "(you)", no wins:
+		   both are in the standings), so it no longer cuts to "L… 275 |" */
+		.seats[data-many] {
+			gap: 4px;
+			padding-right: 8px; /* room for the last chip's tile-count badge, which overhangs its avatar */
+			& .seat:not(.act) {
+				flex: 0 0 auto;
+				padding: 4px 3px;
+				& .si {
+					display: none;
+				}
+				& .av {
+					margin-right: 0;
+				}
+			}
+			& .seat.act {
+				flex: 1 1 auto; /* may shrink (the name ellipsizes) instead of pushing the last chip off-screen */
+				min-width: 96px;
+				& :is(em, .wn) {
+					display: none;
+				}
+			}
+			/* "has melded": a small badge on the avatar's shoulder instead of an inline icon that widens every chip */
+			& .seat-ok {
+				position: absolute;
+				inset-block-start: -3px;
+				inset-inline-start: 24px;
+				z-index: 1;
+				width: 15px;
+				height: 15px;
+				padding: 2px;
+				border-radius: 50%;
+				background: #2e7d32;
+				box-shadow: 0 0 0 1.5px var(--felt-hud);
+				color: #fff;
+				stroke-width: 3.5;
+			}
+		}
+	}
+	@container hud (inline-size <= 380px) {
+		/* very narrow, 2 players: the other chip is avatar + score only, the active one may shrink */
+		.seats:not([data-many]) {
+			& .seat {
+				gap: 4px;
+				padding: 4px 6px 4px 4px;
+			}
+			& .seat:not(.act) {
+				flex: 0 0 auto;
+				& .si b,
+				& > svg {
+					display: none;
+				}
+			}
+			& .seat.act {
+				flex: 1 1 auto;
+			}
+		}
+		.seats[data-many] .seat:not(.act) {
+			padding: 4px 2px;
+		}
+	}
+	@container hud (inline-size <= 320px) {
+		.seats:not([data-many]) .seat:not(.act) .si {
+			display: none;
+		}
+		.seats[data-many] .seat {
+			& .av {
+				width: 26px;
+				font-size: 14px;
+			}
+			&.act {
+				min-width: 70px;
+				gap: 4px;
+				padding: 4px 6px 4px 4px;
+				& .si b {
+					display: none;
+				}
+			}
+		}
+	}
+
+	/* ---- game menu: toggles render as switches (the On/Off text stays for screen readers) ---- */
+	.gmenu {
+		min-width: 270px;
+		border-radius: 16px;
+		background: color-mix(in oklab, var(--felt-deep) 94%, black);
+		box-shadow: var(--elev-4);
+		& button {
+			gap: 12px;
+			& > svg {
+				flex: none;
+				opacity: 0.85;
+			}
+		}
+		@media (hover: hover) {
+			& button:hover:not(:disabled) {
+				background: oklch(100% 0 0 / 0.1);
+			}
+		}
+		& [role='menuitemcheckbox'] .sw {
+			position: relative;
+			flex: none;
+			inline-size: 34px;
+			block-size: 20px;
+			border-radius: 999px;
+			background: oklch(100% 0 0 / 0.22);
+			box-shadow: inset 0 0 0 1px oklch(100% 0 0 / 0.2);
+			font-size: 0; /* the On/Off label is still read out; the switch shows it */
+			opacity: 1;
+			transition: background-color var(--dur-2);
+			&::after {
+				content: '';
+				position: absolute;
+				inset-block-start: 3px;
+				inset-inline-start: 3px;
+				inline-size: 14px;
+				block-size: 14px;
+				border-radius: 50%;
+				background: #fff;
+				box-shadow: var(--elev-1);
+				transition: translate var(--dur-2) var(--ease-out);
+			}
+		}
+		& [role='menuitemcheckbox'][aria-checked='true'] .sw {
+			background: var(--amber);
+			box-shadow: none;
+			&::after {
+				translate: 14px 0;
+			}
+		}
+	}
+
+	/* ---- turn timer: a thin draining bar under the HUD ----
+	   The bar drains by scaling (compositor only) over the time left that the host sent with this state, instead of
+	   re-rendering React and animating width 5x a second. --p0 = fraction left, --dur = ms left, --hold = deal still running. */
+	.tbar {
+		position: relative;
+		z-index: 29;
+		height: 4px;
+		background: oklch(0% 0 0 / 0.38);
+		& i {
+			--bar: var(--ring-ok);
+			display: block;
+			width: 100%;
+			height: 100%;
+			background: linear-gradient(90deg, color-mix(in oklab, var(--bar) 70%, white), var(--bar));
+			box-shadow: 0 0 10px color-mix(in oklab, var(--bar) 60%, transparent);
+			transform-origin: left;
+			transform: scaleX(var(--p0, 1));
+			animation: drain var(--dur, 1s) linear var(--hold, 0s) forwards;
+		}
+		&.amber i {
+			--bar: var(--ring-amber);
+		}
+		&.red i {
+			--bar: var(--ring-red);
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			&.hot i {
+				animation:
+					drain var(--dur, 1s) linear forwards,
+					fade 1s ease-in-out infinite;
+			}
+		}
+	}
+	/* the last-seconds countdown, floating over the top-right of the table */
+	.tnum {
+		position: absolute;
+		top: 10px;
+		right: 12px;
+		z-index: 4;
+		min-width: 40px;
+		padding: 0 12px;
+		border-radius: 999px;
+		background: #c62828;
+		box-shadow: var(--elev-3);
+		font: 800 20px/1.5 var(--disp);
+		font-variant-numeric: tabular-nums;
+		text-align: center;
+		pointer-events: none;
+		opacity: 0.9;
+		&.mine {
+			font-size: 30px;
+			opacity: 1;
+		}
+		@container game (inline-size <= 520px) {
+			top: 8px;
+			right: 8px;
+			min-width: 30px;
+			padding: 0 8px;
+			font-size: 15px;
+			opacity: 0.8;
+			&.mine {
+				font-size: 21px;
+			}
+		}
+	}
+}
+
+/* ================================================================== board */
+@layer board {
+	/* add-to-set controls float over the table (no layout shift when they appear) */
+	.boardwrap {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		timeline-scope: --board; /* lets the scroll shadows below follow the board's scroll position */
+		/* scroll shadows: shown only where there is more table above / below (scroll-driven, no listeners) */
+		&::before,
+		&::after {
+			content: '';
+			position: absolute;
+			inset-inline: 0;
+			z-index: 2;
+			block-size: 16px;
+			pointer-events: none;
+			opacity: 0;
+		}
+		&::before {
+			top: 0;
+			background: radial-gradient(farthest-side at 50% 0, oklch(0% 0 0 / 0.4), transparent);
+		}
+		&::after {
+			bottom: 0;
+			background: radial-gradient(farthest-side at 50% 100%, oklch(0% 0 0 / 0.4), transparent);
+		}
+		@supports (animation-timeline: scroll()) {
+			&::before,
+			&::after {
+				animation: board-shade linear both;
+				animation-timeline: --board;
+			}
+			&::before {
+				animation-range: 0 2rem;
+			}
+			&::after {
+				animation-direction: reverse;
+				animation-range: calc(100% - 2rem) 100%;
+			}
+		}
+	}
+	.board {
+		--vignette: radial-gradient(130% 95% at 50% 30%, transparent 55%, oklch(0% 0 0 / 0.24));
+		flex: 1;
+		display: flex;
+		flex-wrap: wrap;
+		align-content: flex-start;
+		gap: 12px;
+		row-gap: 18px; /* the set's "+" badge overhangs the row above */
+		overflow: auto;
+		overscroll-behavior: contain;
+		scrollbar-gutter: stable;
+		scrollbar-width: thin;
+		scrollbar-color: oklch(100% 0 0 / 0.22) transparent;
+		scroll-timeline: --board block;
+		padding: 24px max(12px, env(safe-area-inset-right)) 14px max(12px, env(safe-area-inset-left));
+		background: var(--pattern, none), var(--vignette);
+		touch-action: manipulation; /* also the gaps between tiles: a quick second tap there must not arm double-tap zoom */
+		&.adding {
+			padding-bottom: 68px; /* room for the floating "New set" button */
+		}
+		&.dropping {
+			box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--amber) 66%, transparent);
+		}
+		@container game (inline-size <= 520px) {
+			scroll-padding-top: 24px;
+		}
+		@media (height <= 480px) and (orientation: landscape) {
+			padding-bottom: 8px;
+		}
+		/* empty table: a centred drop hint instead of a stray line of text */
+		&:has(> .sub:only-child) {
+			align-content: center;
+			justify-content: center;
+		}
+		& > .sub:only-child {
+			display: grid;
+			justify-items: center;
+			gap: 10px;
+			max-inline-size: 34ch;
+			padding: 20px 24px;
+			border: 2px dashed oklch(100% 0 0 / 0.22);
+			border-radius: 18px;
+			background: oklch(0% 0 0 / 0.12);
+			color: var(--text-muted);
+			text-align: center;
+			&::before {
+				content: '';
+				inline-size: 26px;
+				aspect-ratio: 20 / 27;
+				border: 2px dashed currentColor;
+				border-radius: 6px;
+				opacity: 0.6;
+			}
+		}
+	}
+	/* table patterns (menu → Table pattern): low-contrast overlays on the felt, layered over the vignette */
+	.board.bg0 {
+		--pattern: radial-gradient(#ffffff0c 1px, transparent 1.2px) 0 0 / 7px 7px;
+	}
+	.board.bg1 {
+		--pattern:
+			linear-gradient(135deg, #ffffff0b 25%, transparent 25%) -24px 0 / 48px 48px,
+			linear-gradient(225deg, #ffffff0b 25%, transparent 25%) -24px 0 / 48px 48px,
+			linear-gradient(315deg, #ffffff0b 25%, transparent 25%) 0 0 / 48px 48px,
+			linear-gradient(45deg, #ffffff0b 25%, transparent 25%) 0 0 / 48px 48px;
+	}
+	.board.bg2 {
+		--pattern: radial-gradient(#ffffff18 2px, transparent 2.5px) 0 0 / 28px 28px;
+	}
+	.board.bg3 {
+		--pattern: repeating-linear-gradient(90deg, #ffffff0a 0 24px, transparent 24px 48px);
+	}
+	.board.bg4 {
+		--pattern:
+			repeating-linear-gradient(45deg, #ffffff0d 0 2px, transparent 2px 12px),
+			repeating-linear-gradient(-45deg, #ffffff0d 0 2px, transparent 2px 12px);
+	}
+	.board.bg5 {
+		--pattern:
+			linear-gradient(#ffffff0c 1px, transparent 1px) 0 0 / 40px 40px,
+			linear-gradient(90deg, #ffffff0c 1px, transparent 1px) 0 0 / 40px 40px;
+	}
+	.board.bg6 {
+		--pattern:
+			repeating-linear-gradient(0deg, #ffffff09 0 16px, transparent 16px 48px),
+			repeating-linear-gradient(90deg, #ffffff09 0 16px, transparent 16px 48px);
+	}
+	.board.bg7 {
+		--pattern: radial-gradient(circle at 50% 0, transparent 13px, #ffffff14 14px, #ffffff14 15px, transparent 16px) 0 0 / 32px 16px;
+	}
+	.board.bg8 {
+		--pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cpath d='M18 12v12M12 18h12' stroke='white' stroke-opacity='.14' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 0 0 / 36px 36px;
+	}
+	.board.bg9 {
+		--pattern: repeating-radial-gradient(circle at 50% 50%, transparent 0 8px, #ffffff14 8px 9px) 0 0 / 56px 56px;
+	}
+
+	/* a set sits in a recessed tray on the felt */
+	.set {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 3px;
+		padding: 6px;
+		border: 2px solid oklch(100% 0 0 / 0.07);
+		border-radius: 13px;
+		background: var(--felt-tray);
+		box-shadow:
+			inset 0 2px 6px oklch(0% 0 0 / 0.3),
+			0 1px 0 oklch(100% 0 0 / 0.06);
+		transition:
+			border-color var(--dur-2),
+			background-color var(--dur-2);
+		&.bad {
+			border-color: #ff5252;
+			border-style: dashed;
+			background: color-mix(in oklab, #b71c1c 24%, transparent);
+			/* not colour-only: invalid sets also carry a mark */
+			&::after {
+				content: '!';
+				position: absolute;
+				top: -9px;
+				left: -7px;
+				width: 18px;
+				height: 18px;
+				border-radius: 50%;
+				background: #ff5252;
+				box-shadow: var(--elev-1);
+				color: #fff;
+				font: 800 12px/18px var(--font);
+				text-align: center;
+			}
+		}
+		@container game (inline-size <= 520px) {
+			flex-wrap: wrap;
+			max-width: 100%;
+		}
+	}
+	.set.dropping,
+	.rack.dropping {
+		outline: 2px dashed var(--amber);
+		outline-offset: 2px;
+		background-color: color-mix(in oklab, var(--amber) 13%, transparent);
+	}
+
+	/* "+" (add the selected tiles to this set) and "New set" */
+	.plus {
+		padding: 8px 10px;
+		border-color: var(--amber-edge);
+		background: linear-gradient(var(--amber-hi), var(--amber));
+		color: var(--ink);
+		font-weight: 700;
+		&.badge {
+			position: absolute;
+			top: -13px; /* straddles the set's top border instead of covering the tile below */
+			left: 50%;
+			z-index: 2;
+			translate: -50% 0;
+			width: 24px;
+			height: 24px;
+			min-width: 0;
+			min-height: 0; /* fixed size even on touch: its ::after gives a ~46px hit area */
+			padding: 0;
+			border-radius: 50%;
+			box-shadow: var(--elev-2);
+			animation: fadein var(--dur-2) both;
+			&::after {
+				content: '';
+				position: absolute;
+				inset: -11px;
+			}
+			& svg {
+				width: 15px;
+				height: 15px;
+			}
+			&:active:not(:disabled) {
+				transform: scale(0.94);
+			}
+		}
+		&.float {
+			position: absolute;
+			bottom: 14px;
+			left: 50%;
+			z-index: 3;
+			translate: -50% 0;
+			padding: 10px 20px;
+			border-radius: 999px;
+			box-shadow:
+				0 2px 0 var(--amber-deep),
+				var(--elev-3);
+			animation: fadein var(--dur-2) both;
+			@container game (inline-size <= 520px) {
+				bottom: 10px;
+				min-height: 0;
+				gap: 6px;
+				padding: 7px 16px;
+				font-size: 14px;
+				& svg {
+					width: 16px;
+					height: 16px;
+				}
+			}
+		}
+	}
+}
+
+/* ================================================================== tiles */
+@layer tiles {
+	.tile {
+		--tc: var(--tile-ink-0);
+		position: relative;
+		flex: none;
+		flex-direction: column;
+		gap: 0;
+		width: var(--tw);
+		aspect-ratio: 20 / 27; /* 1.35 tall */
+		padding: 0;
+		border: 1px solid var(--paper-edge);
+		border-radius: calc(var(--tw) * 0.16);
+		background: linear-gradient(var(--paper), var(--paper-2));
+		color: var(--tc);
+		box-shadow:
+			inset 0 1px 0 #fff,
+			inset 0 -1px 0 oklch(0% 0 0 / 0.05),
+			0 3px 0 var(--tile-edge),
+			0 4px 3px -1px oklch(0% 0 0 / 0.16),
+			0 8px 12px -4px oklch(0% 0 0 / 0.3);
+		font-family: var(--disp);
+		font-size: calc(var(--tw) * 0.6);
+		font-weight: 800;
+		line-height: 1;
+		user-select: none; /* dragging must not select text */
+		-webkit-user-select: none;
+		-webkit-touch-callout: none; /* no iOS long-press preview over a tile */
+		touch-action: manipulation;
+		view-transition-class: tile; /* see ::view-transition-group(.tile) below */
+		@media (prefers-reduced-motion: no-preference) {
+			transition:
+				translate var(--dur-1) var(--ease-out),
+				box-shadow var(--dur-1) var(--ease-out);
+		}
+		@media (pointer: coarse) {
+			min-width: 0;
+			min-height: 0; /* fixed-size control: the generic 44px minimum would stretch it */
+		}
+		&[data-c='1'] {
+			--tc: var(--tile-ink-1);
+		}
+		&[data-c='2'] {
+			--tc: var(--tile-ink-2);
+		}
+		&[data-c='3'] {
+			--tc: var(--tile-ink-3);
+		}
+		&[data-c='-1'] {
+			--tc: var(--tile-joker);
+		}
+		& .n {
+			display: block;
+			margin-top: -8%;
+		}
+		/* the colour shape (circle, triangle, square, diamond): colour is never the only cue */
+		& .mk {
+			position: absolute;
+			bottom: calc(var(--tw) * 0.1);
+			width: calc(var(--tw) * 0.2);
+			height: calc(var(--tw) * 0.2);
+			background: var(--tc);
+		}
+		&[data-c='0'] .mk {
+			border-radius: 50%;
+		}
+		&[data-c='1'] .mk {
+			clip-path: polygon(50% 0, 100% 100%, 0 100%);
+		}
+		&[data-c='3'] .mk {
+			transform: rotate(45deg) scale(0.8);
+		}
+		/* a joker on the table: the value it stands for, in a pill where the colour mark sits on other tiles */
+		&:has(> small) .n {
+			margin-top: -22%;
+		}
+		& small {
+			position: absolute;
+			bottom: calc(var(--tw) * 0.07);
+			left: 50%;
+			translate: -50% 0;
+			min-width: calc(var(--tw) * 0.44);
+			padding: 0 calc(var(--tw) * 0.07);
+			border-radius: 999px;
+			background: var(--tile-joker);
+			color: #fff;
+			font: 800 max(9px, calc(var(--tw) * 0.25)) / 1.35 var(--font);
+			font-variant-numeric: tabular-nums;
+			text-align: center;
+		}
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: linear-gradient(var(--paper), var(--paper-2)); /* not the generic translucent button hover */
+			}
+		}
+		&:focus-visible {
+			outline: 3px solid #fff;
+			outline-offset: 3px;
+			box-shadow:
+				0 0 0 6px #000a,
+				0 3px 0 var(--tile-edge);
+		}
+		&.sel {
+			translate: 0 -8px;
+			box-shadow:
+				inset 0 1px 0 #fff,
+				0 0 0 3px var(--amber),
+				0 14px 18px -6px oklch(0% 0 0 / 0.5);
+		}
+		&.ghost {
+			opacity: 0.35;
+		}
+		&.dealhide {
+			opacity: 0;
+			pointer-events: none;
+		}
+	}
+	/* on my turn, a tile under the mouse lifts a little: it can be picked up */
+	@media (hover: hover) {
+		.game[data-my-turn] .tile:not(.sel, .ghost):hover {
+			translate: 0 -2px;
+			box-shadow:
+				inset 0 1px 0 #fff,
+				0 3px 0 var(--tile-edge),
+				0 10px 16px -4px oklch(0% 0 0 / 0.38);
+		}
+	}
+	.game[data-dnd] .tile {
+		cursor: grab;
+	}
+	.rack.dealing .tile {
+		opacity: 0;
+	}
+
+	/* a tile just drawn (amber) or just played by an opponent (sky): an outline that fades, plus motion when allowed */
+	.tile.fresh {
+		z-index: 2;
+		outline: 3px solid var(--amber);
+		outline-offset: 1px;
+		animation: drawn-still 1.9s ease-out both;
+		&::after {
+			content: '+';
+			position: absolute;
+			top: -9px;
+			left: 50%;
+			translate: -50% 0;
+			min-width: 16px;
+			height: 16px;
+			border-radius: 8px;
+			background: var(--amber);
+			color: #222;
+			font: 800 12px/16px var(--font);
+			text-align: center;
+			animation: fadeout 1.9s ease-in both;
+		}
+	}
+	.tile.placed {
+		z-index: 2;
+		outline: 3px solid var(--sky);
+		outline-offset: 1px;
+		animation: placed-still 2.4s ease-out both;
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.tile.enter {
+			animation: pop 0.22s backwards; /* only on a deal / new round; remounts (new set, draw) must not replay it */
+		}
+		.tile.fresh {
+			animation-name: drawn;
+		}
+		.tile.placed {
+			animation-name: placed;
+		}
+	}
+
+	/* the lifted copy that follows the pointer while dragging (pointer-events none, so hit-testing sees what is below) */
+	.drag-preview {
+		position: fixed;
+		left: 0;
+		top: 0;
+		z-index: 100;
+		pointer-events: none;
+		scale: 1.08;
+		rotate: -2deg;
+		box-shadow:
+			inset 0 1px 0 #fff,
+			0 3px 0 var(--tile-edge),
+			0 18px 28px oklch(0% 0 0 / 0.45);
+		&[data-count]::after {
+			content: attr(data-count);
+			position: absolute;
+			top: -9px;
+			inset-inline-end: -9px;
+			min-width: 20px;
+			height: 20px;
+			border-radius: 10px;
+			background: var(--amber);
+			color: #222;
+			font: 800 12px/20px var(--font);
+			text-align: center;
+		}
+	}
+
+	/* ---- tiles moving between rack and table (View Transitions, started by src/utils/viewTransition.js) ----
+	   Only on-screen tiles get a view-transition-name, and only for the duration of the move. The page itself is not part
+	   of the transition (root name: none), and the overlay lets clicks through, so the table stays usable meanwhile. */
+	:root {
+		view-transition-name: none;
+	}
+	::view-transition {
+		pointer-events: none;
+	}
+	::view-transition-group(.tile) {
+		animation-duration: var(--dur-3);
+		animation-timing-function: var(--ease-spring);
+	}
+	::view-transition-old(.tile),
+	::view-transition-new(.tile) {
+		animation-duration: var(--dur-2);
+	}
+	::view-transition-new(.tile):only-child {
+		animation: tile-in var(--dur-2) var(--ease-out) both;
+	}
+	::view-transition-old(.tile):only-child {
+		animation: tile-out var(--dur-1) var(--ease-in) both;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		::view-transition-group(*),
+		::view-transition-old(*),
+		::view-transition-new(*) {
+			animation: none !important;
+		}
+	}
+}
+
+/* ================================================================== dock (status + actions) */
+@layer dock {
+	.bar {
+		position: relative;
+		z-index: 5;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+		padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+		border-top: 1px solid var(--felt-ink);
+		background: linear-gradient(oklch(0% 0 0 / 0.4), oklch(0% 0 0 / 0.5));
+		box-shadow: 0 -10px 20px -12px oklch(0% 0 0 / 0.55);
+		& button .sh {
+			display: none;
+		}
+		@media (height <= 480px) and (orientation: landscape) {
+			padding-block: 4px;
+		}
+	}
+	.status {
+		flex: 1 1 100%;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+		font-size: 14px;
+		& b {
+			font-variant-numeric: tabular-nums;
+			white-space: nowrap;
+		}
+		& .log {
+			overflow: hidden;
+			opacity: 0.85;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			&.why {
+				color: #ffd180;
+				font-weight: 600;
+				opacity: 1;
+			}
+		}
+		/* wide tables and short landscape phones: the buttons share the row with the status */
+		@container game (inline-size >= 900px) {
+			flex: 1 1 0;
+		}
+		@media (height <= 480px) and (orientation: landscape) {
+			flex: 1 1 0;
+		}
+	}
+	/* first-meld progress toward 30 points; turns green once the meld is enough */
+	.meld {
+		flex: none;
+		width: 72px;
+		height: 6px;
+		overflow: hidden;
+		border-radius: 999px;
+		background: oklch(100% 0 0 / 0.18);
+		& i {
+			display: block;
+			height: 100%;
+			border-radius: inherit;
+			background: var(--amber);
+			transform-origin: left;
+			scale: var(--fill) 1;
+			@media (prefers-reduced-motion: no-preference) {
+				transition:
+					scale var(--dur-3) var(--ease-out),
+					background-color var(--dur-2);
+			}
+		}
+		&[data-done] i {
+			background: var(--ring-ok);
+		}
+	}
+	/* To rack + Undo: one quiet segmented group, so Draw / End turn stand out as the decisions */
+	.dock-tools {
+		display: inline-flex;
+		gap: 3px;
+		padding: 3px;
+		border-radius: 14px;
+		background: oklch(0% 0 0 / 0.25);
+		border: 1px solid var(--felt-ink);
+		& button {
+			padding: 7px 12px;
+			border-color: transparent;
+			border-radius: 11px;
+			background: transparent;
+		}
+		@media (hover: hover) {
+			& button:hover:not(:disabled) {
+				background: oklch(100% 0 0 / 0.12);
+			}
+		}
+	}
+	/* Draw / End turn: the two decisions, as pills. Draw sits by the tools, End turn alone at the far end, so a slip
+	   cannot hit the other one. */
+	.bar :is(button.draw, button.primary) {
+		border-radius: 999px;
+		padding-inline: 18px;
+	}
+	.decide {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-inline-start: auto;
+	}
+	/* Draw: its own colour so it reads as an equal alternative to End turn */
+	button.draw {
+		border-color: var(--sky-deep);
+		background: linear-gradient(#0277bd, var(--sky-deep)); /* white text: 4.8-7.5:1 */
+		box-shadow: 0 2px 0 var(--sky-deep);
+		color: #fff;
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: linear-gradient(#0288d1, #0277bd);
+			}
+		}
+		&:disabled {
+			opacity: 0.5;
+		}
+	}
+
+	/* ---- phones: compact labels, 44px targets ---- */
+	@container game (inline-size <= 520px) {
+		.bar {
+			gap: 8px;
+			padding-block: 6px;
+			& button {
+				min-height: 44px;
+				padding: 6px 12px;
+				font-size: 14px;
+				& svg {
+					width: 17px;
+					height: 17px;
+				}
+				& .lg {
+					display: none;
+				}
+				& .sh {
+					display: inline;
+				}
+			}
+			& :is(button.draw, button.primary.danger) {
+				min-width: 76px;
+				justify-content: center;
+				white-space: nowrap;
+			}
+			& button.primary.danger {
+				min-width: 96px;
+			}
+			& button.primary[data-tut='end'] {
+				min-width: 84px;
+				justify-content: center;
+				padding: 6px 16px;
+			}
+			& .dock-tools button {
+				min-width: 44px;
+				padding: 6px 10px;
+			}
+		}
+		.lbl {
+			display: none;
+		}
+		.meld {
+			display: none; /* the "0/30" text already says it; frees the row for the log */
+		}
+		.status .log {
+			display: -webkit-box;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+			line-height: 1.25;
+			white-space: normal;
+		}
+	}
+	@container game (inline-size <= 380px) {
+		.bar {
+			justify-content: flex-end;
+		}
+	}
+}
+
+/* ================================================================== rack */
+@layer rack {
+	/* a walnut rack: grain, a warm top light, a lip along its top edge */
+	.rackwrap {
+		position: relative;
+		padding-bottom: env(safe-area-inset-bottom);
+		border-top: 3px solid oklch(60% 0.06 48);
+		background:
+			repeating-linear-gradient(92deg, transparent 0 7px, oklch(0% 0 0 / 0.05) 7px 8px),
+			radial-gradient(120% 140% at 50% 0%, color-mix(in oklab, var(--walnut-hi) 70%, transparent), transparent 62%),
+			linear-gradient(var(--walnut), var(--walnut-lo));
+		box-shadow:
+			inset 0 1px 0 oklch(100% 0 0 / 0.16),
+			inset 0 8px 14px -6px oklch(0% 0 0 / 0.5),
+			0 -6px 16px -8px oklch(0% 0 0 / 0.55);
+	}
+	.rackbar {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		padding: 8px max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+		& button {
+			border-color: oklch(100% 0 0 / 0.14);
+			background: oklch(0% 0 0 / 0.2);
+		}
+		@media (hover: hover) {
+			& button:not([aria-pressed='true']):hover:not(:disabled) {
+				background: oklch(0% 0 0 / 0.34);
+			}
+		}
+		@container game (inline-size <= 520px) {
+			padding-top: 6px;
+			& :is(button, .seg button) {
+				min-height: 44px;
+				padding: 4px 10px;
+			}
+			& button svg {
+				width: 16px;
+				height: 16px;
+			}
+		}
+		@media (height <= 480px) and (orientation: landscape) {
+			padding-top: 2px;
+			& :is(button, .seg button) {
+				min-height: 40px; /* secondary controls; the action bar keeps 44px */
+			}
+		}
+	}
+	.rcount {
+		padding: 3px 10px;
+		border-radius: 999px;
+		background: oklch(0% 0 0 / 0.22);
+		font: 600 13px var(--font);
+		font-variant-numeric: tabular-nums;
+		opacity: 0.95;
+	}
+	.rwrap {
+		margin-inline-start: auto;
+		& button {
+			padding: 5px 12px;
+		}
+	}
+	/* sort (1-2-3 / colour): a segmented control whose amber thumb slides to the active option.
+	   Tapping the active option again goes back to manual order, so neither may be pressed (the thumb fades out). */
+	.rackbar .seg {
+		position: relative;
+		isolation: isolate;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		margin-inline-start: 0;
+		padding: 2px;
+		border-radius: 12px;
+		border: 1px solid oklch(100% 0 0 / 0.14);
+		background: oklch(0% 0 0 / 0.22);
+		&::before {
+			content: '';
+			position: absolute;
+			inset-block: 2px;
+			inset-inline-start: 2px;
+			z-index: -1;
+			width: calc(50% - 2px);
+			border-radius: 10px;
+			background: linear-gradient(var(--amber-hi), var(--amber));
+			box-shadow: 0 1px 0 var(--amber-deep);
+			opacity: 0;
+			transition: opacity var(--dur-1);
+			@media (prefers-reduced-motion: no-preference) {
+				transition:
+					opacity var(--dur-1),
+					translate var(--dur-3) var(--ease-spring);
+			}
+		}
+		&:has(> [aria-pressed='true'])::before {
+			opacity: 1;
+		}
+		&:has(> :last-child[aria-pressed='true'])::before {
+			translate: 100% 0;
+		}
+		& button {
+			padding: 5px 12px;
+			border: 0;
+			border-radius: 10px;
+			background: transparent;
+			transition: color var(--dur-2);
+			&[aria-pressed='true'] {
+				background: transparent;
+				color: var(--ink);
+			}
+		}
+	}
+	.rack {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 5px;
+		min-height: calc(var(--tw) * 1.35 + 24px);
+		max-height: 32dvh;
+		overflow: auto;
+		overscroll-behavior: contain;
+		scrollbar-gutter: stable;
+		scrollbar-width: thin;
+		scrollbar-color: oklch(100% 0 0 / 0.25) transparent;
+		padding: 10px max(10px, env(safe-area-inset-right)) 14px max(10px, env(safe-area-inset-left));
+		touch-action: manipulation;
+		@media (height <= 480px) and (orientation: landscape) {
+			max-height: 28dvh;
+		}
+	}
+}
+
+/* ================================================================== overlays: reactions, deal, celebration */
+@layer overlays {
+	/* reaction picker (a native popover above the rack's smiley button) */
+	.rpick {
+		position-area: block-start span-inline-start;
+		position-try-fallbacks: flip-block, flip-inline; /* flips instead of being clipped on narrow phones */
+		inset: auto;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 4px;
+		width: 276px;
+		max-width: calc(100% - 20px);
+		margin-block: 8px;
+		padding: 6px;
+		border: 1px solid oklch(100% 0 0 / 0.18);
+		border-radius: 16px;
+		background: color-mix(in oklab, var(--felt-deep) 94%, black);
+		box-shadow: var(--elev-4);
+		color: #fff;
+		&:popover-open {
+			display: grid;
+		}
+		& button {
+			flex-direction: column;
+			gap: 2px;
+			padding: 8px 4px;
+			border: 0;
+			border-radius: 10px;
+			background: none;
+			& span {
+				font-size: 26px;
+				line-height: 1.1;
+			}
+			& small {
+				font-size: 0.75rem;
+				font-weight: 600;
+				opacity: 0.85;
+			}
+		}
+		@media (hover: hover) {
+			& button:hover:not(:disabled) {
+				background: oklch(100% 0 0 / 0.12);
+			}
+		}
+		/* phones: an emoji grid with the labels hidden, so it no longer covers the status line (a popover in the top
+		   layer, so the viewport is what it sizes against) */
+		@media (width <= 520px) {
+			width: min(300px, calc(100% - 20px));
+			grid-template-columns: repeat(5, 1fr);
+			& button small {
+				display: none;
+			}
+		}
+		@media (height <= 480px) and (orientation: landscape) {
+			width: min(430px, calc(100% - 20px));
+			grid-template-columns: repeat(5, 1fr);
+			& button small {
+				display: none;
+			}
+		}
+	}
+	/* a reaction bubble under the sender's seat */
+	.rbub {
+		position: fixed;
+		z-index: 35;
+		translate: -50% 0;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 3px 12px 3px 8px;
+		border-radius: 999px;
+		background: oklch(0% 0 0 / 0.78);
+		border: 1px solid oklch(100% 0 0 / 0.12);
+		box-shadow: var(--elev-2);
+		pointer-events: none;
+		animation: rbub-fade 2.6s ease-out both;
+		& .rx {
+			font-size: 26px;
+			line-height: 1;
+		}
+		& small {
+			color: #fff;
+			font: 700 13px var(--font);
+			white-space: nowrap;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			animation-name: rbub;
+			& .rx {
+				animation-duration: 0.9s;
+				animation-iteration-count: 2;
+				animation-timing-function: ease-in-out;
+			}
+			& .rx-clap {
+				animation-name: rx-clap;
+			}
+			& .rx-bounce {
+				animation-name: rx-bounce;
+			}
+			& .rx-zoom {
+				animation-name: rx-zoom;
+			}
+			& .rx-shake {
+				animation-name: rx-shake;
+			}
+			& .rx-sway {
+				animation-name: rx-sway;
+			}
+			& .rx-tilt {
+				animation-name: rx-tilt;
+			}
+			& .rx-flip {
+				animation-name: rx-flip;
+			}
+			& .rx-drop {
+				animation-name: rx-drop;
+			}
+			& .rx-rumble {
+				animation-name: rx-rumble;
+			}
+		}
+	}
+
+	/* dealer / draw animation: face-down tiles flying from the pool to a seat or the rack (dealAnimation.js) */
+	.fly-layer {
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		overflow: hidden;
+		pointer-events: none;
+	}
+	.fly-tile {
+		position: fixed;
+		width: 28px;
+		height: 38px;
+		border-radius: 5px;
+		border: 1px solid #b9a56a;
+		background:
+			repeating-linear-gradient(45deg, oklch(0% 0 0 / 0.07) 0 3px, transparent 3px 6px),
+			linear-gradient(#e8d9a3, #c9b475);
+		box-shadow: 0 2px 5px oklch(0% 0 0 / 0.35);
+		opacity: 0;
+		will-change: transform, opacity;
+	}
+
+	/* ---- attention rings: a transparent ::after carries the static ring; only its opacity is animated (compositor),
+	   instead of animating box-shadow on the element itself (repaints every frame) ---- */
+	.seat.act,
+	button.pulse {
+		position: relative;
+	}
+	.seat.act::after,
+	.tnum.mine::after,
+	button.pulse::after,
+	.tile.placed::before {
+		content: '';
+		position: absolute;
+		inset: -1px;
+		border-radius: inherit;
+		box-shadow: 0 0 0 var(--ring, 7px) var(--ring-color, color-mix(in srgb, var(--amber) 33%, transparent));
+		pointer-events: none;
+		opacity: 0;
+	}
+	.tnum.mine::after {
+		inset: 0;
+	}
+	.tile.placed::before {
+		--ring: 10px;
+		--ring-color: color-mix(in srgb, var(--sky) 40%, transparent);
+		inset: 0;
+	}
+	.seat.act {
+		--ring: 3px;
+		--ring-color: color-mix(in srgb, var(--amber) 20%, transparent);
+		--ring-dur: 2.4s;
+	}
+	button.draw.pulse {
+		--ring: 6px;
+		--ring-color: color-mix(in srgb, var(--sky) 67%, transparent);
+		--ring-dur: 0.9s;
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.seat.act::after,
+		.tnum.mine::after,
+		button.pulse::after {
+			animation: ring var(--ring-dur, 1s) ease-in-out infinite;
+		}
+		.tile.placed::before {
+			animation: placed-ring 2.4s ease-out both;
+		}
+	}
+
+	/* ---- round-winner celebration (Celebration.jsx): confetti + highlighted name just before the summary dialog ---- */
+	.celebrate {
+		position: fixed;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		max-width: none;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+		border: 0;
+		background: transparent;
+		color: #fff;
+		cursor: pointer; /* a tap anywhere skips to the summary */
+		&:popover-open {
+			display: grid;
+			place-items: center;
+		}
+	}
+	.confetti {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		pointer-events: none;
+	}
+	.cf {
+		position: absolute;
+		display: block;
+		border-radius: 1px;
+		will-change: transform;
+		&.r {
+			border-radius: 50%;
+		}
+	}
+	/* the card's border is a slowly turning amber sheen (a conic gradient on the border box) */
+	.cel-card {
+		position: relative;
+		display: grid;
+		justify-items: center;
+		gap: 6px;
+		max-width: min(92vw, 560px);
+		padding: 20px 28px;
+		border: 2px solid transparent;
+		border-radius: 24px;
+		background:
+			radial-gradient(circle at 50% 0%, color-mix(in oklab, var(--felt2) 80%, var(--felt-deep)), var(--felt-deep) 75%) padding-box,
+			conic-gradient(from var(--spin), var(--amber), #fff8 10%, var(--amber) 22%, var(--amber-edge) 60%, var(--amber)) border-box;
+		box-shadow:
+			var(--elev-4),
+			0 0 60px color-mix(in oklab, var(--amber) 25%, transparent);
+		text-align: center;
+		& small {
+			color: #ffffffd9;
+			font-size: 14px;
+			font-weight: 700;
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+		}
+		& span {
+			font-size: 16px;
+			font-weight: 600;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			animation:
+				celpop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both,
+				celout 0.25s ease-in 2.7s forwards,
+				sheen 3s linear infinite;
+		}
+	}
+	.cel-name {
+		max-width: 100%;
+		padding: 0.1em 0.5em;
+		border-radius: 14px;
+		background: var(--amber);
+		color: #1d1300; /* dark ink on amber: about 11:1 */
+		font: 800 clamp(28px, 8vw, 56px) / 1.15 var(--disp);
+		overflow-wrap: anywhere;
+	}
+	.cel-skip {
+		position: absolute;
+		inset-block-end: max(20px, env(safe-area-inset-bottom));
+		inset-inline: 0;
+		width: fit-content;
+		min-height: 44px; /* tap target */
+		margin-inline: auto;
+		padding-inline: 20px;
+		border: 1px solid #ffffff80;
+		border-radius: 12px;
+		background: #0000008c;
+		color: #fff;
+		font-size: 15px;
+		font-weight: 700;
+	}
+}
+
+/* ================================================================== dialogs: standings + round summary */
+@layer dialogs {
+	/* the ranking, in the round summary and the in-game Scores dialog */
+	.res {
+		container: res / inline-size;
+		display: grid;
+		gap: 6px;
+		width: 100%;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		font-variant-numeric: tabular-nums;
+		& li {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 8px 12px;
+			border-radius: 12px;
+			background: var(--card-row);
+			& b {
+				flex: 1;
+				min-width: 0;
+				overflow: hidden;
+				text-align: start;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				& svg {
+					margin-left: 6px;
+					vertical-align: -2px;
+					color: var(--amber-edge);
+				}
+			}
+			/* carries the winner highlight into the summary. An outline, not a tint: a tint replaces the row
+			   background and lowered the contrast of the green/red score below 4.5:1 on the dark card */
+			&.won {
+				outline: 2px solid light-dark(var(--amber-deep), var(--amber));
+				outline-offset: -2px;
+			}
+		}
+		/* rank: gold, silver and bronze medals for the podium */
+		& .rk {
+			display: grid;
+			flex: none;
+			place-items: center;
+			width: 24px;
+			height: 24px;
+			border-radius: 50%;
+			background: color-mix(in oklab, currentColor 12%, transparent);
+			font-size: 13px;
+			font-weight: 800;
+		}
+		& li[data-rank='1'] .rk {
+			background: linear-gradient(#ffe082, #ffb300);
+			color: #3b2a00;
+		}
+		& li[data-rank='2'] .rk {
+			background: linear-gradient(#eceff1, #b0bec5);
+			color: #263238;
+		}
+		& li[data-rank='3'] .rk {
+			background: linear-gradient(#f3c09a, #c98552);
+			color: #2b1608;
+		}
+		& small {
+			opacity: 0.85;
+		}
+		/* this round's points, as a chip */
+		& :is(.pos, .neg) {
+			padding: 1px 9px;
+			border-radius: 999px;
+			background: color-mix(in oklab, currentColor 14%, transparent);
+			font-weight: 800;
+		}
+		& .pos {
+			color: var(--card-pos);
+		}
+		& .neg {
+			color: var(--card-neg);
+		}
+		& .meta {
+			display: flex;
+			align-items: baseline;
+			gap: 10px;
+			font-size: 13px;
+			opacity: 0.85;
+			white-space: nowrap;
+			& svg {
+				vertical-align: -1px;
+			}
+		}
+		& .tot b {
+			flex: none;
+			font-size: 15px;
+		}
+		@container res (inline-size < 20rem) {
+			& li {
+				flex-wrap: wrap;
+				row-gap: 2px;
+				padding: 6px 10px;
+			}
+			& .meta {
+				flex-basis: 100%;
+				padding-inline-start: 34px;
+			}
+		}
+	}
+	.card.felt .res {
+		& li {
+			background: #00000040;
+		}
+		& .pos {
+			color: #9be7a0;
+		}
+		& .neg {
+			color: #ffb3ab;
+		}
+		& small {
+			opacity: 0.9;
+		}
+	}
+
+	/* ---- between-rounds summary (RoundSummary.jsx) ---- */
+	.summary {
+		--pad: 22px;
+		@media (width <= 520px) {
+			--pad: 14px; /* the card's own padding on phones (components.css) */
+		}
+	}
+	.sum-hero {
+		display: grid;
+		justify-items: center;
+		gap: 6px;
+		& .gold {
+			filter: drop-shadow(0 4px 14px color-mix(in oklab, var(--amber) 50%, transparent));
+		}
+		& h2 {
+			margin: 0;
+		}
+		& p {
+			margin: 0;
+		}
+		& .sum-delta {
+			padding: 2px 12px;
+			border-radius: 999px;
+			background: color-mix(in oklab, var(--amber) 22%, transparent);
+			border: 1px solid color-mix(in oklab, var(--amber) 55%, transparent);
+			font: 800 15px var(--disp);
+			font-variant-numeric: tabular-nums;
+		}
+	}
+	/* the room (invite + seats) folds away, so the standings and the next-game button fit on a phone */
+	.room {
+		width: 100%;
+		max-width: 440px;
+		border-radius: 14px;
+		background: #0000002e;
+		border: 1px solid #ffffff40;
+		text-align: start;
+		interpolate-size: allow-keywords; /* lets the disclosure animate to its natural height */
+		& > summary {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-height: var(--target);
+			padding: 8px 12px;
+			border-radius: inherit;
+			cursor: pointer;
+			font-weight: 700;
+			list-style: none;
+			&::-webkit-details-marker {
+				display: none;
+			}
+			& > svg {
+				margin-inline-start: auto;
+				transition: rotate var(--dur-2) var(--ease-out);
+			}
+		}
+		&[open] > summary > svg {
+			rotate: 180deg;
+		}
+		@media (hover: hover) {
+			& > summary:hover {
+				background: #ffffff14;
+			}
+		}
+		& .lseats {
+			grid-template-columns: minmax(0, 1fr); /* rows may shrink: long names ellipsize instead of overflowing */
+			margin: 0;
+			padding: 0 10px 10px;
+		}
+		& .lseat b {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		& .codechip,
+		& .row,
+		& > .sub {
+			margin: 0 10px 10px;
+		}
+		& > .sub {
+			text-align: center;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			&::details-content {
+				block-size: 0;
+				overflow: clip;
+				transition:
+					block-size var(--dur-3) var(--ease-out),
+					content-visibility var(--dur-3) allow-discrete;
+			}
+			&[open]::details-content {
+				block-size: auto;
+			}
+		}
+	}
+	.card:not(.felt) .room {
+		background: var(--card-row);
+		border-color: var(--card-rule);
+	}
+	/* a stack of the room's avatars in the summary line */
+	.room-stack {
+		display: inline-flex;
+		& .av {
+			width: 24px;
+			font-size: 12px;
+			box-shadow: 0 0 0 2px #1f5f24;
+			& + .av {
+				margin-inline-start: -6px;
+			}
+		}
+	}
+	/* actions stay in reach: a footer stuck to the bottom of the scrolling card */
+	.summary .endact {
+		position: sticky;
+		bottom: calc(-1 * var(--pad));
+		z-index: 1;
+		align-self: stretch; /* .center centres its items: the footer's backdrop must still span the card */
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: 8px 16px;
+		margin: 4px calc(-1 * var(--pad)) calc(-1 * var(--pad));
+		padding: 14px var(--pad) calc(var(--pad) - 2px);
+		background: linear-gradient(#1f5f2400, #1f5f24 30%);
+		& p {
+			margin: 0;
+		}
+		@media (width <= 520px) {
+			flex-direction: column;
+			gap: 6px;
+		}
+	}
+	.card:not(.felt) .summary .endact {
+		background: linear-gradient(var(--card-bg-clear), var(--card-bg) 30%);
+	}
+}
+
+/* ================================================================== keyframes */
+@keyframes drain {
+	to {
+		transform: scaleX(0);
+	}
+}
+@keyframes fade {
+	50% {
+		opacity: 0.55;
+	}
+}
+@keyframes board-shade {
+	to {
+		opacity: 1;
+	}
+}
+@keyframes fadeout {
+	0%,
+	70% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes seatbump {
+	40% {
+		transform: scale(1.08);
+	}
+}
+@keyframes ring {
+	50% {
+		opacity: 1;
+	}
+}
+@keyframes drawn-still {
+	100% {
+		outline-color: transparent;
+	}
+}
+@keyframes placed-still {
+	100% {
+		outline-color: transparent;
+	}
+}
+@keyframes drawn {
+	0% {
+		opacity: 0;
+		transform: translateY(-26px) scale(1.5);
+	}
+	22% {
+		opacity: 1;
+		transform: scale(1.12);
+	}
+	36%,
+	70% {
+		transform: scale(1);
+	}
+	53% {
+		transform: scale(1.1);
+	}
+	100% {
+		outline-color: transparent;
+	}
+}
+@keyframes placed {
+	0% {
+		transform: translateY(-18px) scale(1.3);
+	}
+	20% {
+		transform: scale(1.1);
+	}
+	40%,
+	100% {
+		transform: none;
+	}
+	100% {
+		outline-color: transparent;
+	}
+}
+@keyframes placed-ring {
+	0% {
+		opacity: 0.67;
+	}
+	20% {
+		opacity: 0.4;
+	}
+	60% {
+		opacity: 0.27;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes tile-in {
+	from {
+		opacity: 0;
+		scale: 0.6;
+	}
+}
+@keyframes tile-out {
+	to {
+		opacity: 0;
+		scale: 0.6;
+	}
+}
+@keyframes rbub {
+	0% {
+		opacity: 0;
+		transform: translateY(-6px) scale(0.85);
+	}
+	8% {
+		opacity: 1;
+		transform: none;
+	}
+	80% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes rbub-fade {
+	0% {
+		opacity: 0;
+	}
+	8%,
+	80% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes celpop {
+	from {
+		opacity: 0;
+		scale: 0.6;
+	}
+}
+@keyframes celout {
+	to {
+		opacity: 0;
+	}
+}
+@keyframes sheen {
+	to {
+		--spin: 360deg;
+	}
+}
+@keyframes rx-clap {
+	30% {
+		transform: scale(1.3) rotate(-12deg);
+	}
+	60% {
+		transform: scale(0.9) rotate(10deg);
+	}
+}
+@keyframes rx-bounce {
+	40% {
+		transform: translateY(-16px);
+	}
+	70% {
+		transform: translateY(2px);
+	}
+}
+@keyframes rx-zoom {
+	50% {
+		transform: scale(1.5);
+	}
+}
+@keyframes rx-shake {
+	20%,
+	60% {
+		transform: rotate(-14deg) translateY(-4px);
+	}
+	40%,
+	80% {
+		transform: rotate(14deg) translateY(-4px);
+	}
+}
+@keyframes rx-sway {
+	25% {
+		transform: translateX(-8px) rotate(-8deg);
+	}
+	75% {
+		transform: translateX(8px) rotate(8deg);
+	}
+}
+@keyframes rx-tilt {
+	50% {
+		transform: rotate(-20deg) scale(1.1);
+	}
+}
+@keyframes rx-flip {
+	50% {
+		transform: rotateY(180deg) scale(1.15);
+	}
+}
+@keyframes rx-drop {
+	40% {
+		transform: translateY(10px) scale(0.9);
+	}
+	70% {
+		transform: translateY(4px) scale(0.95);
+	}
+}
+@keyframes rx-rumble {
+	20% {
+		transform: translate(-4px, 2px) scale(1.1);
+	}
+	40% {
+		transform: translate(4px, -2px) scale(1.1);
+	}
+	60% {
+		transform: translate(-4px, -2px) scale(1.1);
+	}
+	80% {
+		transform: translate(4px, 2px) scale(1.1);
+	}
+}

@@ -1,3 +1,5 @@
+/* Shared motion: the home/lobby entrances, form feedback, and the top-layer surfaces every screen uses (menus, dialogs,
+   toasts). The game table's own motion (tiles, seats, timer, reactions, celebration) lives with its components in game.css. */
 @keyframes pop {
 	from {
 		opacity: 0;
@@ -16,11 +18,6 @@
 	to {
 		opacity: 1;
 		transform: none;
-	}
-}
-@keyframes drain {
-	to {
-		transform: scaleX(0);
 	}
 }
 @keyframes fadein {
@@ -44,154 +41,13 @@
 		transform: translateX(5px);
 	}
 }
-@keyframes fade {
-	50% {
-		opacity: 0.55;
-	}
-}
-@keyframes rx-clap {
-	30% {
-		transform: scale(1.3) rotate(-12deg);
-	}
-	60% {
-		transform: scale(0.9) rotate(10deg);
-	}
-}
-@keyframes rx-bounce {
-	40% {
-		transform: translateY(-16px);
-	}
-	70% {
-		transform: translateY(2px);
-	}
-}
-@keyframes rx-zoom {
-	50% {
-		transform: scale(1.5);
-	}
-}
-@keyframes rx-shake {
-	20%,
-	60% {
-		transform: rotate(-14deg) translateY(-4px);
-	}
-	40%,
-	80% {
-		transform: rotate(14deg) translateY(-4px);
-	}
-}
-@keyframes rx-sway {
-	25% {
-		transform: translateX(-8px) rotate(-8deg);
-	}
-	75% {
-		transform: translateX(8px) rotate(8deg);
-	}
-}
-@keyframes rx-tilt {
-	50% {
-		transform: rotate(-20deg) scale(1.1);
-	}
-}
-@keyframes rx-flip {
-	50% {
-		transform: rotateY(180deg) scale(1.15);
-	}
-}
-@keyframes rx-drop {
-	40% {
-		transform: translateY(10px) scale(0.9);
-	}
-	70% {
-		transform: translateY(4px) scale(0.95);
-	}
-}
-@keyframes rx-rumble {
-	20% {
-		transform: translate(-4px, 2px) scale(1.1);
-	}
-	40% {
-		transform: translate(4px, -2px) scale(1.1);
-	}
-	60% {
-		transform: translate(-4px, -2px) scale(1.1);
-	}
-	80% {
-		transform: translate(4px, 2px) scale(1.1);
-	}
-}
-@keyframes fadeout {
-	0%,
-	70% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-	}
-}
-@keyframes rbub {
-	0% {
-		opacity: 0;
-		transform: translateY(-6px) scale(0.85);
-	}
-	8% {
-		opacity: 1;
-		transform: none;
-	}
-	80% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-	}
-}
 @keyframes tutpulse {
 	50% {
 		outline-color: transparent;
 	}
 }
-@keyframes celpop {
-	from {
-		opacity: 0;
-		scale: 0.6;
-	}
-}
-@keyframes celout {
-	to {
-		opacity: 0;
-	}
-}
-@keyframes seatbump {
-	40% {
-		transform: scale(1.08);
-	}
-}
-@keyframes drawn-still {
-	100% {
-		outline-color: transparent;
-	}
-}
-@keyframes placed-still {
-	100% {
-		outline-color: transparent;
-	}
-}
-@keyframes rbub-fade {
-	0% {
-		opacity: 0;
-	}
-	8%,
-	80% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-	}
-}
 
-/* Decorative motion is opt-in: users who ask for reduced motion get the static end state.
-   Opacity/outline-only effects (modal fade-in, the "+" badge, drawn/placed outline fade, reaction fade-out)
-   stay in components.css because they are not spatial. */
+/* Decorative motion is opt-in: users who ask for reduced motion get the static end state. */
 @media (prefers-reduced-motion: no-preference) {
 	.spin {
 		animation: spin 1s linear infinite;
@@ -203,142 +59,82 @@
 	.field-box:has(> input[aria-invalid='true']) {
 		animation: shake 0.3s;
 	}
-	.seat.bump {
-		animation: seatbump 0.4s ease-out;
-	}
-	.seat.win {
-		animation: seatbump 0.5s ease-out 3;
-	}
-	.cel-card {
-		animation:
-			celpop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both,
-			celout 0.25s ease-in 2.7s forwards;
-	}
-	.menu {
-		animation: slide 0.15s both;
-	}
-	.card {
-		animation: slide 0.2s both;
-	}
 	.toast {
 		animation: slide 0.25s both;
 	}
-	.rpick {
-		animation: pop 0.15s both;
+}
+
+/* ---- menus and pickers (native popovers): fade + slide in and out of the top layer ----
+   `display` and `overlay` transition discretely so the closing popover stays in the top layer while it fades. Browsers that
+   cannot transition them (Firefox, Safari: no `overlay`) still get the entrance; the exit is instant there. */
+.menu,
+.rpick {
+	opacity: 0;
+	transition-property: opacity, translate, scale, display, overlay;
+	transition-duration: var(--dur-2);
+	transition-timing-function: var(--ease-out);
+	transition-behavior: allow-discrete; /* separate from the shorthand: older engines drop a whole shorthand they cannot parse */
+	@media (prefers-reduced-motion: no-preference) {
+		translate: 0 -6px;
 	}
-	.tbar.hot i {
-		animation:
-			drain var(--dur, 1s) linear forwards,
-			fade 1s ease-in-out infinite;
+	@media (prefers-reduced-motion: reduce) {
+		transition-duration: var(--dur-1);
 	}
-	.tile.enter {
-		animation: pop 0.22s backwards; /* only on a deal / new round; remounts (new set, draw) must not replay it */
+}
+.rpick {
+	transform-origin: bottom right;
+	@media (prefers-reduced-motion: no-preference) {
+		translate: 0 6px;
+		scale: 0.96;
 	}
-	.tile.fresh {
-		animation-name: drawn;
+}
+.menu:popover-open,
+.rpick:popover-open {
+	opacity: 1;
+	translate: 0;
+	scale: 1;
+	@starting-style {
+		opacity: 0;
 	}
-	.tile.placed {
-		animation-name: placed;
+	@media (prefers-reduced-motion: no-preference) {
+		@starting-style {
+			translate: 0 -6px;
+		}
 	}
-	.seat.act::after,
-	.tnum.mine::after,
-	button.pulse::after,
-	.tile.placed::before {
-		animation: ring var(--ring-dur, 1s) ease-in-out infinite;
-	}
-	.tile.placed::before {
-		animation: placed-ring 2.4s ease-out both;
-	}
-	.rbub {
-		animation-name: rbub;
-	}
-	.rbub .rx {
-		animation-duration: 0.9s;
-		animation-iteration-count: 2;
-		animation-timing-function: ease-in-out;
-	}
-	.rx-clap {
-		animation-name: rx-clap;
-	}
-	.rx-bounce {
-		animation-name: rx-bounce;
-	}
-	.rx-zoom {
-		animation-name: rx-zoom;
-	}
-	.rx-shake {
-		animation-name: rx-shake;
-	}
-	.rx-sway {
-		animation-name: rx-sway;
-	}
-	.rx-tilt {
-		animation-name: rx-tilt;
-	}
-	.rx-flip {
-		animation-name: rx-flip;
-	}
-	.rx-drop {
-		animation-name: rx-drop;
-	}
-	.rx-rumble {
-		animation-name: rx-rumble;
+}
+.rpick:popover-open {
+	@media (prefers-reduced-motion: no-preference) {
+		@starting-style {
+			translate: 0 6px;
+			scale: 0.96;
+		}
 	}
 }
 
-/* Pulsing attention rings. A transparent ::after carries the static ring; only its opacity is animated
-   (compositor), instead of animating box-shadow/filter on the element itself (repaints every frame). */
-@keyframes ring {
-	50% {
-		opacity: 1;
-	}
+/* ---- dialogs: rise in over a fading, lightly blurred backdrop ----
+   Modal.jsx unmounts a dialog as it closes, so only the entrance is animated (the exit would need a delayed unmount). */
+dialog.card {
+	transition-property: opacity, translate, scale;
+	transition-duration: var(--dur-3);
+	transition-timing-function: var(--ease-out);
 }
-@keyframes drawn {
-	0% {
+dialog.card[open] {
+	opacity: 1;
+	@starting-style {
 		opacity: 0;
-		transform: translateY(-26px) scale(1.5);
 	}
-	22% {
-		opacity: 1;
-		transform: scale(1.12);
-	}
-	36%,
-	70% {
-		transform: scale(1);
-	}
-	53% {
-		transform: scale(1.1);
-	}
-	100% {
-		outline-color: transparent;
+	@media (prefers-reduced-motion: no-preference) {
+		@starting-style {
+			translate: 0 14px;
+			scale: 0.97;
+		}
 	}
 }
-@keyframes placed {
-	0% {
-		transform: translateY(-18px) scale(1.3);
-	}
-	20% {
-		transform: scale(1.1);
-	}
-	40%,
-	100% {
-		transform: none;
-	}
-	100% {
-		outline-color: transparent;
-	}
-}
-@keyframes placed-ring {
-	0% {
-		opacity: 0.67;
-	}
-	20% {
-		opacity: 0.4;
-	}
-	60% {
-		opacity: 0.27;
-	}
-	100% {
-		opacity: 0;
+dialog.card::backdrop {
+	background-color: oklch(0% 0 0 / 0.62);
+	backdrop-filter: blur(3px);
+	transition: background-color var(--dur-3) var(--ease-out);
+	@starting-style {
+		background-color: oklch(0% 0 0 / 0);
 	}
 }

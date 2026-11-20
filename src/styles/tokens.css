@@ -1,4 +1,4 @@
-/* Design tokens. The --tw (tile width) ladder keeps the original cascade order: later rules win. */
+/* Design tokens. The tile width (--tw) is set by the game table itself: src/styles/game.css. */
 :root {
 	--felt: #1b5e20;
 	--felt2: #2e7d32;
@@ -15,7 +15,7 @@
 	--paper-2: #f1e7c4;
 	--paper-edge: #d6c690;
 	--tile-edge: #b9a77a;
-	--tw: 40px;
+	--tw: 40px; /* fallback only: the board and rack size their tiles from the table's width (game.css) */
 	/* ---- layout scales + felt surfaces (used by the lobby; the table itself stays on the palette above) ---- */
 	--space-1: 0.25rem;
 	--space-2: 0.5rem;
@@ -87,6 +87,34 @@
 	--coach-ink: light-dark(#222, #f1f5ef);
 	--xbtn-bg: light-dark(#0000000f, #00000059);
 	--xbtn-ink: light-dark(#333, #fff);
+	/* ---- game table (src/styles/game.css). Game objects: identical in both colour schemes ---- */
+	--tile-ink-0: #1b1b1b; /* same four inks as COLORS in src/engine/game.js (the home logo still reads them from there) */
+	--tile-ink-1: #d32f2f;
+	--tile-ink-2: #1565c0;
+	--tile-ink-3: #d97800;
+	--tile-joker: #7b1fa2;
+	--felt-hud: var(--felt-edge); /* opaque: iOS samples the header for the status-bar tint */
+	--felt-ink: oklch(100% 0 0 / 0.08); /* pattern strokes and hairlines on the felt */
+	--felt-tray: oklch(18% 0.04 150 / 0.34); /* the recessed trays that hold sets */
+	--walnut-hi: oklch(56% 0.07 58);
+	--walnut: oklch(45% 0.062 52);
+	--walnut-lo: oklch(34% 0.055 48);
+	--ring-ok: #66bb6a;
+	--ring-amber: var(--amber);
+	--ring-red: #ef5350;
+	/* elevation: ambient + key shadow, lighter steps for small objects */
+	--elev-1: 0 1px 2px oklch(0% 0 0 / 0.25);
+	--elev-2: 0 2px 4px oklch(0% 0 0 / 0.2), 0 6px 14px oklch(0% 0 0 / 0.22);
+	--elev-3: 0 4px 10px oklch(0% 0 0 / 0.24), 0 14px 32px oklch(0% 0 0 / 0.32);
+	--elev-4: 0 10px 24px oklch(0% 0 0 / 0.3), 0 28px 64px oklch(0% 0 0 / 0.42);
+	/* motion */
+	--dur-1: 120ms;
+	--dur-2: 200ms;
+	--dur-3: 320ms;
+	--ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+	/* a gentle spring (about 4% overshoot) */
+	--ease-spring: linear(0, 0.0157, 0.0625 4.8%, 0.25 10.9%, 0.5625 17.1%, 0.8789 23%, 0.9531 26.3%, 1.0039 30%, 1.0352 33.9%, 1.0469 38.1%, 1.0381 42.6%, 1.0127 51.4%, 0.998 59.5%, 0.9944 66.2%, 1.0002 82.4%, 1);
 	--font: 'Inter Variable', system-ui, -apple-system, sans-serif;
 	--disp: 'Outfit Variable', 'Inter Variable', system-ui, sans-serif;
 	color-scheme: light dark; /* the page supports both; the <meta name="color-scheme"> below can pin one (src/utils/theme.js) */
@@ -98,6 +126,26 @@
 		color-scheme: light;
 	}
 }
+/* Typed custom properties, so they interpolate in transitions and keyframes (unregistered ones jump). */
+@property --sweep {
+	/* the active seat's turn ring: how much of the turn is left */
+	syntax: '<angle>';
+	inherits: true;
+	initial-value: 360deg;
+}
+@property --spin {
+	/* rotating sheen on the winner card */
+	syntax: '<angle>';
+	inherits: false;
+	initial-value: 0deg;
+}
+@property --fill {
+	/* first-meld progress, 0..1 */
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 0;
+}
+
 /* Height of the solid strip that keeps iOS 26's top-edge blur off Home and Lobby in the installed app (see EdgeCap.jsx).
    WebKit only honours a fixed edge bar taller than 10px. Zero in a browser tab, where there is no such blur. */
 :root {
@@ -111,30 +159,5 @@
 @media (pointer: coarse) {
 	:root {
 		--target: 2.75rem;
-	}
-}
-@media (width <= 520px) {
-	:root {
-		--tw: 31px;
-	}
-}
-@media (height <= 480px) and (orientation: landscape) {
-	:root {
-		--tw: 28px;
-	}
-}
-@media (width >= 1200px) {
-	:root {
-		--tw: 48px;
-	}
-}
-@media (width >= 1800px) {
-	:root {
-		--tw: 58px;
-	}
-}
-@media (width <= 380px) {
-	:root {
-		--tw: 29px;
 	}
 }
