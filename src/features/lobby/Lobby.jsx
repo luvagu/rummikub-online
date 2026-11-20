@@ -5,14 +5,14 @@ import { Invite } from '../../components/Invite.jsx'
 import { Seats } from '../../components/Seats.jsx'
 import { TimerPick } from '../../components/TimerPick.jsx'
 
-export function Lobby({ s, net, copy, share, leave, openRules }) {
+export function Lobby({ s, net, copy, share, whatsappUrl, leave, openRules }) {
 	const t = useT(),
 		host = s.me === 0
 	return (
 		<main className='home lobby'>
 			<LangButton />
 			<p className='sub'>{t('room')}</p>
-			<Invite net={net} copy={copy} share={share} />
+			<Invite net={net} copy={copy} share={share} whatsappUrl={whatsappUrl} />
 			<Seats s={s} net={net} host={host} />
 			{host ? (
 				<>

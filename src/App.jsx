@@ -312,6 +312,10 @@ export default function App() {
 				url: link(),
 			})
 			.catch(() => {})
+	const whatsappUrl =
+		net &&
+		'https://wa.me/?text=' +
+			encodeURIComponent(t('shareText', { code: net.code }) + ' ' + link())
 	const openRules = () => setRules(true),
 		inRoom = !!(s && net)
 	const backFromInvite = () => {
@@ -363,6 +367,7 @@ export default function App() {
 					net={net}
 					copy={copy}
 					share={share}
+					whatsappUrl={whatsappUrl}
 					leave={() => setLeaving(true)}
 					openRules={openRules}
 				/>
@@ -376,6 +381,7 @@ export default function App() {
 					offline={!conn && sess.current?.mode === 'join'}
 					copy={copy}
 					share={share}
+					whatsappUrl={whatsappUrl}
 					tut={
 						sess.current && sess.current.mode === 'tutorial'
 							? tutReport

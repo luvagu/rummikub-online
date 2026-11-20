@@ -132,6 +132,7 @@ export default function Game({
   reacts,
   copy,
   share,
+  whatsappUrl,
   tut,
   openRules,
   onLeave,
@@ -1273,7 +1274,7 @@ export default function Game({
         <ScoresDialog s={s} onClose={() => setScoresOpen(false)} />
       )}
       {s.phase === "over" && !celebrate && (
-        <RoundSummary s={s} net={net} copy={copy} share={share} inRoom={inRoom} hostRoom={hostRoom} onLeave={onLeave} />
+        <RoundSummary s={s} net={net} copy={copy} share={share} whatsappUrl={whatsappUrl} inRoom={inRoom} hostRoom={hostRoom} onLeave={onLeave} />
       )}
     </div>
   );
