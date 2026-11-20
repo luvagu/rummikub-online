@@ -177,7 +177,10 @@ export function Home({
 		<header className='hm-bar'>
 			<button className='hm-ghost hm-rules' onClick={openRules} aria-label={t('readRules')} title={t('readRules')}>
 				<BookOpen size={16} aria-hidden='true' />
-				<span>{t('readRules')}</span>
+				<span className='rules-long'>{t('readRules')}</span>
+				<span className='rules-short' aria-hidden='true'>
+					{t('readRulesShort')}
+				</span>
 			</button>
 			<LangButton />
 		</header>

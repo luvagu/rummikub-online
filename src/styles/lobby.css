@@ -60,9 +60,16 @@ html:has(.lobby) {
 		background: var(--surface-hover);
 	}
 }
-@container lobby (inline-size < 26rem) {
-	.lb-rules span {
+/* the label has a long and a short form: the short one on narrow (phone) widths */
+.lb-rules .rules-short {
+	display: none;
+}
+@container lobby (inline-size < 32rem) {
+	.lb-rules .rules-long {
 		display: none;
+	}
+	.lb-rules .rules-short {
+		display: inline;
 	}
 }
 

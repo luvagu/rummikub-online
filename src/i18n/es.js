@@ -12,6 +12,7 @@ export const es = {
 	rules: 'Reglas',
 	rotate: 'Gira tu dispositivo en vertical para jugar',
 	readRules: 'Leer las reglas',
+	readRulesShort: 'Ver reglas',
 	needName: 'Primero escribe tu nombre',
 	soloD: 'Practica al instante, sin conexión',
 	createD: 'Obtén un código de sala para compartir con amigos',

@@ -50,9 +50,16 @@
 		color: #fff;
 	}
 }
-@container home (inline-size < 22rem) {
-	.hm-rules span {
-		display: none; /* the button keeps its aria-label */
+/* the label has a long and a short form: the short one on narrow (phone) widths */
+.hm-rules .rules-short {
+	display: none;
+}
+@container home (inline-size < 28rem) {
+	.hm-rules .rules-long {
+		display: none;
+	}
+	.hm-rules .rules-short {
+		display: inline;
 	}
 }
 

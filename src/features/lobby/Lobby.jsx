@@ -25,7 +25,10 @@ export function Lobby({ s, net, copy, share, whatsappUrl, leave, openRules }) {
 					<div className='lb-bar-end'>
 						<button className='lb-ghost lb-rules' onClick={openRules} aria-label={t('readRules')} title={t('readRules')}>
 							<BookOpen size={16} aria-hidden='true' />
-							<span>{t('readRules')}</span>
+							<span className='rules-long'>{t('readRules')}</span>
+							<span className='rules-short' aria-hidden='true'>
+								{t('readRulesShort')}
+							</span>
 						</button>
 						<LangButton />
 					</div>
