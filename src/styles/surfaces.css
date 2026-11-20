@@ -464,8 +464,238 @@
 	}
 }
 
-/* ================================================================== banner: the rotate notice */
+/* ================================================================== toast: bottom stack, dismissible, pausable */
+@layer toast {
+	/* the always-mounted region (Toasts.jsx). Bottom of the screen; in a game, just above the action dock. */
+	.toaster {
+		position: fixed;
+		inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 16px);
+		width: min(calc(100% - 24px), 420px);
+		margin: 0 auto;
+		padding: 0;
+		overflow: visible;
+		border: 0;
+		background: none;
+		color: #fff;
+		&:popover-open {
+			display: block;
+		}
+		& ol {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			margin: 0;
+			padding: 0;
+			list-style: none;
+		}
+	}
+	@supports (bottom: anchor(top)) {
+		.game .bar {
+			anchor-name: --dock;
+		}
+		:root:has(.game .bar) .toaster {
+			position-anchor: --dock;
+			bottom: calc(anchor(top) + 10px);
+		}
+	}
+	.toast {
+		--tone: var(--tone-info);
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		overflow: hidden;
+		padding: 8px 6px 8px 10px;
+		border: 1px solid oklch(100% 0 0 / 0.14);
+		border-radius: 14px;
+		background: var(--toast-bg);
+		box-shadow: var(--elev-3);
+		interpolate-size: allow-keywords; /* collapses smoothly when it leaves */
+		transition:
+			opacity var(--dur-2) var(--ease-out),
+			translate var(--dur-2) var(--ease-out),
+			block-size var(--dur-2) var(--ease-out),
+			padding var(--dur-2) var(--ease-out);
+		@starting-style {
+			opacity: 0;
+		}
+		@media (prefers-reduced-motion: no-preference) {
+			@starting-style {
+				translate: 0 12px;
+			}
+		}
+		&.ok {
+			--tone: var(--tone-ok);
+		}
+		&.warn {
+			--tone: var(--tone-warn);
+		}
+		&.err {
+			--tone: var(--tone-danger);
+		}
+		&[data-leaving] {
+			block-size: 0;
+			padding-block: 0;
+			border-width: 0;
+			opacity: 0;
+			@media (prefers-reduced-motion: no-preference) {
+				translate: 0 8px;
+			}
+		}
+	}
+	.tchip {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		background: color-mix(in oklab, var(--tone) 20%, transparent);
+		color: var(--tone);
+	}
+	.tmsg {
+		flex: 1;
+		min-width: 0;
+		font-size: 14px;
+		font-weight: 600;
+		line-height: 1.35;
+		& .tn {
+			margin-inline-start: 6px;
+			padding: 0 6px;
+			border-radius: 999px;
+			background: oklch(100% 0 0 / 0.14);
+			font-size: 12px;
+			font-variant-numeric: tabular-nums;
+		}
+	}
+	.toast .tclose {
+		flex: none;
+		padding: 6px;
+		border-color: transparent;
+		background: transparent;
+		color: #fff;
+		opacity: 0.8;
+		@media (hover: hover) {
+			&:hover:not(:disabled) {
+				background: oklch(100% 0 0 / 0.12);
+				opacity: 1;
+			}
+		}
+	}
+	/* the time left, as a draining line. Its animationend removes the toast, so pausing it (hover, keyboard focus)
+	   pauses the dismissal too. A countdown, not decoration: it runs with reduced motion as well. */
+	.tbar {
+		position: absolute;
+		inset: auto 0 0;
+		height: 3px;
+		background: var(--tone);
+		opacity: 0.85;
+		transform-origin: left;
+		animation: tlife var(--life, 3s) linear forwards;
+	}
+	.toaster:is(:hover, :focus-within) .tbar {
+		animation-play-state: paused;
+	}
+}
+
+/* ================================================================== banner: connection pill, update card */
 @layer banner {
+	/* "Reconnecting…": a pill under the game header (anchored to it where supported), at the bottom elsewhere. */
+	.banner {
+		position: fixed;
+		inset: auto;
+		top: calc(env(safe-area-inset-top, 0px) + 12px);
+		left: 50%;
+		width: max-content;
+		max-width: calc(100% - 24px);
+		margin: 0;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 7px 14px 7px 10px;
+		border: 1px solid color-mix(in oklab, var(--amber) 60%, transparent);
+		border-radius: 999px;
+		background: color-mix(in oklab, var(--amber) 22%, var(--felt-deep));
+		box-shadow: var(--elev-3);
+		color: #fff;
+		font: 700 13px var(--font);
+		translate: -50% 0;
+		opacity: 0;
+		transition-property: opacity, translate, display, overlay;
+		transition-duration: var(--dur-2);
+		transition-timing-function: var(--ease-out);
+		transition-behavior: allow-discrete;
+		&:popover-open {
+			display: flex;
+			opacity: 1;
+			@starting-style {
+				opacity: 0;
+			}
+			@media (prefers-reduced-motion: no-preference) {
+				@starting-style {
+					translate: -50% -6px;
+				}
+			}
+		}
+		& svg {
+			flex: none;
+			color: var(--amber);
+		}
+	}
+	/* in a game: below the header (never over it, never over the turn timer) */
+	:root:has(.game .top) .banner:not(.update) {
+		top: calc(env(safe-area-inset-top, 0px) + 80px);
+	}
+	@supports (top: anchor(bottom)) {
+		.game .top {
+			anchor-name: --hud;
+		}
+		:root:has(.game .top) .banner:not(.update) {
+			position-anchor: --hud;
+			top: calc(anchor(bottom) + 10px);
+		}
+	}
+	/* home and lobby: their top bars hold buttons, so the pill sits at the bottom instead */
+	:root:not(:has(.game)) .banner:not(.update) {
+		top: auto;
+		bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+	}
+
+	/* "A new version is ready": a persistent card at the bottom, styled like a toast */
+	.banner.update {
+		top: auto;
+		bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+		flex-wrap: wrap;
+		gap: 10px;
+		width: min(calc(100% - 24px), 420px);
+		padding: 10px 10px 10px 16px;
+		border-radius: 16px;
+		background: var(--toast-bg);
+		font: 600 14px var(--font);
+		& button {
+			min-height: 44px; /* tap target */
+			padding-inline: 16px;
+			font-size: 14px;
+			font-weight: 700;
+			color: #fff;
+			background: #ffffff1f;
+			border: 1px solid #ffffff80;
+			border-radius: 10px;
+		}
+		& button.primary {
+			margin-inline-start: auto;
+			color: #1d1300;
+			background: var(--amber);
+			border-color: var(--amber-edge);
+		}
+	}
+	@supports (bottom: anchor(top)) {
+		:root:has(.game .bar) .banner.update {
+			position-anchor: --dock;
+			bottom: calc(anchor(top) + 10px);
+		}
+	}
+
 	/* Portrait only: shown by RotateHint.jsx while an installed app on a touch device is sideways (iOS ignores the manifest lock) */
 	.rotate-hint {
 		position: fixed;
@@ -678,6 +908,45 @@
 					translate: 0 100%;
 				}
 			}
+		}
+	}
+
+	/* ---- "Copied" / "Couldn't copy": a bubble on the copy button (CopyBubble.jsx) ---- */
+	.cbubble {
+		position: fixed;
+		width: max-content;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 12px 6px 9px;
+		border: 1px solid oklch(100% 0 0 / 0.16);
+		border-radius: 999px;
+		background: var(--toast-bg);
+		box-shadow: var(--elev-3);
+		color: #fff;
+		font: 700 13px var(--font);
+		pointer-events: none;
+		&:popover-open {
+			display: inline-flex;
+		}
+		& svg {
+			color: var(--tone-ok);
+		}
+		&[data-tone='err'] svg {
+			color: var(--tone-danger);
+		}
+	}
+	@supports (position-area: block-start) {
+		.cbubble {
+			inset: auto;
+			margin: 0 0 8px;
+			position-area: block-start;
+			position-try-fallbacks: flip-block;
+		}
+	}
+	@supports not (position-area: block-start) {
+		.cbubble {
+			inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 24px);
+			margin: 0 auto;
 		}
 	}
 }

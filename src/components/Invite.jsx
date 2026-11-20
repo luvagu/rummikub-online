@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Copy, Check, Link2, Share2 } from 'lucide-react'
 import { useT } from '../i18n/index.js'
+import { CopyBubble, useAnchorName } from './CopyBubble.jsx'
 
 // Room code + copy / share buttons. Used in the lobby and in the round-over dialog (inviting someone between rounds).
 // lucide-react ships no brand icons, so the WhatsApp glyph is inline.
@@ -12,12 +13,13 @@ export const WhatsApp = ({ size = 18 }) => (
 
 export function Invite({ net, copy, share, whatsappUrl }) {
 	const t = useT(),
-		[done, setDone] = useState('')
+		aCode = useAnchorName(),
+		aLink = useAnchorName(),
+		[done, setDone] = useState(''), // 'code' | 'link' (copied), 'code!' | 'link!' (failed)
+		bubble = w => (done === w ? 'ok' : done === w + '!' ? 'err' : '')
 	const doCopy = async w => {
-		if (await copy(w)) {
-			setDone(w)
-			setTimeout(() => setDone(''), 1800)
-		}
+		setDone((await copy(w)) ? w : w + '!')
+		setTimeout(() => setDone(''), 1800)
 	}
 	return (
 		<>
@@ -29,13 +31,14 @@ export function Invite({ net, copy, share, whatsappUrl }) {
 					className='icon'
 					aria-label={t('copyCode')}
 					title={t('copyCode')}
+					style={{ anchorName: aCode }}
 					onClick={() => doCopy('code')}
 				>
 					{done === 'code' ? <Check size={20} /> : <Copy size={20} />}
 				</button>
 			</div>
 			<div className='row'>
-				<button className='primary' onClick={() => doCopy('link')}>
+				<button className='primary' style={{ anchorName: aLink }} onClick={() => doCopy('link')}>
 					{done === 'link' ? <Check size={18} /> : <Link2 size={18} />}
 					{done === 'link' ? t('copied') : t('copy')}
 				</button>
@@ -58,6 +61,9 @@ export function Invite({ net, copy, share, whatsappUrl }) {
 				)}
 			</div>
 			<p className='sub'>{t('inviteHint')}</p>
+			<CopyBubble anchor={aCode} state={bubble('code')} t={t} />
+			{/* the link button already says "Copied"; its bubble only reports a failure */}
+			<CopyBubble anchor={aLink} state={done === 'link!' ? 'err' : ''} t={t} />
 		</>
 	)
 }

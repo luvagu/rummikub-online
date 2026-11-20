@@ -49,6 +49,7 @@ export const es = {
 	copy: 'Copiar enlace',
 	copyCode: 'Copiar código',
 	copied: 'Copiado',
+	copyFailS: 'No se pudo copiar',
 	share: 'Compartir',
 	whatsapp: 'WhatsApp',
 	inviteHint:
@@ -106,6 +107,8 @@ export const es = {
 	waitNext: 'Esperando a que el anfitrión empiece la siguiente partida…',
 	total: 'total',
 	close: 'Cerrar',
+	dismiss: 'Descartar',
+	notifs: 'Notificaciones',
 	secsLeft: p => `${p.n} segundos restantes`,
 	'sw.on': 'SÍ',
 	'sw.off': 'NO',

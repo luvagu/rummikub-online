@@ -59,7 +59,4 @@
 	.field-box:has(> input[aria-invalid='true']) {
 		animation: shake 0.3s;
 	}
-	.toast {
-		animation: slide 0.25s both;
-	}
 }
