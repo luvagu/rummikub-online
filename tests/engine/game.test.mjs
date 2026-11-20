@@ -207,3 +207,44 @@ test('a player who leaves mid-game keeps their name while a bot plays the seat',
 	assert.equal(p.bot, true)
 	assert.equal(p.name, 'Guest')
 })
+
+test('a timeout message is only honoured once the turn clock has really run out, and only for that turn', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.act('h', { t: 'bot' })
+	g.s.opts.timer = 15
+	g.act('h', { t: 'start' })
+	const s = g.s
+	s.holdUntil = Date.now() - 1
+	s.t0 = Date.now() // a fresh turn: 15s on the clock
+	const cur = s.players[s.turn]
+	const turn = s.turn,
+		seq = s.seq
+	// a stale client (its countdown still read 0 from the previous turn) must not burn this turn
+	g.act(cur.id, { t: 'timeout', q: seq })
+	assert.equal(s.turn, turn, 'an early timeout is ignored')
+	assert.equal(s.seq, seq)
+	// a timeout aimed at an earlier turn is ignored even if the clock has run out
+	s.t0 = Date.now() - 16000
+	g.act(cur.id, { t: 'timeout', q: seq - 1 })
+	assert.equal(s.seq, seq, 'a timeout for another turn is ignored')
+	// the real thing still ends the turn, with or without the turn id (older clients send none)
+	g.act(cur.id, { t: 'timeout', q: seq })
+	assert.notEqual(s.seq, seq, 'an expired turn is drawn for')
+	const seq2 = s.seq
+	s.t0 = Date.now() - 16000
+	g.act(s.players[s.turn].id, { t: 'timeout' })
+	assert.notEqual(s.seq, seq2)
+})
+
+test('a timeout message is refused when the game has no turn timer', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.act('h', { t: 'bot' })
+	g.s.opts.timer = 0
+	g.act('h', { t: 'start' })
+	g.s.holdUntil = Date.now() - 1
+	const seq = g.s.seq
+	g.act(g.s.players[g.s.turn].id, { t: 'timeout' })
+	assert.equal(g.s.seq, seq)
+})
