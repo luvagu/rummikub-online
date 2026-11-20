@@ -127,14 +127,78 @@ html:has(.lobby) {
 	font-size: 0.875rem;
 	color: var(--text-muted);
 }
-/* inside a dialog (round summary, solo setup): the same component without the panel's own chrome */
+/* ---- inside a dialog (round summary, solo setup): the same components, without the panel chrome ----
+   A lighter, denser list that sets its own sizes: the lobby page's --gap / --row / --pad (on .lb-shell) do not exist
+   inside a dialog, and without them the phone rules above left the rows unspaced. */
 .lb-panel.bare {
+	--gap: 0.625rem;
+	--row: 2.75rem;
+	gap: var(--gap);
 	padding: 0;
 	background: none;
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
 	backdrop-filter: none;
+	/* the code and its copy button as one framed chip */
+	& .lb-code {
+		gap: var(--space-2);
+		padding: 0.375rem 0.375rem 0.375rem 0.75rem;
+		background: var(--surface-2);
+		border: 1px solid var(--stroke);
+		border-radius: var(--radius-md);
+	}
+	& .lb-tile {
+		max-inline-size: 2.25rem;
+		font-size: clamp(1.1rem, 6cqi, 1.5rem);
+		box-shadow: 0 2px 0 var(--tile-edge);
+	}
+	& .lb-codeicon {
+		inline-size: 2.25rem;
+	}
+	/* copy link across the top, the share actions splitting the row below (no empty third column) */
+	& .lb-actions {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	/* seats: a flat list with dividers, not boxes inside the dialog's box */
+	& .lb-seats {
+		gap: 0;
+	}
+	& .lb-seat {
+		min-block-size: var(--row);
+		padding: 0.375rem 0.25rem;
+		gap: var(--space-2);
+		background: none;
+		border: 0;
+		border-bottom: 1px solid var(--stroke);
+		border-radius: 0;
+		&:last-child {
+			border-bottom: 0;
+		}
+		& .av {
+			inline-size: 28px;
+			font-size: 13px;
+		}
+	}
+	& .lb-seat.empty:not([data-add]) {
+		min-block-size: 2.25rem;
+	}
+	& .lb-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+/* the players follow the invite: a divider between the two */
+.lb-panel.bare.lb-invite + .lb-panel.bare.lb-players {
+	padding-top: var(--gap);
+	border-top: 1px solid var(--stroke);
+}
+/* a bot's level pill repeats its generated name ("Expert Bot"): dropped where the row is tight */
+@container lbpanel (inline-size < 26rem) {
+	.lb-panel.bare .lb-pill:not(.host, .off) {
+		display: none;
+	}
 }
 /* the solo setup: the timer is set apart from the level list that follows it */
 .card .lb-timer.bare {

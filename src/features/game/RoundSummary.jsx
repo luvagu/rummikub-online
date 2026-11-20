@@ -55,7 +55,8 @@ export function RoundSummary({ s, net, copy, share, whatsappUrl, inRoom, hostRoo
           <h2>{title}</h2>
           {gain > 0 && <span className="sum-delta">{SIGNED.format(gain)}</span>}
           {cx && <p>{t("roundEndedD")}</p>}
-          <p className="sf-sub">{t("roundN", { n: s.games })}</p>
+          {/* a finished round has been counted already; one the host ended early has not */}
+          <p className="sf-sub">{t("roundN", { n: cx ? s.games + 1 : s.games })}</p>
         </header>
         <Standings s={s} result={s.result} />
         {inRoom && (

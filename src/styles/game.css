@@ -1609,20 +1609,7 @@
 			}
 		}
 	}
-	.card.felt .res {
-		& li {
-			background: #00000040;
-		}
-		& .pos {
-			color: #9be7a0;
-		}
-		& .neg {
-			color: #ffb3ab;
-		}
-		& small {
-			opacity: 0.9;
-		}
-	}
+
 
 	/* ---- between-rounds summary (RoundSummary.jsx) ---- */
 	.sum-hero {
@@ -1650,11 +1637,10 @@
 	}
 	/* the room (invite + seats) folds away, so the standings and the next-game button fit on a phone */
 	.room {
-		width: 100%;
-		max-width: 440px;
+		width: 100%; /* lines up with the standings above it */
 		border-radius: 14px;
-		background: #0000002e;
-		border: 1px solid #ffffff40;
+		background: var(--card-row);
+		border: 1px solid var(--card-rule);
 		text-align: start;
 		interpolate-size: allow-keywords; /* lets the disclosure animate to its natural height */
 		& > summary {
@@ -1686,7 +1672,7 @@
 		/* the lobby's invite and seat list, bare (lobby.css), inset from the disclosure's edges (margin: the lobby layer
 		   owns the panel's padding) */
 		& > .lb-panel {
-			margin: 0 10px 10px;
+			margin: 0 12px 12px;
 		}
 		@media (prefers-reduced-motion: no-preference) {
 			&::details-content {
@@ -1700,10 +1686,6 @@
 				block-size: auto;
 			}
 		}
-	}
-	.card:not(.felt) .room {
-		background: var(--card-row);
-		border-color: var(--card-rule);
 	}
 	/* a stack of the room's avatars in the summary line */
 	.room-stack {
