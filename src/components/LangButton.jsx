@@ -11,8 +11,12 @@ export const LangButton = () => {
 			aria-label={`${lang === 'en' ? 'Español' : 'English'} – Language / Idioma`}
 			onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
 		>
-			<Languages size={16} />
-			{lang === 'en' ? 'Español' : 'English'}
+			<Languages size={16} aria-hidden='true' />
+			{/* long on wide layouts, the ISO code on phones (the containers' CSS picks one) */}
+			<span className='lang-long'>{lang === 'en' ? 'Español' : 'English'}</span>
+			<span className='lang-short' aria-hidden='true'>
+				{lang === 'en' ? 'ES' : 'EN'}
+			</span>
 		</button>
 	)
 }

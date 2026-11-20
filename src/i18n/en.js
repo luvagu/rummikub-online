@@ -12,7 +12,7 @@ export const en = {
 	rules: 'Rules',
 	rotate: 'Turn your device upright to play',
 	readRules: 'Read the rules',
-	readRulesShort: 'See rules',
+	readRulesShort: 'Rules',
 	needName: 'Please enter your name first',
 	soloD: 'Practice instantly, offline',
 	createD: 'Get a room code to share with friends',

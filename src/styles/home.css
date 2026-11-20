@@ -51,14 +51,17 @@
 	}
 }
 /* the label has a long and a short form: the short one on narrow (phone) widths */
-.hm-rules .rules-short {
+.hm-rules .rules-short,
+.home .lang-short {
 	display: none;
 }
 @container home (inline-size < 28rem) {
-	.hm-rules .rules-long {
+	.hm-rules .rules-long,
+	.home .lang-long {
 		display: none;
 	}
-	.hm-rules .rules-short {
+	.hm-rules .rules-short,
+	.home .lang-short {
 		display: inline;
 	}
 }
