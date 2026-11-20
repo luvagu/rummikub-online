@@ -91,6 +91,7 @@ export function analyze(ids) {
 	return bad
 }
 
+const TURN_MOVES = new Set(['draw', 'end', 'timeout']) // the moves that spend the active player's turn
 export class Game {
 	constructor(s) {
 		const resumed = !!s
@@ -272,6 +273,12 @@ export class Game {
 		this.s.t0 = Date.now()
 		this.s.draft = null
 	}
+	// The host was frozen (device asleep, tab suspended) while this turn's clock ran: nobody could have played, so the
+	// current turn starts its clock again. The turn itself (seq) is unchanged.
+	grace() {
+		const s = this.s
+		if (s.phase === 'play') s.t0 = Math.max(Date.now(), s.holdUntil || 0)
+	}
 	// Active player reports how many tiles are in their working rack (no state change, no broadcast).
 	draft(tok, n) {
 		const s = this.s,
@@ -414,14 +421,16 @@ export class Game {
 				this.draw(s.turn, 1)
 			return
 		}
+		// A move carries the turn it was made for (`q`, optional for older clients), so a resend of one that already went through,
+		// or one that reaches the host after the turn moved on, can never land on a different turn. Dropped without a word.
+		if (TURN_MOVES.has(m.t) && m.q != null && m.q !== s.seq) return
 		if (s.phase !== 'play' || i !== s.turn) return E('e.notTurn')
 		if (this.hold()) return E('e.dealing')
 		if (m.t === 'draw') return this.draw(i, 1)
 		if (m.t === 'timeout') {
-			// The host is the authority on the clock: a client's timeout only counts for the turn it was sent for (`q`, optional for
-			// older clients) and once the turn has really run out. Client deadlines are host `tl` + arrival time, so a legit one is
-			// never earlier than this (300ms of slack for rounding).
-			if (!s.opts.timer || (m.q != null && m.q !== s.seq) || Date.now() < s.t0 + s.opts.timer * 1000 - 300) return
+			// The host is the authority on the clock: a client's timeout only counts once the turn has really run out. Client
+			// deadlines are host `tl` + arrival time, so a legit one is never earlier than this (300ms of slack for rounding).
+			if (!s.opts.timer || Date.now() < s.t0 + s.opts.timer * 1000 - 300) return
 			return this.draw(i, this.dirty(i) ? 3 : 1, true)
 		}
 		if (m.t !== 'end') return

@@ -352,6 +352,7 @@ export const en = {
 	'e.noRoom':
 		'Room not found. Check the code, and that the host tab is still open.',
 	'e.hostOff': 'The host went offline. Waiting for them to come back…',
+	'e.noSync': "The host isn't answering, so your last move may not have gone through. Check the table and try again.",
 	'e.refused': 'The relay refused the connection.',
 	'e.closed': 'The host ended the game.',
 	'e.nobroker':
