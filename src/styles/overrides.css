@@ -1,27 +1,3 @@
-.xbtn {
-	position: absolute;
-	top: 10px;
-	inset-inline-end: 10px;
-	background: var(--xbtn-bg);
-	color: var(--xbtn-ink);
-	border: 0;
-}
-.tut-hl {
-	outline: 3px solid var(--sky);
-	outline-offset: 2px;
-	z-index: 3;
-}
-.card.felt .xbtn {
-	background: #00000059;
-	color: #fff;
-	border: 1px solid #ffffff59;
-}
-@media (prefers-reduced-motion: no-preference) {
-	.tut-hl {
-		animation: tutpulse 1s ease-in-out infinite;
-	}
-}
-
 /* while a tile is being dragged the whole page shows the grabbing cursor (the pointer leaves the tile at once) */
 html.dragging,
 html.dragging * {

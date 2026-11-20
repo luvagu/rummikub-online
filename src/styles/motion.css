@@ -1,5 +1,5 @@
-/* Shared motion: the home/lobby entrances, form feedback, and the top-layer surfaces every screen uses (menus, dialogs,
-   toasts). The game table's own motion (tiles, seats, timer, reactions, celebration) lives with its components in game.css. */
+/* Shared motion: the home/lobby entrances and form feedback. Surfaces (dialogs, sheets, toasts, banners, menus) animate in
+   surfaces.css and the game table in game.css, each next to the rules it belongs to. */
 @keyframes pop {
 	from {
 		opacity: 0;
@@ -61,80 +61,5 @@
 	}
 	.toast {
 		animation: slide 0.25s both;
-	}
-}
-
-/* ---- menus and pickers (native popovers): fade + slide in and out of the top layer ----
-   `display` and `overlay` transition discretely so the closing popover stays in the top layer while it fades. Browsers that
-   cannot transition them (Firefox, Safari: no `overlay`) still get the entrance; the exit is instant there. */
-.menu,
-.rpick {
-	opacity: 0;
-	transition-property: opacity, translate, scale, display, overlay;
-	transition-duration: var(--dur-2);
-	transition-timing-function: var(--ease-out);
-	transition-behavior: allow-discrete; /* separate from the shorthand: older engines drop a whole shorthand they cannot parse */
-	@media (prefers-reduced-motion: no-preference) {
-		translate: 0 -6px;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		transition-duration: var(--dur-1);
-	}
-}
-.rpick {
-	transform-origin: bottom right;
-	@media (prefers-reduced-motion: no-preference) {
-		translate: 0 6px;
-		scale: 0.96;
-	}
-}
-.menu:popover-open,
-.rpick:popover-open {
-	opacity: 1;
-	translate: 0;
-	scale: 1;
-	@starting-style {
-		opacity: 0;
-	}
-	@media (prefers-reduced-motion: no-preference) {
-		@starting-style {
-			translate: 0 -6px;
-		}
-	}
-}
-.rpick:popover-open {
-	@media (prefers-reduced-motion: no-preference) {
-		@starting-style {
-			translate: 0 6px;
-			scale: 0.96;
-		}
-	}
-}
-
-/* ---- dialogs: rise in over a fading, lightly blurred backdrop ----
-   Modal.jsx unmounts a dialog as it closes, so only the entrance is animated (the exit would need a delayed unmount). */
-dialog.card {
-	transition-property: opacity, translate, scale;
-	transition-duration: var(--dur-3);
-	transition-timing-function: var(--ease-out);
-}
-dialog.card[open] {
-	opacity: 1;
-	@starting-style {
-		opacity: 0;
-	}
-	@media (prefers-reduced-motion: no-preference) {
-		@starting-style {
-			translate: 0 14px;
-			scale: 0.97;
-		}
-	}
-}
-dialog.card::backdrop {
-	background-color: oklch(0% 0 0 / 0.62);
-	backdrop-filter: blur(3px);
-	transition: background-color var(--dur-3) var(--ease-out);
-	@starting-style {
-		background-color: oklch(0% 0 0 / 0);
 	}
 }

@@ -222,7 +222,6 @@ button.link:hover:not(:disabled) {
 	margin: 0;
 }
 
-
 /* ---- shared by the game seats and the lobby / room seat lists ---- */
 .av {
 	position: relative;
@@ -243,45 +242,6 @@ button.link:hover:not(:disabled) {
 	position: relative;
 	flex: none;
 }
-.menu {
-	/* a native popover (top layer): placed against its trigger with anchor positioning, flipping when it would overflow */
-	position-area: block-end span-inline-start;
-	position-try-fallbacks: flip-block, flip-inline;
-	inset: auto;
-	margin-block: 6px;
-	color: #fff;
-	min-width: 240px;
-	background: var(--felt-deep);
-	border: 1px solid #ffffff30;
-	border-radius: 14px;
-	padding: 6px;
-	box-shadow: 0 14px 34px #0008;
-	flex-direction: column;
-}
-.menu:popover-open {
-	display: flex; /* never unconditional: it would override the closed (display: none) state */
-}
-.menu button {
-	justify-content: flex-start;
-	background: none;
-	border: 0;
-	border-radius: 10px;
-	width: 100%;
-	text-align: start;
-}
-.menu .sw {
-	margin-inline-start: auto;
-	font-size: 0.75rem;
-	font-weight: 700;
-	opacity: 0.85;
-	letter-spacing: 0.05em;
-}
-.menu hr {
-	border: 0;
-	border-top: 1px solid #ffffff22;
-	margin: 4px 6px;
-	width: calc(100% - 12px);
-}
 .seg {
 	display: flex;
 	margin-inline-start: auto;
@@ -298,58 +258,6 @@ button.link:hover:not(:disabled) {
 	border-start-end-radius: 12px;
 	border-end-end-radius: 12px;
 	border-inline-start: 0;
-}
-
-/* ---- dialogs, toasts, banner ---- */
-.card {
-	/* the <dialog> itself: fixed and centred in the top layer by the UA, so no position/inset here */
-	overscroll-behavior: contain;
-	background: var(--card-bg);
-	color: var(--card-ink);
-	border: 0;
-	border-radius: 20px;
-	padding: 22px;
-	width: min(560px, 100%);
-	max-width: calc(100% - 32px);
-	max-height: 88dvh;
-	overflow: auto;
-	line-height: 1.5;
-	box-shadow: 0 20px 50px #0009;
-}
-dialog.card::backdrop {
-	overflow: hidden; /* ::backdrop is not a scroll container by default, so it would ignore overscroll-behavior */
-	overscroll-behavior: contain; /* colour, blur and fade-in: motion.css */
-}
-.card h2 {
-	margin-bottom: 10px;
-}
-.card h3 {
-	margin: 14px 0 6px;
-}
-.card button {
-	background: var(--card-btn-bg);
-	border-color: var(--card-btn-edge);
-}
-.card button.primary {
-	background: linear-gradient(var(--amber-hi), var(--amber));
-	color: var(--ink);
-	border-color: var(--amber-edge);
-}
-.card button.primary.danger {
-	background: linear-gradient(#ef6c5f, #e53935);
-	color: #fff;
-	border-color: #b71c1c;
-}
-.card button.link {
-	background: none;
-	color: var(--card-link);
-	border: 0;
-}
-.card .row {
-	margin-top: 14px;
-}
-.card a {
-	color: var(--card-link);
 }
 
 .toasts {
@@ -439,15 +347,17 @@ dialog.card::backdrop {
 	border-color: var(--amber-edge);
 }
 
+@media (height <= 480px) and (orientation: landscape) {
+	.toasts {
+		top: calc(56px + env(safe-area-inset-top));
+	}
+}
+
 /* sort toggle (selected state) */
 .seg button[aria-pressed='true'] {
 	background: linear-gradient(var(--amber-hi), var(--amber));
 	color: var(--ink);
 	border-color: var(--amber-edge);
-}
-.menu {
-	min-width: 270px;
-	max-width: calc(100vw - 20px);
 }
 
 /* bot difficulty dropdown */
@@ -476,26 +386,6 @@ dialog.card::backdrop {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-.lvlpop {
-	position-area: block-end span-inline-end;
-	min-width: 250px;
-}
-.lvlpop button {
-	align-items: center;
-	justify-content: space-between;
-	gap: 10px;
-}
-.lvlpop button[aria-selected='true'] {
-	background: #ffffff1f;
-}
-.lvlpop b,
-.lvlpop small {
-	display: block;
-}
-.lvlpop small {
-	font-weight: 400;
-	opacity: 0.85;
-}
 .lvltag {
 	opacity: 0.85;
 	font-weight: 500;
@@ -505,26 +395,9 @@ dialog.card::backdrop {
 .lseat {
 	position: relative;
 }
-.lvlpop {
-	background: var(--felt-deep);
-}
-
 /* ---- audit fixes ---- */
-.card :focus-visible {
-	outline-color: var(--card-focus);
-}
-.menu {
-	max-height: calc(100dvh - 84px);
-	overflow-y: auto;
-	overscroll-behavior: contain;
-}
 button {
 	touch-action: manipulation; /* a quick second tap must not arm double-tap zoom */
-}
-@media (height <= 480px) and (orientation: landscape) {
-	.toasts {
-		top: calc(56px + env(safe-area-inset-top));
-	}
 }
 @media (pointer: coarse) {
 	button,
@@ -553,244 +426,6 @@ button.primary:disabled {
 	}
 }
 
-
-/* ---- tutorial coach ---- */
-.coach {
-	position: fixed;
-	z-index: 40;
-	top: calc(env(safe-area-inset-top, 0px) + 58px);
-	left: 50%;
-	translate: -50% 0;
-	width: min(calc(100% - 24px), 420px);
-	box-sizing: border-box;
-	padding: 12px 14px;
-	border-radius: 14px;
-	background: var(--coach-bg);
-	color: var(--coach-ink);
-	border: 2px solid var(--amber);
-	box-shadow: 0 10px 28px #0006;
-	display: grid;
-	gap: 8px;
-}
-.coach p {
-	margin: 0;
-	font-size: 0.92rem;
-	line-height: 1.35;
-}
-.coachhead {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-}
-.coachhead b {
-	flex: 1;
-}
-.coachn {
-	font-size: 0.75rem;
-	opacity: 0.85;
-}
-.coach .row {
-	flex-wrap: wrap;
-	justify-content: flex-end;
-}
-
-
-
-.card .lvltitle + .switch {
-	margin-bottom: 14px;
-}
-
-/* switch on the light dialog card: the default translucent-white track is invisible there */
-.card .switch .tr {
-	background: var(--card-switch-off);
-	box-shadow: inset 0 0 0 1px var(--card-switch-ring);
-}
-.card .switch input:checked + .tr {
-	background: var(--card-switch-on);
-	box-shadow: none;
-}
-.card .switch input:focus-visible + .tr {
-	outline-color: var(--card-focus);
-	outline-offset: 2px;
-}
-
-/* ---- light dialog cards: contrast + hover/active/focus states ----
-   (the global button:hover rule is a translucent white made for the dark table; it beat `.card button` and
-   turned every dialog button white-on-white when hovered) */
-@media (hover: hover) {
-.card button:hover:not(:disabled) {
-	background: var(--card-btn-hover);
-}
-}
-.card button:active:not(:disabled) {
-	background: var(--card-btn-active);
-}
-@media (hover: hover) {
-.card button.primary:hover:not(:disabled) {
-	background: linear-gradient(#ffcb52, #ffbb1a);
-}
-}
-.card button.primary:active:not(:disabled) {
-	background: linear-gradient(#f0a800, var(--amber-edge));
-}
-@media (hover: hover) {
-.card button.primary.danger:hover:not(:disabled) {
-	background: linear-gradient(#f4786c, #ec4a46);
-}
-}
-.card button.link:active:not(:disabled) {
-	background: none;
-	color: var(--card-link-hover);
-}
-@media (hover: hover) {
-.card button.link:hover:not(:disabled) {
-	background: none;
-	color: var(--card-link-hover);
-}
-}
-.card button:focus-visible {
-	outline: 3px solid var(--card-focus);
-	outline-offset: 2px;
-}
-.card button.primary:focus-visible {
-	outline-color: var(--ink);
-}
-.card .codechip {
-	background: var(--card-chip-bg);
-	border-color: var(--card-chip-edge);
-}
-.card .codechip button.icon {
-	background: var(--card-chip-btn);
-	border-color: var(--card-chip-btn-edge);
-}
-@media (hover: hover) {
-.card .codechip button.icon:hover:not(:disabled) {
-	background: var(--card-chip-btn-hover);
-}
-}
-.card .codechip button:focus-visible {
-	outline-color: var(--amber);
-}
-
-/* ---- room screens on the felt (lobby + the between-rounds dialog) ----
-   Dark tint + a clear light edge instead of faint white: the old 8-20% whites almost vanished on the green. */
-.card.felt {
-	--panel: #00000047;
-	--edge: #ffffff73;
-	--btn: #0000005c;
-	--btn-hover: #00000080;
-	--btn-edge: #ffffffb3;
-}
-.card.felt {
-	background: radial-gradient(circle at 50% 0%, #3b7f3f, #1f5f24 78%);
-	color: #fff;
-	border: 1px solid #ffffff33;
-}
-.card.felt h2,
-.card.felt h3 {
-	color: #fff;
-}
-.card.felt .lseat {
-	background: var(--panel);
-	border-color: var(--edge);
-}
-.card.felt .lseat.empty {
-	background: #00000024;
-	border-color: #ffffff99;
-	opacity: 1;
-}
-.card.felt .av.ghost {
-	background: #00000030;
-	border-color: #ffffff99;
-}
-.card.felt button:not(.primary):not(.link) {
-	background: var(--btn);
-	border-color: var(--btn-edge);
-	color: #fff;
-}
-@media (hover: hover) {
-.card.felt button:not(.primary):not(.link):hover:not(:disabled) {
-	background: var(--btn-hover);
-}
-}
-.card.felt button:not(.primary):not(.link):active:not(:disabled) {
-	background: #000000a6;
-}
-.card.felt button:focus-visible {
-	outline: 3px solid var(--amber);
-	outline-offset: 2px;
-}
-.card.felt .menu button {
-	background: none;
-	border-color: transparent;
-}
-@media (hover: hover) {
-.card.felt .menu button:hover:not(:disabled) {
-	background: #ffffff26;
-}
-}
-.card.felt .lvlpop button[aria-selected='true'] {
-	background: #ffffff38;
-}
-.card.felt .codechip {
-	background: #00000066;
-	border-color: #ffffffb3;
-}
-.card.felt .codechip button.icon {
-	background: #ffffff2e;
-	border-color: #ffffffb3;
-}
-@media (hover: hover) {
-.card.felt .codechip button.icon:hover:not(:disabled) {
-	background: #ffffff47;
-}
-}
-.card.felt .sub,
-.card.felt .lvltag,
-.card.felt .lseat em {
-	opacity: 0.92;
-}
-/* a disabled primary stays legible but clearly inactive (no 45% fade) */
-.card.felt button.primary:disabled {
-	opacity: 1;
-	background: #0000004d;
-	color: #ffffffcc;
-	border: 1px dashed #ffffff99;
-	box-shadow: none;
-	cursor: not-allowed;
-}
-.card.felt button.link,
-.card.felt button.link:active:not(:disabled) {
-	background: none;
-	color: #fff;
-	border: 0;
-}
-@media (hover: hover) {
-.card.felt button.link:hover:not(:disabled) {
-	background: none;
-	color: #fff;
-	border: 0;
-}
-}
-
-/* dropdown rows stay flat: the generic felt button style above has equal-or-higher specificity, so repeat it here */
-.card.felt .menu button:not(.primary):not(.link) {
-	background: none;
-	border-color: transparent;
-}
-@media (hover: hover) {
-.card.felt
-	.menu
-	button:not(.primary):not(.link):hover:not(:disabled) {
-	background: #ffffff26;
-}
-}
-.card.felt
-	.menu
-	button[aria-selected='true']:not(.primary):not(.link) {
-	background: #ffffff38;
-}
-
 /* turn timer picker (lobby / solo setup) */
 .timerpick {
 	display: flex;
@@ -798,6 +433,10 @@ button.primary:disabled {
 	gap: 8px;
 	align-items: stretch;
 	text-align: start;
+	/* separated from the level list that follows it in the solo dialog */
+	margin-bottom: 14px;
+	padding-bottom: 14px;
+	border-bottom: 1px solid var(--card-rule);
 }
 .timerpick > span {
 	display: flex;
@@ -815,41 +454,6 @@ button.primary:disabled {
 	min-width: 0;
 	padding: 8px 4px;
 }
-
-/* phones: dialogs get more room */
-@media (width <= 520px) {
-	.card {
-		padding: 14px;
-		max-width: calc(100% - 20px);
-		max-height: 94dvh;
-	}
-	.card:not(.felt) {
-		padding-top: 18px;
-	}
-	.card > svg:first-child,
-	.card .trophy {
-		margin-top: 6px;
-	}
-}
-
-/* phones: the bot level list floats as a bottom sheet instead of pushing the page to scroll */
-@media (width <= 520px) {
-	.lvlpop,
-	.card.felt .lvlpop {
-		position-area: none; /* a bottom sheet, not anchored to its trigger */
-		position-try-fallbacks: none;
-		inset-inline: 12px;
-		inset-block: auto calc(12px + env(safe-area-inset-bottom, 0px));
-		margin: 0;
-		min-width: 0;
-		max-height: 70dvh;
-		overflow-y: auto;
-	}
-	.lvlpop::backdrop {
-		background: #0009; /* replaces the old 100vmax box-shadow scrim */
-	}
-}
-
 
 /* WhatsApp invite: an anchor styled like the row buttons, with the brand green */
 a.btn {
@@ -896,30 +500,4 @@ a.btn.wa:active {
 		block-size: calc(env(safe-area-inset-top, 0px) + var(--edgecap));
 		background: var(--felt-edge);
 	}
-}
-/* Portrait only: shown by RotateHint.jsx while an installed app on a touch device is sideways (iOS ignores the manifest lock) */
-.rotate-hint {
-	position: fixed;
-	inset: 0;
-	width: auto;
-	height: auto;
-	margin: 0;
-	border: 0;
-	padding: max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px))
-		max(24px, env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
-	background: var(--felt-edge);
-	color: #fff;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 16px;
-	text-align: center;
-	font: 600 1.125rem/1.4 var(--font);
-}
-.rotate-hint:popover-open {
-	display: flex;
-}
-.rotate-hint p {
-	margin: 0;
-	max-width: 22rem;
 }

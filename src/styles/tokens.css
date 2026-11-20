@@ -102,6 +102,18 @@
 	--ring-ok: #66bb6a;
 	--ring-amber: var(--amber);
 	--ring-red: #ef5350;
+	/* ---- surfaces (src/styles/surfaces.css): dialogs, sheets, toasts, banners, pop-ups ---- */
+	--sf-pad: 22px;
+	--sf-radius: 22px;
+	--sheet-radius: 24px;
+	--scrim: oklch(0% 0 0 / 0.6);
+	--toast-bg: color-mix(in oklab, var(--felt-deep) 90%, black);
+	/* tones on the dark toast / pill surfaces (icons and accents; text stays white) */
+	--tone-ok: #81c784;
+	--tone-info: var(--sky);
+	--tone-warn: var(--amber);
+	--tone-danger: #ff8a80;
+	--tone-danger-solid: #e53935;
 	/* elevation: ambient + key shadow, lighter steps for small objects */
 	--elev-1: 0 1px 2px oklch(0% 0 0 / 0.25);
 	--elev-2: 0 2px 4px oklch(0% 0 0 / 0.2), 0 6px 14px oklch(0% 0 0 / 0.22);

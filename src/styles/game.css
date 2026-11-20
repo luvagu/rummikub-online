@@ -1267,14 +1267,11 @@
 @layer overlays {
 	/* reaction picker (a native popover above the rack's smiley button) */
 	.rpick {
-		position-area: block-start span-inline-start;
-		position-try-fallbacks: flip-block, flip-inline; /* flips instead of being clipped on narrow phones */
-		inset: auto;
+		/* placement (anchored above the smiley button, or a bottom sheet without anchor positioning): surfaces.css */
 		grid-template-columns: repeat(3, 1fr);
 		gap: 4px;
 		width: 276px;
 		max-width: calc(100% - 20px);
-		margin-block: 8px;
 		padding: 6px;
 		border: 1px solid oklch(100% 0 0 / 0.18);
 		border-radius: 16px;
