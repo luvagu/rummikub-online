@@ -2423,3 +2423,33 @@ button.draw.pulse {
 		min-height: 40px; /* secondary controls; the action bar keeps 44px */
 	}
 }
+
+/* WhatsApp invite: an anchor styled like the row buttons, with the brand green */
+a.btn {
+	font: inherit;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 10px 14px;
+	border-radius: 12px;
+	text-decoration: none;
+	transition:
+		background 0.15s,
+		transform 0.1s;
+}
+a.btn.wa {
+	background: #25d366;
+	color: #0b2e17;
+	font-weight: 700;
+	border: 1px solid #1da851;
+	box-shadow: 0 2px 0 #178a42;
+}
+@media (hover: hover) {
+	a.btn.wa:hover {
+		background: #3ee07b;
+	}
+}
+a.btn.wa:active {
+	transform: scale(0.97);
+}

@@ -6,7 +6,7 @@ import { useT } from "../../i18n/index.js";
 import { Standings } from "./Standings.jsx";
 
 // The dialog between rounds: who won (or that the host ended the round), the scores, and "play next game".
-export function RoundSummary({ s, net, copy, share, inRoom, hostRoom, onLeave }) {
+export function RoundSummary({ s, net, copy, share, whatsappUrl, inRoom, hostRoom, onLeave }) {
   const t = useT(),
     me = s.me,
     cx = !!(s.result && s.result.cancelled); // the host ended the round early (no winner, no score change)
@@ -37,7 +37,7 @@ export function RoundSummary({ s, net, copy, share, inRoom, hostRoom, onLeave })
           <>
             <p className="sub">{t("room")}</p>
             {hostRoom && s.players.length < 4 && (
-              <Invite net={net} copy={copy} share={share} />
+              <Invite net={net} copy={copy} share={share} whatsappUrl={whatsappUrl} />
             )}
             <Seats s={s} net={net} host={hostRoom} />
           </>

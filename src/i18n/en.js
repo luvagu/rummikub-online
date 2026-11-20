@@ -40,6 +40,7 @@ export const en = {
 	copyCode: 'Copy code',
 	copied: 'Copied',
 	share: 'Share',
+	whatsapp: 'WhatsApp',
 	inviteHint: 'Share the link or the code. Friends can join from any device.',
 	waiting: 'Waiting for player…',
 	host: '(host)',
