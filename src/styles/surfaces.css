@@ -15,6 +15,11 @@
 	   body scrolls (so the close button never scrolls away). */
 	dialog.card {
 		--pad: var(--sf-pad);
+		/* dialogs are for reading (rules, scores, the room code): selectable again, even when opened from inside the
+		   unselectable game screen (game.css .game) */
+		user-select: text;
+		-webkit-user-select: text;
+		-webkit-touch-callout: default;
 		width: min(560px, 100%);
 		max-width: calc(100% - 32px);
 		max-height: 88dvh;
@@ -454,6 +459,9 @@
 @layer toast {
 	/* the always-mounted region (Toasts.jsx). Bottom of the screen; in a game, just above the action dock. */
 	.toaster {
+		user-select: none; /* chrome over the table: a press on it is not a text selection */
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
 		position: fixed;
 		inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 16px);
 		width: min(calc(100% - 24px), 420px);
@@ -588,6 +596,9 @@
 @layer banner {
 	/* "Reconnecting…": a pill under the game header (anchored to it where supported), at the bottom elsewhere. */
 	.banner {
+		user-select: none; /* chrome over the table: a press on it is not a text selection */
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
 		position: fixed;
 		inset: auto;
 		top: calc(env(safe-area-inset-top, 0px) + 12px);
@@ -1036,6 +1047,10 @@
 @layer coach {
 	/* a non-modal dialog in the top layer (Tutorial.jsx: popover="manual") */
 	.coach {
+		/* sits over the table during play: a long-press there must not select text either */
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
 		/* buttons follow the coach's own light / dark background */
 		--btn-bg: light-dark(#0000000d, oklch(100% 0 0 / 0.12));
 		--btn-bg-hover: light-dark(#0000001a, oklch(100% 0 0 / 0.2));
