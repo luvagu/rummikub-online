@@ -487,6 +487,7 @@ export function localGame(
 	{ onState, onErr, onReact = () => {} },
 	tok = TOK,
 	resume,
+	botName = () => 'Bot', // lvl -> the bot's display name, e.g. "Expert Bot"
 ) {
 	const game = new Game(resume && resume.s),
 		react = reactor(game, onReact),
@@ -502,7 +503,7 @@ export function localGame(
 			v = local.get('rmkTimer'),
 			timer = v == null ? 45 : +v === 1 ? 60 : +v || 0
 		game.act(tok, { t: 'opts', lvl, timer })
-		game.act(tok, { t: 'bot' })
+		game.act(tok, { t: 'bot', name: botName(lvl) })
 		game.act(tok, { t: 'start' })
 	}
 	push()

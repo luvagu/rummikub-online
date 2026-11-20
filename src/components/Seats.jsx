@@ -92,7 +92,7 @@ export function Seats({ s, net, host }) {
 							<span>{t('waiting')}</span>
 						)}
 						{host && i === s.players.length && (
-							<button onClick={() => net.send({ t: 'bot' })}>
+							<button onClick={() => net.send({ t: 'bot', name: t('botName', { lvl: t('lvl' + (s.opts.lvl || 3)) }) })}>
 								<Plus size={16} />
 								<Bot size={16} />
 								{t('addBot')}

@@ -364,9 +364,13 @@ export class Game {
 				let n = 1 // first unused number: ids stay unique after a middle bot was removed
 				while (s.players.some(x => x.id === 'bot' + n)) n++
 				const id = 'bot' + n
+				// the host names it (e.g. "Expert Bot" in its language); a second bot with the same name gets a number
+				const base = (typeof m.name === 'string' && m.name.trim().slice(0, 24)) || 'Bot'
+				let name = base
+				for (let k = 2; s.players.some(x => x.name === name); k++) name = base + ' ' + k
 				s.players.push({
 					id,
-					name: 'Bot ' + n,
+					name,
 					bot: true,
 					lvl: s.opts.lvl || 3,
 					rack: [],

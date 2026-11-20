@@ -1,16 +1,15 @@
-import { Trophy, Crown, LogOut } from "lucide-react";
+import { Trophy, LogOut } from "lucide-react";
 import { Modal } from "../../components/Modal.jsx";
 import { Invite } from "../../components/Invite.jsx";
 import { Seats } from "../../components/Seats.jsx";
 import { useT } from "../../i18n/index.js";
-import { SIGNED } from "./display.js";
+import { Standings } from "./Standings.jsx";
 
 // The dialog between rounds: who won (or that the host ended the round), the scores, and "play next game".
 export function RoundSummary({ s, net, copy, share, inRoom, hostRoom, onLeave }) {
   const t = useT(),
     me = s.me,
-    cx = !!(s.result && s.result.cancelled), // the host ended the round early (no winner, no score change)
-    ranked = s.players.toSorted((a, b) => s.scores[b.id] - s.scores[a.id]);
+    cx = !!(s.result && s.result.cancelled); // the host ended the round early (no winner, no score change)
   return (
     <Modal
       felt={inRoom}
@@ -33,34 +32,7 @@ export function RoundSummary({ s, net, copy, share, inRoom, hostRoom, onLeave })
         </h2>
         {cx && <p>{t("roundEndedD")}</p>}
         <p className="sub">{t("roundN", { n: s.games })}</p>
-        <ul className="res">
-          {ranked.map((p, rank) => {
-            const v = cx ? 0 : s.result.delta?.[p.id] || 0,
-              won = !cx && s.players[s.result.winner]?.id === p.id;
-            return (
-              <li key={p.id} className={won ? "won" : undefined}>
-                <span className="rk">{rank + 1}</span>
-                <b>
-                  {p.name}
-                  {won && <Crown size={14} aria-label={t("roundWinner")} />}
-                </b>
-                {!cx && (
-                  <span className={v > 0 ? "pos" : "neg"}>
-                    {SIGNED.format(v)}
-                  </span>
-                )}
-                <span className="meta">
-                  <span className="tot">
-                    {t("total")} <b>{s.scores[p.id]}</b>
-                  </span>
-                  <span>
-                    <Trophy size={12} /> {s.wins[p.id]} {t("winsLbl")}
-                  </span>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <Standings s={s} result={s.result} />
         {inRoom && (
           <>
             <p className="sub">{t("room")}</p>
