@@ -2,7 +2,9 @@
 // trouble. The host's browser is the authoritative game server; guests talk to it via the relay.
 // Room code = 1 letter (which relay) + 4 random characters.
 import { Game } from '../engine/game.js'
-import { RKEYS, RLEGACY, RCOOL, botReact } from '../engine/reactions.js'
+import { RKEYS, RLEGACY, RCOOL } from '../engine/reactions.js'
+import { runner } from './runner.js'
+import { makePending } from './pending.js'
 import { setupTutorial } from '../engine/tutorial.js'
 import { local, session } from '../utils/store.js'
 import { HelloBook, kidOf, makeHello, randomId } from '../utils/secure.js'
@@ -23,6 +25,7 @@ const BROKERS = [
 const LET = 'ABCDEFGH',
 	AL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
 	ROOT = 'rmkb' + PROTO + '/'
+const TURN_MOVES = new Set(['draw', 'end', 'timeout']) // see Game.act
 const NOBROKER = { k: 'e.nobroker' },
 	J = JSON.stringify
 
@@ -97,53 +100,6 @@ const reactor = (game, deliver) => {
 	}
 }
 
-// Host-side clock work: lets bots take their turns after a short "thinking" delay, and enforces the
-// turn timer even if the player's own browser is gone (client sends the precise timeout first; this is the fallback).
-const runner = (game, push, react) => {
-	let bt = 0,
-		tt = 0,
-		seq = -1
-	const quiet = {} // per-bot cooldown so bots never spam
-	const run = () => {
-		const s = game.s
-		if (!bt && game.botDue())
-			bt = setTimeout(() => {
-				bt = 0
-				const r = game.botPlay()
-				push()
-				const k = r && botReact(r),
-					now = Date.now()
-				if (k && (r.left === 0 || now - (quiet[r.id] || 0) > 20000)) {
-					quiet[r.id] = now
-					setTimeout(() => react(r.id, k), 350 + Math.random() * 600)
-				}
-			}, game.hold() + 700 + Math.random() * 1100) // varied "thinking" time, starting once the deal is over
-		if (s.phase !== 'play' || !s.opts.timer) {
-			clearTimeout(tt)
-			seq = -1
-			return
-		}
-		if (s.seq !== seq) {
-			seq = s.seq
-			clearTimeout(tt)
-			tt = setTimeout(() => {
-				const g = game.s,
-					p = g.players[g.turn]
-				if (g.seq === seq && g.phase === 'play' && !p.bot) {
-					game.act(p.id, { t: 'timeout' })
-					push()
-				}
-			}, game.hold() + game.s.opts.timer * 1000 + 3000)
-		}
-	}
-	run.stop = () => {
-		clearTimeout(bt)
-		clearTimeout(tt)
-		bt = tt = 0
-	}
-	return run
-}
-
 // Host: the authoritative game server. Every guest has its own encrypted channel (see secure.js): the host derives it
 // from the guest's public key in its hello, and only ever acts on messages that decrypt with that channel's key.
 export function hostGame(
@@ -196,6 +152,7 @@ export function hostGame(
 	api.send = m => {
 		if (m.t === 'react') return react(tok, m.k)
 		if (m.t === 'draft') return game.draft(tok, m.n)
+		sched.guard() // the host's own client can be the first thing to wake up after a freeze
 		const e = game.act(tok, m)
 		if (e) onErr(e)
 		push()
@@ -224,6 +181,7 @@ export function hostGame(
 	// One inbound packet. The only unencrypted ones are a guest's hello (public data) and the broker's last-will hint.
 	const handle = async d => {
 		if (dead || !d || typeof d !== 'object' || typeof d.kid !== 'string') return
+		sched.guard() // woke from a freeze? then every deadline is restarted before this message is looked at
 		const kid = d.kid
 		if (d.pub) {
 			// hello: the tag inside it only opens under the guest's own key, and its handshake number must be newer than
@@ -268,6 +226,12 @@ export function hostGame(
 		}
 		if (m.t === 'react') return react(kid, m.k)
 		if (m.t === 'draft') return game.draft(kid, m.n)
+		if (TURN_MOVES.has(m.t) && m.q != null && m.q !== game.s.seq) {
+			// a resend of a move that already went through, or one for a turn that is over: not applied, but the guest
+			// evidently has not seen the newer state, so hand it over
+			out(kid, { t: 'state', s: game.view(kid) })
+			return
+		}
 		const e = game.act(kid, m)
 		if (e) out(kid, { t: 'err', msg: e })
 		push()
@@ -352,6 +316,12 @@ export function joinGame(
 		cid = randomId(8), // identifies this MQTT connection: in the will, and sealed into the hello
 		inbox = Promise.resolve()
 	const rseen = [] // QoS 1 can redeliver: drop reaction ids we already showed
+	let seq = -1 // the turn id of the newest state we have; committing moves are stamped with it
+	// A committing move is resent until the host's next state shows it went through (see pending.js).
+	const pend = makePending(
+		m => pub(m),
+		() => onErr({ k: 'e.noSync' }),
+	)
 	// Returns false when the message cannot go out (no channel yet, or the connection is down), so the UI can say so instead
 	// of letting a move vanish. Moves are never queued: a replayed move could land on a different turn.
 	const pub = m => {
@@ -372,11 +342,18 @@ export function joinGame(
 		c && c.end(true)
 		onErr(m, true)
 	}
-	api.send = pub
+	api.send = m => {
+		if (!TURN_MOVES.has(m.t)) return pub(m)
+		m = { ...m, q: m.q ?? seq }
+		const ok = pub(m)
+		if (ok) pend.track(m)
+		return ok
+	}
 	api.close = () => {
 		if (dead) return
 		dead = 1
 		clearTimeout(t)
+		pend.clear()
 		if (c) {
 			pub({ t: 'bye' })
 			setTimeout(() => c.end(true), 300)
@@ -392,6 +369,8 @@ export function joinGame(
 		if (d.t === 'state') {
 			got = 1
 			clearTimeout(t)
+			seq = d.s.seq
+			pend.settle(seq)
 			onState(d.s)
 		} else if (d.t === 'react') {
 			d.k = RLEGACY[d.k] || d.k
@@ -401,6 +380,7 @@ export function joinGame(
 				onReact(d)
 			}
 		} else if (d.t === 'err') {
+			pend.clear()
 			d.fatal ? fail(d.msg) : onErr(d.msg)
 		}
 	}
@@ -459,7 +439,10 @@ export function joinGame(
 			c.end(true)
 			return
 		}
-		c.on('connect', hello) // after an automatic reconnect: take the seat back
+		c.on('connect', () => {
+			hello() // after an automatic reconnect: take the seat back
+			pend.nudge() // and say again what the host may have missed while the link was down
+		})
 		watch(c, onConn, () => dead)
 		c.on('message', (topic, buf) => {
 			if (dead) return
@@ -512,11 +495,12 @@ export function localGame(
 		send: m => {
 			if (m.t === 'react') return react(tok, m.k)
 			if (m.t === 'draft') return game.draft(tok, m.n)
+			sched.guard() // a locked phone freezes the clock work too
 			const e = game.act(tok, m)
 			if (e) onErr(e)
 			push()
 		},
-		close: () => {},
+		close: () => sched.stop(),
 	}
 }
 

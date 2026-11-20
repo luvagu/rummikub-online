@@ -360,6 +360,7 @@ export const es = {
 	'e.noRoom':
 		'Sala no encontrada. Revisa el código y que la pestaña del anfitrión siga abierta.',
 	'e.hostOff': 'El anfitrión se desconectó. Esperando a que vuelva…',
+	'e.noSync': 'El anfitrión no responde, así que quizá tu última jugada no llegó. Revisa la mesa e inténtalo de nuevo.',
 	'e.refused': 'El servidor de enlace rechazó la conexión.',
 	'e.closed': 'El anfitrión terminó la partida.',
 	'e.nobroker':

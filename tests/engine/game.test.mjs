@@ -248,3 +248,40 @@ test('a timeout message is refused when the game has no turn timer', () => {
 	g.act(g.s.players[g.s.turn].id, { t: 'timeout' })
 	assert.equal(g.s.seq, seq)
 })
+
+test('a move stamped for another turn is dropped silently, so a resend can never land on a different turn', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.act('h', { t: 'bot' })
+	g.act('h', { t: 'start' })
+	const s = g.s
+	s.holdUntil = 0
+	s.turn = 0
+	const seq = s.seq
+	assert.equal(g.act('h', { t: 'draw', q: seq - 1 }), undefined, 'no error, no draw')
+	assert.equal(s.seq, seq)
+	assert.equal(g.act('h', { t: 'end', q: seq + 3, board: [], rack: [] }), undefined)
+	assert.equal(s.seq, seq)
+	g.act('h', { t: 'draw', q: seq })
+	assert.equal(s.seq, seq + 1, 'the right turn id goes through')
+	// and the same message sent again (a retry) is now a no-op
+	const turn = s.turn
+	g.act('h', { t: 'draw', q: seq })
+	assert.equal(s.seq, seq + 1)
+	assert.equal(s.turn, turn)
+})
+
+test('grace() restarts the turn clock without changing the turn', () => {
+	const g = new Game()
+	g.join('h', 'Host')
+	g.act('h', { t: 'bot' })
+	g.s.opts.timer = 15
+	g.act('h', { t: 'start' })
+	g.s.holdUntil = 0
+	g.s.t0 = Date.now() - 20000
+	const seq = g.s.seq
+	assert.equal(g.view('h').tl, 0)
+	g.grace()
+	assert.equal(g.s.seq, seq)
+	assert.ok(g.view('h').tl > 14000)
+})
