@@ -31,7 +31,7 @@ export function LobbySeats({ s, net, host }) {
 					if (p)
 						return (
 							<li key={p.id} className='lb-seat' data-off={p.on === false || undefined}>
-								<Avatar name={p.name} i={i} />
+								<Avatar name={p.name} i={i} bot={p.bot} />
 								<span className='lb-name'>
 									{p.name}
 									{i === s.me && <em> {t('you')}</em>}

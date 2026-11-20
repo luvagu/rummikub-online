@@ -56,13 +56,13 @@ export function Seats({ s, net, host }) {
 				const p = s.players[i]
 				return p ? (
 					<li key={p.id} className={'lseat' + (p.on === false ? ' off' : '')}>
-						<Avatar name={p.name} i={i} />
+						<Avatar name={p.name} i={i} bot={p.bot} />
 						<b>
 							{p.name}
 							{i === s.me && <em> {t('you')}</em>}
 						</b>
 						{i === 0 && <Crown size={16} aria-label={t('host')} />}
-						{p.bot && <Bot size={16} aria-label={t('bot')} />}
+						{p.bot && <span className='sr'>{t('bot')}</span>}{/* the robot avatar shows it */}
 						{p.bot && !p.left && (
 							<small className='lvltag'>{t('lvl' + (p.lvl || 3))}</small>
 						)}

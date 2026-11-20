@@ -26,7 +26,6 @@ import {
   ArrowDownToLine,
   CopyPlus,
   Check,
-  Bot,
   WifiOff,
   ArrowDown01,
   Palette,
@@ -713,7 +712,7 @@ export default function Game({
           const r = tile.getBoundingClientRect(),
             pv = tile.cloneNode(true),
             ids = sel.includes(id) ? sel : [id];
-          pv.className = "tile drag-preview";
+          pv.className = "tile drag-preview"; // its data-c keeps the tile's ink
           for (const a of ["data-id", "aria-label", "aria-pressed"]) pv.removeAttribute(a);
           pv.setAttribute("aria-hidden", "true");
           pv.tabIndex = -1;
@@ -818,7 +817,10 @@ export default function Game({
 
   return (
     <div
-      className={"game" + (dnd ? " dnd" : "")}
+      className="game"
+      data-dnd={dnd || undefined}
+      data-my-turn={my || undefined}
+      data-phase={s.phase}
       onPointerDown={onTilePointerDown}
       onClick={onTileClick}
       onFocus={onTileFocus}
@@ -869,13 +871,17 @@ export default function Game({
           title={s.phase === "play" ? t("scores") : undefined}
           onClick={() => s.phase === "play" && setScoresOpen(true)}
         >
-          {s.players.map((p, i) => (
+          {s.players.map((p, i) => {
+            const act = i === s.turn && s.phase === "play";
+            return (
             <div
               key={p.id}
               data-pid={p.id}
+              data-t={act && timed ? cls : undefined}
+              style={act && timed && secs != null ? { "--sweep": (Math.max(0, secs) / tot) * 360 + "deg" } : undefined}
               className={
                 "seat" +
-                (i === s.turn && s.phase === "play" ? " act" : "") +
+                (act ? " act" : "") +
                 (p.on === false ? " off" : "") +
                 (bump === p.id ? " bump" : "") +
                 (celebrate?.id === p.id ? " win" : "")
@@ -884,6 +890,7 @@ export default function Game({
               <Avatar
                 name={p.name}
                 i={i}
+                bot={p.bot}
                 badge={
                   dealt != null
                     ? Math.min(p.n, Math.max(0, Math.ceil((dealt - i) / s.players.length)))
@@ -908,13 +915,12 @@ export default function Game({
                   </span>
                 </small>
               </div>
-              {p.bot && (
-                <Bot size={14} className="seat-bot" aria-label={t("bot")} />
-              )}
+              {p.bot && <span className="sr">{t("bot")}</span>}{/* the robot avatar shows it */}
               {p.on === false && <WifiOff size={14} aria-label={t("off")} />}
               {p.melded && <Check size={14} className="seat-ok" />}
             </div>
-          ))}
+            );
+          })}
         </div>
         <span
           className="pill"
@@ -935,7 +941,7 @@ export default function Game({
           >
             <EllipsisVertical size={20} />
           </button>
-          <Popup id="game-menu" className="menu" label={t("menu")} onOpenChange={setMenu}>
+          <Popup id="game-menu" className="menu gmenu" label={t("menu")} onOpenChange={setMenu}>
               <button
                 role="menuitem"
                 onClick={() => {
@@ -1129,8 +1135,13 @@ export default function Game({
               : t("turnOf", { name: cur.name })}
           </b>
           {my && !melded && (
-            <span className="meld" aria-hidden="true">
-              <i style={{ width: Math.min(100, (pts / 30) * 100) + "%" }} />
+            <span
+              className="meld"
+              aria-hidden="true"
+              data-done={pts >= 30 || undefined}
+              style={{ "--fill": Math.min(1, pts / 30) }}
+            >
+              <i />
             </span>
           )}
           {hold || (my && edited && why) ? (
@@ -1145,6 +1156,7 @@ export default function Game({
         </div>
         {my && (
           <>
+            <div className="dock-tools">
             <button
               aria-label={t("toRack")}
               disabled={!canBack}
@@ -1168,6 +1180,7 @@ export default function Game({
               <Undo2 size={18} />
               <span className="lbl">{t("undo")}</span>
             </button>
+            </div>
             <button
               className={
                 cd
