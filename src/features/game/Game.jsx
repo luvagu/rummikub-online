@@ -109,8 +109,13 @@ import {
 } from "./dealAnimation.js";
 import {
   DND_MQ,
-  BGS,
-  loadBg,
+  SHUFFLE,
+  loadBgMode,
+  saveBgMode,
+  nextBgMode,
+  pickBg,
+  initialBg,
+  saveLastBg,
 } from "./display.js";
 import {
   prefersReducedMotion,
@@ -164,7 +169,11 @@ export default function Game({
     [sel, setSel] = useState([]),
     [menu, setMenu] = useState(false),
     [sm, setSm] = useState(loadSort),
-    [bg, setBg] = useState(loadBg);
+    [bgMode, setBgMode] = useState(loadBgMode),
+    [bg, setBg] = useState(() => initialBg(bgMode)); // resolved once per mount = once per session (App remounts Game for each)
+  useEffect(() => {
+    saveLastBg(bg); // the next Shuffle avoids repeating it
+  }, [bg]);
   const { theme, shown } = useTheme();
   const [pf, setPf] = useState(getPrefs),
     seatsRef = useRef(null);
@@ -1020,15 +1029,16 @@ export default function Game({
               <button
                 role="menuitem"
                 onClick={() => {
-                  const v = (bg + 1) % BGS;
+                  const m = nextBgMode(bgMode);
                   sfx("click");
-                  setBg(v);
-                  local.set("rmkBg", v);
+                  setBgMode(m);
+                  setBg(m === SHUFFLE ? pickBg(bg) : m);
+                  saveBgMode(m);
                 }}
               >
                 <Grid3x3 size={18} />
                 {t("bg")}
-                <span className="sw">{t("bg" + bg)}</span>
+                <span className="sw">{bgMode === SHUFFLE ? `${t("bgShuffle")} · ${t("bg" + bg)}` : t("bg" + bg)}</span>
               </button>
               <button
                 role="menuitem"
