@@ -76,7 +76,11 @@ The dialogs, text fields, coach and menus follow the system theme (`color-scheme
 
 ## Table patterns
 
-Menu > Table pattern cycles the table background through ten patterns (Felt, Diamonds, Dots, Stripes, Weave, Grid, Plaid, Scales, Crosses, Rings). The choice is remembered in the browser. Patterns are pure CSS (`.board.bg0` to `.bg9` in `src/styles/components.css`).
+Menu > Table pattern cycles **Shuffle**, then eight patterns: Baize, Deco, Honeycomb, Cubes, Pinstripe, Chevron, Starfield and Lattice. They are layered light, dark and faint gold overlays on the green felt, drawn in pure CSS or small inline SVGs (`.board.bg0` to `.bg7` in `src/styles/game.css`).
+
+- **Shuffle** is the default: each session (new room, solo game, tutorial, or a reload that resumes a game) starts on a random pattern that differs from the last one shown. Rounds inside a session keep it.
+- Picking a pattern pins it. The choice is remembered in the browser (`rmkTable`; `rmkTableLast` is the pattern last shown). The older `rmkBg` key is ignored, so everyone starts on Shuffle.
+- The helpers live in `src/features/game/display.js`. Keep `BGS`, the CSS rules and the `bg0`..`bgN` names in both language files in step (`tests/features/game/tablePatterns.test.mjs` checks it).
 
 ## Between rounds
 
