@@ -314,7 +314,9 @@ export class Game {
 			p = s.players[i]
 		if (!this.botDue() || this.hold()) return
 		const lvl = p.lvl || 3,
-			before = p.rack.length
+			before = p.rack.length,
+			wasMelded = p.melded,
+			hadJoker = p.rack.some(id => T(id).j)
 		// beginners often just draw, even when they could play
 		const mv =
 			Math.random() < (BOT[lvl] || BOT[3]).skip
@@ -329,6 +331,8 @@ export class Game {
 			lvl,
 			played: Math.max(0, before - left),
 			drew: left > before,
+			first: !wasMelded && p.melded, // melded for the first time this turn
+			joker: hadJoker && !p.rack.some(id => T(id).j), // played a joker this turn
 			left,
 			oppMin: Math.min(
 				99,

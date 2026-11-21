@@ -1,0 +1,87 @@
+/* Table colours (menu → Table colour). A theme is only its three seeds: hue, chroma multiplier and lightness offset; every
+   felt role in tokens.css is derived from them. `data-table` on <html> picks one (src/features/game/tableTheme.js; the
+   inline script in index.html applies the saved one before first paint). Emerald is the default and needs no attribute.
+   The same seed blocks also paint the swatches in the menu (.tdot[data-t]), so the swatch and the table can never disagree.
+
+   Keep every theme a dark felt: white text sits on it, and tests/features/game/tableThemes.test.mjs checks the contrast
+   (text 4.5:1, tiles/rings/seat chips 3:1) and that each role stays inside sRGB for all of them. `--table` repeats the id so
+   a style query can fine-tune one theme (below); the core colours never depend on it. */
+:is(:root[data-table='emerald'], .tdot[data-t='emerald']) {
+	--table: emerald;
+	--table-h: 145;
+	--table-c: 1;
+	--table-l: 0;
+}
+:is(:root[data-table='midnight'], .tdot[data-t='midnight']) {
+	--table: midnight;
+	--table-h: 262;
+	--table-c: 0.7;
+	--table-l: -0.05;
+}
+:is(:root[data-table='burgundy'], .tdot[data-t='burgundy']) {
+	--table: burgundy;
+	--table-h: 8;
+	--table-c: 0.9;
+	--table-l: -0.03;
+}
+:is(:root[data-table='slate'], .tdot[data-t='slate']) {
+	--table: slate;
+	--table-h: 250;
+	--table-c: 0.2;
+	--table-l: 0;
+}
+:is(:root[data-table='plum'], .tdot[data-t='plum']) {
+	--table: plum;
+	--table-h: 322;
+	--table-c: 0.8;
+	--table-l: -0.02;
+}
+:is(:root[data-table='teal'], .tdot[data-t='teal']) {
+	--table: teal;
+	--table-h: 192;
+	--table-c: 0.55;
+	--table-l: -0.03;
+}
+
+/* Switching colours: the registered seeds interpolate, so the felt, header, trays and dialogs cross-fade together (no
+   view-transition snapshot, which would freeze the timer ring and an ongoing drag). Not under reduced motion: it just changes. */
+@media (prefers-reduced-motion: no-preference) {
+	:root {
+		transition:
+			--table-h var(--dur-3) var(--ease-out),
+			--table-c var(--dur-3) var(--ease-out),
+			--table-l var(--dur-3) var(--ease-out);
+	}
+}
+
+/* The menu's swatch: the lit felt colour of the theme, with a thin edge so slate/midnight stay visible on the dark menu. */
+.tdot {
+	--table-h: 145;
+	--table-c: 1;
+	--table-l: 0;
+	display: inline-block;
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+	border-radius: 50%;
+	background: radial-gradient(
+		circle at 35% 30%,
+		oklch(calc(0.62 + var(--table-l)) calc(0.13 * var(--table-c)) var(--table-h)),
+		oklch(calc(0.42 + var(--table-l)) calc(0.11 * var(--table-c)) var(--table-h)) 70%
+	);
+	box-shadow: inset 0 0 0 1px oklch(100% 0 0 / 0.35);
+	/* the header colour (= --felt-edge in tokens.css) at this swatch's seeds: tableTheme.js reads it for <meta name="theme-color"> */
+	--hud: oklch(calc(0.352 + var(--table-l)) calc(0.091 * var(--table-c)) var(--table-h));
+}
+
+/* Per-theme fine-tuning with style queries (Baseline since 2026-05; purely cosmetic, so no fallback is needed).
+   Burgundy: an invalid set is a red dashed tray, which nearly disappears on a red felt. Switch it to a light warm edge. */
+@container style(--table: burgundy) {
+	.set.bad {
+		border-color: var(--danger-ink);
+		background: color-mix(in oklab, black 30%, transparent);
+		&::after {
+			background: var(--danger-ink);
+			color: oklch(0.25 0.1 25);
+		}
+	}
+}

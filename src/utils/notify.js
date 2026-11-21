@@ -61,62 +61,42 @@ export const buzz = (p = [200, 100, 200]) => {
 		if (canVibrate()) navigator.vibrate(p)
 	} catch {}
 }
-// One short synthesized cue per reaction key (see REACTIONS in reactions.js). Steps are [freq, at, dur, gain, type].
+// One short synthesized cue per emote category (see `cat` in REACTIONS, reactions.js). Steps are [freq, at, dur, gain, type].
 const RSND = {
-	gg: [
-		[660, 0, 0.09, 0.08, 'triangle'],
-		[880, 0.1, 0.14, 0.08, 'triangle'],
-	], // rising double blip
-	nice: [
+	cheer: [
 		[523, 0, 0.1, 0.07],
 		[659, 0.08, 0.1, 0.07],
 		[784, 0.16, 0.18, 0.07],
 	], // bright arpeggio
-	wow: [
+	shock: [
 		[400, 0, 0.1, 0.07, 'triangle'],
 		[520, 0.07, 0.1, 0.07, 'triangle'],
 		[680, 0.14, 0.1, 0.07, 'triangle'],
 		[900, 0.21, 0.2, 0.07, 'triangle'],
 	], // upward sweep
-	haha: [
+	laugh: [
 		[740, 0, 0.06, 0.07, 'square'],
 		[740, 0.09, 0.06, 0.07, 'square'],
 		[740, 0.18, 0.06, 0.07, 'square'],
 	], // staccato triplet
-	scared: [
-		[880, 0, 0.06, 0.08, 'triangle'],
-		[1175, 0.06, 0.06, 0.08, 'triangle'],
-		[880, 0.12, 0.06, 0.08, 'triangle'],
-		[1175, 0.18, 0.06, 0.08, 'triangle'],
-		[660, 0.26, 0.28, 0.08, 'triangle'],
-	], // shrill warble then a drop
-	hmm: [
-		[330, 0, 0.18, 0.08, 'sine'],
-		[294, 0.2, 0.26, 0.08, 'sine'],
-	], // low two-tone
-	hurry: [
+	sad: [
+		[392, 0, 0.16, 0.08, 'sine'],
+		[330, 0.18, 0.16, 0.08, 'sine'],
+		[262, 0.36, 0.3, 0.08, 'sine'],
+	], // slow falling thirds
+	taunt: [
+		[220, 0, 0.12, 0.08, 'sawtooth'],
+		[233, 0.12, 0.2, 0.08, 'sawtooth'],
+	], // low sly wobble
+	nudge: [
 		[1000, 0, 0.04, 0.06],
 		[1000, 0.15, 0.04, 0.06],
 		[1000, 0.3, 0.04, 0.06],
-		[1000, 0.45, 0.04, 0.06],
 	], // ticking
-	fire: [
-		[180, 0, 0.05, 0.07, 'sawtooth'],
-		[240, 0.04, 0.04, 0.06, 'square'],
-		[200, 0.09, 0.05, 0.07, 'sawtooth'],
-		[300, 0.13, 0.04, 0.06, 'square'],
-		[420, 0.18, 0.1, 0.07, 'sawtooth'],
-		[620, 0.26, 0.12, 0.07, 'triangle'],
-		[940, 0.34, 0.2, 0.07, 'triangle'],
-	], // crackle then a rising whoosh
-	rage: [
-		[110, 0, 0.3, 0.1, 'sawtooth'],
-		[104, 0.04, 0.26, 0.06, 'sawtooth'],
-	], // low buzz
 }
-export function reactPop(k) {
+export function reactPop(cat) {
 	if (!getPrefs().sound) return
-	const c = RSND[k]
+	const c = RSND[cat]
 	if (c) c.forEach(([f, at, d, g, ty]) => tone(f, at, d, g, ty))
 	else tone(780, 0, 0.12, 0.07, 'triangle')
 }

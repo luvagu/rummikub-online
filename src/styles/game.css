@@ -321,7 +321,7 @@
 				height: 15px;
 				padding: 2px;
 				border-radius: 50%;
-				background: #2e7d32;
+				background: var(--felt2);
 				box-shadow: 0 0 0 1.5px var(--felt-hud);
 				color: #fff;
 				stroke-width: 3.5;
@@ -1230,14 +1230,15 @@
 
 /* ================================================================== overlays: reactions, deal, celebration */
 @layer overlays {
-	/* reaction picker (a native popover above the rack's smiley button) */
+	/* emote picker (a native popover above the rack's smiley button): a "Suggested" strip of three that fit the moment, then the
+	   fixed 4 x 3 grid, most-used first. A 12-column grid: suggestions span 4, grid items span 3. */
 	.rpick {
 		/* placement (anchored above the smiley button, or a bottom sheet without anchor positioning): surfaces.css */
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(12, 1fr);
 		gap: 4px;
-		width: 276px;
+		width: 336px;
 		max-width: calc(100% - 20px);
-		padding: 6px;
+		padding: 6px; /* no overflow here: the tail (surfaces.css .rpick::after) sits outside the box */
 		border: 1px solid oklch(100% 0 0 / 0.18);
 		border-radius: 16px;
 		background: color-mix(in oklab, var(--felt-deep) 94%, black);
@@ -1246,36 +1247,57 @@
 		&:popover-open {
 			display: grid;
 		}
+		& .rhead {
+			grid-column: 1 / -1;
+			margin: 2px 6px 0;
+			font: 700 11px/1 var(--font);
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			opacity: 0.6;
+		}
 		& button {
+			grid-column: span 3;
 			flex-direction: column;
 			gap: 2px;
-			padding: 8px 4px;
+			padding: 6px 2px;
 			border: 0;
 			border-radius: 10px;
 			background: none;
-			& span {
-				font-size: 26px;
-				line-height: 1.1;
-			}
 			& small {
 				font-size: 0.75rem;
 				font-weight: 600;
 				opacity: 0.85;
 			}
 		}
+		& button.rsug {
+			grid-column: span 4;
+			background: oklch(100% 0 0 / 0.07);
+		}
 		@media (hover: hover) {
 			& button:hover:not(:disabled) {
 				background: oklch(100% 0 0 / 0.12);
 			}
 		}
-		/* phones and short landscape: a compact 3 x 3 emoji grid. The labels are hidden here, but every item keeps its
-		   name (aria-label in Game.jsx), so screen readers still hear "Clap", not just the emoji. A popover in the top
-		   layer, so the viewport is what it sizes against. */
+		/* phones and short landscape: the grid's labels are hidden (every item keeps its name: aria-label in Game.jsx, so screen
+		   readers still hear "Respect!", not just the picture); the suggestions keep theirs. A popover in the top layer, so the
+		   viewport is what it sizes against. */
 		@media (width <= 520px), (height <= 480px) and (orientation: landscape) {
-			width: min(228px, calc(100% - 20px));
-			& button small {
+			width: min(300px, calc(100% - 20px));
+			& button:not(.rsug) small {
 				display: none;
 			}
+		}
+	}
+	/* one emote: the animated WebP, or the emoji character as its stand-in (Emote.jsx) */
+	.emo {
+		display: block;
+		inline-size: var(--emo, 1.5rem);
+		block-size: var(--emo, 1.5rem);
+		object-fit: contain;
+		&.glyph {
+			font-size: calc(var(--emo) * 0.82);
+			line-height: var(--emo);
+			text-align: center;
 		}
 	}
 	/* a reaction bubble under the sender's seat: anchored to the seat (Game.jsx names each seat --seat-<i>), or placed
@@ -1286,17 +1308,25 @@
 		translate: -50% 0;
 		display: flex;
 		align-items: center;
-		gap: 6px;
-		padding: 3px 12px 3px 8px;
+		gap: 8px;
+		padding: 4px 14px 4px 6px;
 		border-radius: 999px;
 		background: oklch(0% 0 0 / 0.78);
-		border: 1px solid oklch(100% 0 0 / 0.12);
+		border: 2px solid var(--tail, oklch(100% 0 0 / 0.12)); /* the sender's seat colour: who, without reading the name */
 		box-shadow: var(--elev-2);
 		pointer-events: none;
 		animation: rbub-fade 2.6s ease-out both;
-		& .rx {
-			font-size: 26px;
-			line-height: 1;
+		&[data-seat='0'] {
+			--tail: var(--seat-0);
+		}
+		&[data-seat='1'] {
+			--tail: var(--seat-1);
+		}
+		&[data-seat='2'] {
+			--tail: var(--seat-2);
+		}
+		&[data-seat='3'] {
+			--tail: var(--seat-3);
 		}
 		& small {
 			color: #fff;
@@ -1306,37 +1336,30 @@
 		@media (prefers-reduced-motion: no-preference) {
 			animation-name: rbub;
 			& .rx {
-				animation-duration: 0.9s;
-				animation-iteration-count: 2;
-				animation-timing-function: ease-in-out;
+				animation: rx-pop 0.5s var(--ease-spring) both;
 			}
-			& .rx-clap {
-				animation-name: rx-clap;
-			}
-			& .rx-bounce {
-				animation-name: rx-bounce;
-			}
-			& .rx-zoom {
-				animation-name: rx-zoom;
-			}
-			& .rx-shake {
-				animation-name: rx-shake;
-			}
-			& .rx-sway {
-				animation-name: rx-sway;
-			}
-			& .rx-tilt {
-				animation-name: rx-tilt;
-			}
-			& .rx-flip {
-				animation-name: rx-flip;
-			}
-			& .rx-drop {
-				animation-name: rx-drop;
-			}
-			& .rx-rumble {
-				animation-name: rx-rumble;
-			}
+		}
+	}
+
+	/* a seat's mood: the emote it is "feeling" (reactions.js moodsFor / endMoodsFor), pinned to the chip's corner. Decorative and
+	   local; it fades out on its own just before Game.jsx removes it. */
+	.seat > .mood {
+		position: absolute;
+		inset-block-start: -5px; /* the seat row clips at its 6px padding */
+		inset-inline-end: 4px;
+		z-index: 2;
+		display: grid;
+		place-items: center;
+		padding: 2px;
+		border-radius: 50%;
+		background: oklch(0% 0 0 / 0.72);
+		box-shadow: var(--elev-1);
+		pointer-events: none;
+		animation: mood-out 0.3s ease-in 2.1s both;
+		@media (prefers-reduced-motion: no-preference) {
+			animation:
+				mood-in 0.35s var(--ease-spring) both,
+				mood-out 0.3s ease-in 2.1s both;
 		}
 	}
 
@@ -1709,7 +1732,7 @@
 		& .av {
 			width: 24px;
 			font-size: 12px;
-			box-shadow: 0 0 0 2px #1f5f24;
+			box-shadow: 0 0 0 2px var(--felt-card);
 			& + .av {
 				margin-inline-start: -6px;
 			}
@@ -1883,74 +1906,26 @@
 		--spin: 360deg;
 	}
 }
-@keyframes rx-clap {
-	30% {
-		transform: scale(1.3) rotate(-12deg);
+@keyframes rx-pop {
+	/* an emote arriving: a springy pop from small and slightly tilted */
+	from {
+		scale: 0.3;
+		rotate: -14deg;
 	}
-	60% {
-		transform: scale(0.9) rotate(10deg);
-	}
-}
-@keyframes rx-bounce {
-	40% {
-		transform: translateY(-16px);
-	}
-	70% {
-		transform: translateY(2px);
+	to {
+		scale: 1;
+		rotate: 0deg;
 	}
 }
-@keyframes rx-zoom {
-	50% {
-		transform: scale(1.5);
+@keyframes mood-in {
+	from {
+		opacity: 0;
+		scale: 0.4;
+		translate: 0 6px;
 	}
 }
-@keyframes rx-shake {
-	20%,
-	60% {
-		transform: rotate(-14deg) translateY(-4px);
-	}
-	40%,
-	80% {
-		transform: rotate(14deg) translateY(-4px);
-	}
-}
-@keyframes rx-sway {
-	25% {
-		transform: translateX(-8px) rotate(-8deg);
-	}
-	75% {
-		transform: translateX(8px) rotate(8deg);
-	}
-}
-@keyframes rx-tilt {
-	50% {
-		transform: rotate(-20deg) scale(1.1);
-	}
-}
-@keyframes rx-flip {
-	50% {
-		transform: rotateY(180deg) scale(1.15);
-	}
-}
-@keyframes rx-drop {
-	40% {
-		transform: translateY(10px) scale(0.9);
-	}
-	70% {
-		transform: translateY(4px) scale(0.95);
-	}
-}
-@keyframes rx-rumble {
-	20% {
-		transform: translate(-4px, 2px) scale(1.1);
-	}
-	40% {
-		transform: translate(4px, -2px) scale(1.1);
-	}
-	60% {
-		transform: translate(-4px, -2px) scale(1.1);
-	}
-	80% {
-		transform: translate(4px, 2px) scale(1.1);
+@keyframes mood-out {
+	to {
+		opacity: 0;
 	}
 }

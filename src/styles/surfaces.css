@@ -258,7 +258,7 @@
 		--btn-off-bg: #0000004d;
 		--btn-off-edge: #ffffff99;
 		--btn-off-ink: #ffffffcc;
-		--card-bg: #1f5f24; /* the footer and the sheet handle read the card colour */
+		--card-bg: var(--felt-card); /* the footer and the sheet handle read the card colour */
 		/* the felt is dark in both colour schemes: its text and rows never take the light card's values */
 		--card-ink: #fff;
 		--card-sub-ink: #ffffffcc;
@@ -267,9 +267,9 @@
 		--card-link: #fff;
 		--card-link-hover: #fff;
 		--card-focus: var(--amber);
-		--card-pos: #9be7a0;
+		--card-pos: oklch(0.86 calc(0.123 * var(--table-c)) calc(var(--table-h) + 1));
 		--card-neg: #ffb3ab;
-		background: radial-gradient(circle at 50% 0%, #3b7f3f, #1f5f24 78%);
+		background: radial-gradient(circle at 50% 0%, var(--felt-card-hi), var(--felt-card) 78%);
 		color: #fff;
 		border: 1px solid #ffffff33;
 		& h2,
@@ -837,6 +837,36 @@
 		}
 		&.mdanger button {
 			color: var(--tone-danger);
+		}
+	}
+	/* Table colour row (Game.jsx): the label line, then six swatches. The swatch itself (.tdot) is drawn in tables.css. */
+	.tcolors {
+		display: grid;
+		gap: 6px;
+		padding: 6px 15px 8px; /* the item buttons' 14px + 1px border */
+		& .tlabel {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			& > svg {
+				flex: none;
+				opacity: 0.85;
+			}
+		}
+		& .tdots {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			padding-inline-start: 30px; /* lines up with the label text, past the icon */
+		}
+		& .tdots button {
+			inline-size: auto;
+			padding: 4px;
+			border-radius: 50%;
+			border: 2px solid transparent;
+			&[aria-checked='true'] {
+				border-color: var(--amber);
+			}
 		}
 	}
 	.lvlpop {
