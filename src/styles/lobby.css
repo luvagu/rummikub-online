@@ -301,9 +301,9 @@ html:has(.lobby) {
 .lb-actions > :is(button, a) {
 	min-block-size: 2.75rem;
 }
-.lb-actions > .primary,
-.lb-actions > :nth-child(2):last-child {
-	grid-column: 1 / -1; /* copy link is the primary action: full row; WhatsApp + Share pair up below */
+/* two actions sit side by side; with three, copy link (the primary) takes the full row and WhatsApp + Share pair up below */
+.lb-actions:has(> :nth-child(3)) > .primary {
+	grid-column: 1 / -1;
 }
 .lb-actions > button:not(.primary) {
 	background: var(--surface-2);
@@ -664,10 +664,6 @@ html:has(.lobby) {
 	.lb-actions {
 		display: flex;
 		flex-wrap: wrap;
-	}
-	.lb-actions > .primary,
-	.lb-actions > :nth-child(2):last-child {
-		grid-column: auto;
 	}
 	.lb-actions > .primary {
 		flex: 1 1 9rem;
