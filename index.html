@@ -22,6 +22,9 @@
 			try {
 				var t = localStorage.getItem('rmkTheme')
 				if (t === 'light' || t === 'dark') document.querySelector('meta[name="color-scheme"]').content = t
+				// table colour (src/features/game/tableTheme.js): the attribute is all CSS needs; main.jsx fixes theme-color after
+				var f = localStorage.getItem('rmkFelt')
+				if (/^(midnight|burgundy|slate|plum|teal)$/.test(f)) document.documentElement.dataset.table = f
 			} catch (e) {}
 		</script>
 		<meta

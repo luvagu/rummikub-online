@@ -6,14 +6,15 @@ import { join } from 'node:path'
 
 // Emits dist/sw.js from scripts/sw-template.js after the build, with the precache list and a cache name derived from the content
 // of every precached file (so any change to the app makes a new cache, and the old one is deleted on activate).
-// Not cached on purpose: the lazy mqtt chunk (online play needs the network anyway), og.png (only for crawlers) and the fonts
+// Not precached on purpose: the animated emotes (emotes/*.webp: the worker caches each one the first time it is shown, in its own
+// cache that survives updates), the lazy mqtt chunk (online play needs the network anyway), og.png (only for crawlers) and the fonts
 // for scripts the app does not use (only the latin and latin-ext subsets are kept).
 const swPlugin = () => ({
 	name: 'rmk-service-worker',
 	apply: 'build',
 	writeBundle(options) {
 		const out = options.dir
-		const skip = f => f === 'sw.js' || f === 'og.png' || /^assets\/mqtt/.test(f) || (/\.woff2?$/.test(f) && !/-latin(-ext)?-/.test(f))
+		const skip = f => f === 'sw.js' || f === 'og.png' || f.startsWith('emotes/') || /^assets\/mqtt/.test(f) || (/\.woff2?$/.test(f) && !/-latin(-ext)?-/.test(f))
 		const files = readdirSync(out, { recursive: true })
 			.map(f => f.split('\\').join('/'))
 			.filter(f => statSync(join(out, f)).isFile() && !skip(f))

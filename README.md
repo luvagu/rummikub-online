@@ -18,6 +18,10 @@ Classic Rummikub (2–4 players) in React. Multiplayer goes through free public 
 
 - Rules: the in-game Rules button (menu > Rules).
 
+## Credits
+
+The animated emotes are Google's Noto Animated Emoji (CC BY 4.0, https://googlefonts.github.io/noto-emoji-animation/), downscaled and re-encoded for this app (`public/emotes/LICENSE.txt`, `scripts/make-emotes.py`).
+
 ## Bots
 
 Add up to 3 bots in the lobby or between rounds, or press "Play solo" on the home screen and choose "Play against the bot" (works fully offline, no network needed). Bots come in five difficulty levels:
@@ -82,6 +86,15 @@ Menu > Table pattern cycles **Shuffle**, then eight patterns: Baize, Deco, Honey
 - Picking a pattern pins it. The choice is remembered in the browser (`rmkTable`; `rmkTableLast` is the pattern last shown). The older `rmkBg` key is ignored, so everyone starts on Shuffle.
 - The helpers live in `src/features/game/display.js`. Keep `BGS`, the CSS rules and the `bg0`..`bgN` names in both language files in step (`tests/features/game/tablePatterns.test.mjs` checks it).
 
+## Table colours
+
+Menu > Table colour picks the felt: **Emerald** (default), **Midnight**, **Burgundy**, **Slate**, **Plum** or **Teal**. It is independent of the pattern and applies app-wide (Home, Lobby, the table, dialogs, the browser's `theme-color`); the choice is remembered (`rmkFelt`) and applied by a tiny script in `index.html` before first paint, so a reload never flashes green.
+
+- A theme is just three numbers in `src/styles/tables.css` (hue, chroma multiplier, lightness offset). Every felt role in `src/styles/tokens.css` (`--felt`, `--felt2`, `--felt-deep`, `--felt-edge`, the dark dialog/field/coach surfaces and the green-tinted light-scheme neutrals) is an `oklch()` derived from those seeds, which are registered with `@property`, so switching cross-fades the whole table (not under reduced motion). Emerald reproduces the original palette.
+- Per-theme fine-tuning uses a style query (`@container style(--table: burgundy)`, invalid sets get a light edge on the red felt).
+- `src/features/game/tableTheme.js` holds the ids, the saved choice and `applyTable()`, which also sets `<meta name="theme-color">` from the theme's header colour. Keep `TABLES`, the blocks in `tables.css` and the `table.<id>` names in both language files in step.
+- `tests/features/game/tableThemes.test.mjs` checks that every theme stays inside sRGB, that white text is at least 4.5:1 on every felt role, that tiles, the amber action colour, timer ring and seat chips are at least 3:1, that emerald still matches the old hex palette, and that no felt colour is hard-coded or used in a `repeating-*-gradient` (Firefox).
+
 ## Between rounds
 
 When a round ends in a hosted room, the dialog has the same layout as the lobby: room code, copy/share, and the four seats.
@@ -117,7 +130,10 @@ A small service worker (`scripts/sw-template.js`, emitted by a plugin in `vite.c
 
 ## Reactions, drawn tiles and drag & drop
 
-- **Reactions:** the smiley button next to the rack sort buttons sends one of nine fixed emoji (including 😱 Scared and 🔥 On fire) + short messages (translated per player). Each one has its own short synthesized sound (no audio files; follows the sound toggle). They pop up over the sender's seat and are never part of the game state (not saved, not replayed on reconnect). The host validates the key and rate-limits each player. Bots react sporadically (beginners chat more, experts rarely) based on what just happened. Menu > Reactions mutes incoming ones. The set lives in `src/engine/reactions.js`.
+- **Emotes:** the smiley button next to the rack sort buttons opens the emote picker: a **Suggested** strip of three that fit the moment (leading, trailing, an opponent nearly out, someone slow, round won / lost / blocked) and a fixed 4 × 3 grid of twelve (Good game, Well played, Mind blown, LOL, No way, Hmm, Hurry up, On fire, Respect, So close, Rummikub, Mine now), most-used first for you (a counter in this browser, `rmkEmoteUse`). Three more (tense endgame, party, oops) only appear as suggestions. Each is an animated emote (Noto Animated Emoji, CC BY 4.0, `public/emotes/*.webp`, rebuilt by `scripts/make-emotes.py`; the emoji character shows while it loads, offline-first-time, and with reduced motion). A sent emote pops up under the sender's seat in their seat colour, with one short synthesized sound per category (cheer, shock, laugh, sad, taunt, nudge; follows the sound toggle). Only the key goes over the wire; it is never part of the game state (not saved, not replayed on reconnect), the host validates it and rate-limits each player, and keys from older clients are mapped onto the new set (`RLEGACY`). Menu > Reactions mutes incoming ones and the seat moods below.
+- **Seat moods:** every client derives, from the same public state, a small emote badge on each seat for a few seconds (nothing is sent): 3+ tiles in one turn is "on fire", a first meld a clap, an opponent dropping to 3 tiles or fewer makes the others gasp, and in the round-end celebration the winner gets a trophy and each loser reacts to the points they are stuck with (few: so close, some: oops, a lot: gasp). The rules are the pure functions `situationFor`, `momentFor`, `moodsFor` and `endMoodsFor` in `src/engine/reactions.js` (tested), and like the confetti they only fire on a live transition, never on a reload or late join.
+- **Bots** react from the same situations (a rule table with a persona by level: beginners chatty and silly, experts rare and terse; they always celebrate going out), at most once per 20 s each. `botPlay()` reports `{played, drew, first, joker, left, oppMin}` for it.
+- The animations are not precached by the service worker (about half a megabyte): each is kept in its own cache the first time it is shown.
 - **Drawn tiles:** a tile you just drew (including the 3-tile timeout penalty) glows with a "+" tag and scrolls into view in a busy rack.
 - **Drag & drop:** on wide screens with a mouse/trackpad (`hover: hover`, `pointer: fine`, min-width 900px) tiles can be dragged onto a set, an empty board area (new set) or the rack. On phones/tablets drag is off and tap-to-select is used (it always works too).
 

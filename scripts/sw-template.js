@@ -17,6 +17,7 @@
 const VERSION = '__VERSION__'
 const FILES = __FILES__
 const CACHE = 'rmk-' + VERSION
+const EMOTES = 'emotes-v1' // no 'rmk-' prefix: the activate step below deletes every other rmk- cache
 const SHELL = new URL('index.html', self.registration.scope).href
 // Servers often send `Vary: Origin`, and module scripts are requested with an Origin header that the install-time fetch did not
 // have, so a plain match() would miss. Every cached file is addressed by its (hashed) URL, so Vary adds nothing here.
@@ -46,6 +47,20 @@ self.addEventListener('fetch', event => {
 	if (req.mode === 'navigate') {
 		event.respondWith(
 			fetch(req, { signal: AbortSignal.timeout(4000) }).catch(async () => (await (await caches.open(CACHE)).match(SHELL, NOVARY)) ?? Response.error()),
+		)
+		return
+	}
+	// the animated emotes are not precached (about half a megabyte): each is kept the first time it is shown, in a cache of its
+	// own that updates do not delete. Offline, one that was never shown fails and the page falls back to the emoji character.
+	if (url.pathname.includes('/emotes/')) {
+		event.respondWith(
+			caches.open(EMOTES).then(async cache => {
+				const hit = await cache.match(req, NOVARY)
+				if (hit) return hit
+				const res = await fetch(req)
+				if (res.ok) cache.put(req, res.clone())
+				return res
+			}),
 		)
 		return
 	}

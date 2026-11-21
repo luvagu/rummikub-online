@@ -62,9 +62,18 @@ import {
   reactPop,
 } from "../../utils/notify.js";
 import {
-  REACTIONS,
+  REACTION,
+  GRID,
   RCOOL,
+  MOOD_MS,
+  suggestionsFor,
+  moodsFor,
+  endMoodsFor,
+  orderByUse,
+  bumpUse,
 } from "../../engine/reactions.js";
+import { Emote, warmEmotes } from "./Emote.jsx";
+import { loadUse, saveUse } from "./emoteUse.js";
 import {
   Tile,
 } from "../../components/Tile.jsx";
@@ -117,6 +126,7 @@ import {
   initialBg,
   saveLastBg,
 } from "./display.js";
+import { TABLES, loadTable, saveTable, applyTable } from "./tableTheme.js";
 import {
   prefersReducedMotion,
   scrollBehavior,
@@ -170,6 +180,7 @@ export default function Game({
     [menu, setMenu] = useState(false),
     [sm, setSm] = useState(loadSort),
     [bgMode, setBgMode] = useState(loadBgMode),
+    [table, setTable] = useState(loadTable),
     [bg, setBg] = useState(() => initialBg(bgMode)); // resolved once per mount = once per session (App remounts Game for each)
   useEffect(() => {
     saveLastBg(bg); // the next Shuffle avoids repeating it
@@ -464,6 +475,10 @@ export default function Game({
   const [pk, setPk] = useState(false),
     [cool, setCool] = useState(false),
     [bub, setBub] = useState({}),
+    [moods, setMoods] = useState({}), // seat id -> {k, n}: the emote a seat is wearing right now (derived locally, never sent)
+    [use, setUse] = useState(loadUse), // how often this player sends each emote: orders the picker
+    prevView = useRef(null),
+    moodTo = useRef({}),
     meId = useRef();
   meId.current = s.players[me] && s.players[me].id;
   useEffect(() => {
@@ -471,7 +486,7 @@ export default function Game({
     const to = {};
     const off = reacts((r) => {
       const mine = r.from === meId.current;
-      if (!mine && !getPrefs().reacts) return;
+      if (!REACTION[r.k] || (!mine && !getPrefs().reacts)) return;
       const el =
         seatsRef.current &&
         seatsRef.current.querySelector('[data-pid="' + r.from + '"]');
@@ -490,7 +505,7 @@ export default function Game({
           y: sr.bottom + 12, // below the timer bar, not over the seat chips
         },
       }));
-      reactPop(r.k);
+      reactPop(REACTION[r.k]?.cat);
       clearTimeout(to[r.from]);
       to[r.from] = setTimeout(
         () =>
@@ -507,9 +522,38 @@ export default function Game({
       Object.values(to).forEach(clearTimeout);
     };
   }, [reacts]);
+  // Seat moods: what a live move or the round's end makes each seat feel (reactions.js). Local only: every client derives the
+  // same thing from the same public state, so nothing is sent and nothing can be spoofed. Gated by Menu > Reactions.
+  const putMoods = (list) => {
+    if (!getPrefs().reacts) return;
+    for (const { id, k } of list) {
+      setMoods((v) => ({ ...v, [id]: { k, n: (v[id]?.n || 0) + 1 } }));
+      clearTimeout(moodTo.current[id]);
+      moodTo.current[id] = setTimeout(
+        () =>
+          setMoods((v) => {
+            const n = { ...v };
+            delete n[id];
+            return n;
+          }),
+        MOOD_MS,
+      );
+    }
+  };
+  useEffect(() => {
+    const prev = prevView.current;
+    prevView.current = s;
+    if (prev) putMoods(moodsFor(prev, s)); // null unless this is a real step of the same running round
+  }, [s]);
+  useEffect(() => () => Object.values(moodTo.current).forEach(clearTimeout), []);
   const sendR = (k) => {
     if (cool || offline) return;
     if (send({ t: "react", k }) === false) return;
+    setUse((u) => {
+      const n = bumpUse(u, k);
+      saveUse(n);
+      return n;
+    });
     hidePopup("react-picker");
     setCool(true);
     setTimeout(() => setCool(false), RCOOL);
@@ -617,6 +661,7 @@ export default function Game({
         : t(celebrate.blocked ? "winsPool" : "wins", { name: celebrate.name }),
     );
     sfx("win"); // silent when Turn sound is off
+    putMoods(Object.entries(endMoodsFor(s)).map(([id, k]) => ({ id, k }))); // winner and losers react while the confetti runs
     const el = seatsRef.current?.querySelector('[data-pid="' + celebrate.id + '"]');
     el?.scrollIntoView?.({ block: "nearest", inline: "center", behavior: scrollBehavior() }); // the seat row scrolls sideways on busy tables
   }, [celebrate]);
@@ -854,7 +899,7 @@ export default function Game({
       <div className="fly-layer" ref={flyRef} aria-hidden="true" />
       {celebrate && <Celebration c={celebrate} onDone={() => setCelebrate(null)} />}
       {Object.entries(bub).map(([id, b]) => {
-        const r = REACTIONS.find((x) => x.k === b.k),
+        const r = REACTION[b.k],
           seat = s.players.findIndex((p) => p.id === id);
         return (
           r && (
@@ -862,6 +907,7 @@ export default function Game({
               key={b.id}
               className="rbub"
               aria-hidden="true"
+              data-seat={seat}
               // tethered under the sender's seat by anchor positioning (game.css); measured coordinates only without it
               style={
                 ANCHORS
@@ -872,7 +918,7 @@ export default function Game({
                     }
               }
             >
-              <span className={"rx rx-" + r.a}>{r.e}</span>
+              <Emote k={r.k} size={56} className="rx" />
               <small>
                 {((s.players.find((p) => p.id === id) || {}).name || "") +
                   ": " +
@@ -952,6 +998,11 @@ export default function Game({
               {p.bot && <span className="sr">{t("bot")}</span>}{/* the robot avatar shows it */}
               {p.on === false && <WifiOff size={14} aria-label={t("off")} />}
               {p.melded && <Check size={14} className="seat-ok" />}
+              {moods[p.id] && !bub[p.id] && (
+                <span className="mood" key={moods[p.id].n} aria-hidden="true">
+                  <Emote k={moods[p.id].k} size={30} />
+                </span>
+              )}
             </div>
             );
           })}
@@ -1040,6 +1091,33 @@ export default function Game({
                 {t("bg")}
                 <span className="sw">{bgMode === SHUFFLE ? `${t("bgShuffle")} · ${t("bg" + bg)}` : t("bg" + bg)}</span>
               </button>
+              {/* table colour: one tap on a swatch (the felt, header and dialogs follow; the choice is app-wide and remembered) */}
+              <div className="tcolors" role="group" aria-label={t("table")}>
+                <span className="tlabel" aria-hidden="true">
+                  <Palette size={18} />
+                  {t("table")}
+                  <span className="sw">{t("table." + table)}</span>
+                </span>
+                <span className="tdots">
+                  {TABLES.map((id) => (
+                    <button
+                      key={id}
+                      role="menuitemradio"
+                      aria-checked={table === id}
+                      aria-label={t("table." + id)}
+                      title={t("table." + id)}
+                      onClick={() => {
+                        sfx("click");
+                        setTable(id);
+                        saveTable(id);
+                        applyTable(id);
+                      }}
+                    >
+                      <i className="tdot" data-t={id} />
+                    </button>
+                  ))}
+                </span>
+              </div>
               <button
                 role="menuitem"
                 onClick={() => setLang(lang === "en" ? "es" : "en")}
@@ -1299,19 +1377,37 @@ export default function Game({
             >
               <SmilePlus size={18} />
             </button>
-            <Popup id="react-picker" className="rpick" label={t("react")} onOpenChange={setPk}>
-                {REACTIONS.map((r) => (
-                  <button
-                    key={r.k}
-                    role="menuitem"
-                    aria-label={t("r." + r.k)}
-                    disabled={cool}
-                    onClick={() => sendR(r.k)}
-                  >
-                    <span aria-hidden="true">{r.e}</span>
-                    <small aria-hidden="true">{t("r." + r.k)}</small>
-                  </button>
-                ))}
+            <Popup
+              id="react-picker"
+              className="rpick"
+              label={t("react")}
+              onOpenChange={(o) => {
+                setPk(o);
+                if (o) warmEmotes(Object.keys(REACTION));
+              }}
+            >
+              {/* the three that fit the moment (leading, trailing, round won or lost...), then the fixed grid, most-used first */}
+              <p className="rhead" aria-hidden="true">{t("reactSuggested")}</p>
+              {suggestionsFor(s).map((k) => (
+                <button
+                  key={"s" + k}
+                  className="rsug"
+                  role="menuitem"
+                  aria-label={t("r." + k)}
+                  disabled={cool}
+                  onClick={() => sendR(k)}
+                >
+                  <Emote k={k} size={36} />
+                  <small aria-hidden="true">{t("r." + k)}</small>
+                </button>
+              ))}
+              <p className="rhead" aria-hidden="true">{t("reactAll")}</p>
+              {orderByUse(GRID, use).map((k) => (
+                <button key={k} role="menuitem" aria-label={t("r." + k)} disabled={cool} onClick={() => sendR(k)}>
+                  <Emote k={k} size={34} />
+                  <small aria-hidden="true">{t("r." + k)}</small>
+                </button>
+              ))}
             </Popup>
           </div>
           <div className="seg">

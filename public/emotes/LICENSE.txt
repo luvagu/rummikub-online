@@ -1,0 +1,3 @@
+Animated emotes: Noto Animated Emoji, Copyright Google, licensed under CC BY 4.0
+(https://creativecommons.org/licenses/by/4.0/). Source: https://googlefonts.github.io/noto-emoji-animation/
+Modified: downscaled to 96 px, reduced to about 10 fps and re-encoded as lossy animated WebP by scripts/make-emotes.py.

@@ -2,6 +2,7 @@
    tokens.css is unlayered (custom properties only). */
 @layer base, components, game, surfaces, home, lobby, motion, overrides;
 @import './tokens.css';
+@import './tables.css';
 @import './base.css' layer(base);
 @import './components.css' layer(components);
 @import './game.css' layer(game);

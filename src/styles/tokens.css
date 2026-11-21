@@ -1,14 +1,24 @@
 /* Design tokens. The tile width (--tw) is set by the game table itself: src/styles/game.css. */
 :root {
-	--felt: #1b5e20;
-	--felt2: #2e7d32;
+	/* ---- table colour ----
+	   The whole felt scale (and the green-tinted chrome that follows it) is derived from three registered seeds, so a table
+	   theme is just a few numbers: --table-h (hue), --table-c (chroma multiplier) and --table-l (lightness offset); see
+	   tables.css. The defaults below are the emerald table: they reproduce the original palette. A role's lightness and
+	   chroma are fixed numbers in oklch() on purpose (no relative colour syntax: lightness edits skip gamut mapping).
+	   Never use these inside repeating-*-gradient stops: Firefox drops the whole gradient (see game.css). */
+	--felt: oklch(calc(0.425 + var(--table-l)) calc(0.116 * var(--table-c)) calc(var(--table-h) - 1));
+	--felt2: oklch(calc(0.523 + var(--table-l)) calc(0.135 * var(--table-c)) calc(var(--table-h) - 1));
+	--felt-deep: oklch(calc(0.298 + var(--table-l)) calc(0.065 * var(--table-c)) calc(var(--table-h) + 3));
+	--felt-edge: oklch(calc(0.352 + var(--table-l)) calc(0.091 * var(--table-c)) var(--table-h));
+	--felt-card: oklch(calc(0.43 + var(--table-l)) calc(0.112 * var(--table-c)) var(--table-h)); /* dark-scheme dialog card, round-end card */
+	--felt-card-hi: oklch(calc(0.536 + var(--table-l)) calc(0.119 * var(--table-c)) var(--table-h)); /* the lit centre of that card */
+	--felt-field: oklch(calc(0.255 + var(--table-l)) calc(0.056 * var(--table-c)) calc(var(--table-h) + 2)); /* dark-scheme text fields */
+	--felt-coach: oklch(calc(0.28 + var(--table-l)) calc(0.053 * var(--table-c)) calc(var(--table-h) + 4)); /* dark-scheme tutorial coach */
 	--amber: #ffb300;
 	--amber-hi: #ffc233;
 	--amber-edge: #e69f00;
 	--amber-deep: #b07800;
 	--ink: #2a1d00;
-	--felt-deep: #12361a;
-	--felt-edge: #14471a;
 	--sky: #4fc3f7;
 	--sky-deep: #01579b;
 	--paper: #fffdf6;
@@ -45,46 +55,46 @@
 	   is the "chrome" that sits on top: dialog cards, text fields, the tutorial coach and native controls.
 	   The first value of every light-dark() is exactly what the app has always used, so the light scheme is unchanged;
 	   the second reuses the felt palette that the lobby and round-end dialogs already have. */
-	--card-bg: light-dark(#fbfaf3, #1f5f24);
-	--card-bg-clear: light-dark(#fbfaf300, #1f5f2400);
-	--card-ink: light-dark(#1d2b1e, #fff);
-	--card-sub-ink: light-dark(#4a5b4b, #ffffffcc);
+	--card-bg: light-dark(#fbfaf3, var(--felt-card));
+	--card-bg-clear: light-dark(#fbfaf300, color-mix(in oklab, var(--felt-card) 0%, transparent));
+	--card-ink: light-dark(oklch(0.272 calc(0.03 * var(--table-c)) calc(var(--table-h) + 1)), #fff);
+	--card-sub-ink: light-dark(oklch(0.452 calc(0.033 * var(--table-c)) calc(var(--table-h) + 2)), #ffffffcc);
 	--card-rule: light-dark(#0000001f, #ffffff30);
 	--card-btn-bg: light-dark(var(--felt), #0000005c);
 	--card-btn-edge: light-dark(var(--felt-edge), #ffffffb3);
 	--card-btn-hover: light-dark(var(--felt2), #00000080);
 	--card-btn-active: light-dark(var(--felt-edge), #000000a6);
 	--card-link: light-dark(var(--felt), #fff);
-	--card-link-hover: light-dark(#0d3a12, #fff);
+	--card-link-hover: light-dark(oklch(0.308 calc(0.083 * var(--table-c)) var(--table-h)), #fff);
 	--card-focus: light-dark(var(--felt), var(--amber));
 	--card-chip-bg: light-dark(var(--felt), #00000066);
 	--card-chip-edge: light-dark(var(--felt-edge), #ffffffb3);
 	--card-chip-btn: light-dark(var(--felt2), #ffffff2e);
-	--card-chip-btn-edge: light-dark(#4a9a4e, #ffffffb3);
-	--card-chip-btn-hover: light-dark(#3d8b40, #ffffff47);
+	--card-chip-btn-edge: light-dark(oklch(0.617 calc(0.136 * var(--table-c)) var(--table-h)), #ffffffb3);
+	--card-chip-btn-hover: light-dark(oklch(0.57 calc(0.134 * var(--table-c)) calc(var(--table-h) - 1)), #ffffff47);
 	--card-opt-bg: light-dark(#fff, #00000040);
-	--card-opt-edge: light-dark(#d5e0d3, #ffffff80);
-	--card-opt-hover: light-dark(#eaf4e6, #00000066);
+	--card-opt-edge: light-dark(oklch(0.895 calc(0.021 * var(--table-c)) calc(var(--table-h) - 4)), #ffffff80);
+	--card-opt-hover: light-dark(oklch(0.956 calc(0.021 * var(--table-c)) calc(var(--table-h) - 8)), #00000066);
 	--card-opt-hover-edge: light-dark(var(--felt), var(--amber));
-	--card-opt-active: light-dark(#dcecd6, #00000080);
+	--card-opt-active: light-dark(oklch(0.925 calc(0.034 * var(--table-c)) calc(var(--table-h) - 8)), #00000080);
 	--card-opt-sel: light-dark(#fff7de, color-mix(in srgb, var(--amber) 22%, transparent));
 	--card-opt-sel-hover: light-dark(#ffefbd, color-mix(in srgb, var(--amber) 32%, transparent));
-	--card-switch-off: light-dark(#8a948a, #0000005c);
-	--card-switch-ring: light-dark(#5b665c, #ffffffb3);
+	--card-switch-off: light-dark(oklch(0.655 calc(0.019 * var(--table-c)) var(--table-h)), #0000005c);
+	--card-switch-ring: light-dark(oklch(0.498 calc(0.021 * var(--table-c)) calc(var(--table-h) + 3)), #ffffffb3);
 	--card-switch-on: light-dark(var(--felt), var(--amber));
 	--card-row: light-dark(#0000000a, #00000040);
-	--card-pos: light-dark(#1b7a24, #9be7a0);
+	--card-pos: light-dark(oklch(0.508 calc(0.149 * var(--table-c)) calc(var(--table-h) - 1)), oklch(0.86 calc(0.123 * var(--table-c)) calc(var(--table-h) + 1)));
 	--card-neg: light-dark(#c62828, #ffb3ab);
-	--field-bg: light-dark(#fff, #0d2a12);
-	--field-ink: light-dark(#1b1b1b, #f1f5ef);
-	--field-placeholder: light-dark(#757575, #9db3a0);
+	--field-bg: light-dark(#fff, var(--felt-field));
+	--field-ink: light-dark(#1b1b1b, oklch(0.965 calc(0.009 * var(--table-c)) calc(var(--table-h) - 10)));
+	--field-placeholder: light-dark(#757575, oklch(0.744 calc(0.036 * var(--table-c)) calc(var(--table-h) + 4)));
 	--field-caret: light-dark(var(--felt), var(--amber));
 	--field-edge: light-dark(#0000001f, #ffffff2e);
 	--field-edge-hover: light-dark(#0000004d, #ffffff59);
-	--field-label: light-dark(#5f6b60, #a9bfac); /* the floating label sits on --field-bg, not on the felt */
+	--field-label: light-dark(oklch(0.514 calc(0.022 * var(--table-c)) calc(var(--table-h) + 3)), oklch(0.783 calc(0.036 * var(--table-c)) calc(var(--table-h) + 4))); /* the floating label sits on --field-bg, not on the felt */
 	--field-danger-ink: light-dark(#c62828, #ffb4ab);
-	--coach-bg: light-dark(var(--paper), #14301a);
-	--coach-ink: light-dark(#222, #f1f5ef);
+	--coach-bg: light-dark(var(--paper), var(--felt-coach));
+	--coach-ink: light-dark(#222, oklch(0.965 calc(0.009 * var(--table-c)) calc(var(--table-h) - 10)));
 	--xbtn-bg: light-dark(#0000000f, #00000059);
 	--xbtn-ink: light-dark(#333, #fff);
 	/* ---- game table (src/styles/game.css). Game objects: identical in both colour schemes ---- */
@@ -99,7 +109,7 @@
 	--seat-3: #f48fb1;
 	--felt-hud: var(--felt-edge); /* opaque: iOS samples the header for the status-bar tint */
 	--felt-ink: oklch(100% 0 0 / 0.08); /* pattern strokes and hairlines on the felt */
-	--felt-tray: oklch(18% 0.04 150 / 0.34); /* the recessed trays that hold sets */
+	--felt-tray: oklch(0.18 calc(0.04 * var(--table-c)) calc(var(--table-h) + 5) / 0.34); /* the recessed trays that hold sets */
 	--walnut-hi: oklch(56% 0.07 58);
 	--walnut: oklch(45% 0.062 52);
 	--walnut-lo: oklch(34% 0.055 48);
@@ -159,6 +169,22 @@
 	}
 }
 /* Typed custom properties, so they interpolate in transitions and keyframes (unregistered ones jump). */
+@property --table-h {
+	/* table colour seeds (see the "table colour" block above and tables.css): registered so a theme change interpolates */
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 145;
+}
+@property --table-c {
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 1;
+}
+@property --table-l {
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 0;
+}
 @property --left {
 	/* the active seat's turn timer: the percentage of the turn that is left */
 	syntax: '<number>';
