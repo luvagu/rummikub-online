@@ -913,16 +913,16 @@ export default function Game({
                 ANCHORS
                   ? { positionAnchor: "--seat-" + seat }
                   : {
-                      left: Math.min(Math.max(b.x, 100), window.innerWidth - 100),
+                      left: Math.min(Math.max(b.x, 90), window.innerWidth - 90), // half the narrowest pill
                       top: b.y - 6,
                     }
               }
             >
               <Emote k={r.k} size={56} className="rx" />
               <small>
-                {((s.players.find((p) => p.id === id) || {}).name || "") +
-                  ": " +
-                  t("r." + r.k)}
+                {/* the sender's name is dropped on phones (game.css): the seat-colour border says who, and the live region below still reads it out */}
+                <span className="who">{((s.players.find((p) => p.id === id) || {}).name || "") + ": "}</span>
+                {t("r." + r.k)}
               </small>
             </div>
           )
@@ -1000,7 +1000,7 @@ export default function Game({
               {p.melded && <Check size={14} className="seat-ok" />}
               {moods[p.id] && !bub[p.id] && (
                 <span className="mood" key={moods[p.id].n} aria-hidden="true">
-                  <Emote k={moods[p.id].k} size={30} />
+                  <Emote k={moods[p.id].k} size={20} />
                 </span>
               )}
             </div>

@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useT } from '../../i18n/index.js'
+import { NAME_MAX } from '../../engine/names.js'
 
 export function NameField({ name, setName, nameErr, names, onForgetName, onEnter }) {
 	const t = useT(),
@@ -14,7 +15,7 @@ export function NameField({ name, setName, nameErr, names, onForgetName, onEnter
 					name='nickname'
 					placeholder=' ' // a blank placeholder only so CSS can tell an empty field (:placeholder-shown)
 					value={name}
-					maxLength={16}
+					maxLength={NAME_MAX}
 					autoComplete='off'
 					autoCapitalize='words'
 					spellCheck={false}

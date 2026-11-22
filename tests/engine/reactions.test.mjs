@@ -94,10 +94,17 @@ test('moodsFor: a big play, a first meld and "someone is nearly out"', () => {
 	assert.deepEqual(moodsFor(prev, big), [{ id: 'p0', k: 'fire' }])
 	const small = { ...view([9, 10, 10]), seq: 2 }
 	assert.deepEqual(moodsFor(prev, small), [])
+	// p1 drops from 6 to 2 tiles (4 played: on fire); only the NEXT player (p2) reacts, not everyone
 	const nearly = { ...view([10, 2, 10]), seq: 2 }
-	nearly.players[1].n = 2
 	const before = view([10, 6, 10])
-	assert.deepEqual(moodsFor(before, nearly).sort((a, b) => a.id.localeCompare(b.id)), [{ id: 'p0', k: 'gasp' }, { id: 'p1', k: 'fire' }, { id: 'p2', k: 'gasp' }]) // the mover played 4 tiles: on fire, and the rest gasp
+	assert.deepEqual(moodsFor(before, nearly), [{ id: 'p1', k: 'fire' }, { id: 'p2', k: 'gasp' }])
+	// ...and it wraps around the table, and the next player being close too turns the gasp into popcorn
+	const last = { ...view([10, 10, 2]), seq: 2 },
+		lastBefore = view([10, 10, 6])
+	assert.deepEqual(moodsFor(lastBefore, last), [{ id: 'p2', k: 'fire' }, { id: 'p0', k: 'gasp' }])
+	const close = { ...view([4, 2, 10]), seq: 2 }
+	assert.deepEqual(moodsFor(view([4, 6, 10]), close), [{ id: 'p1', k: 'fire' }, { id: 'p2', k: 'gasp' }])
+	assert.deepEqual(moodsFor(view([10, 6, 4]), { ...view([10, 2, 4]), seq: 2 }), [{ id: 'p1', k: 'fire' }, { id: 'p2', k: 'popcorn' }])
 	assert.deepEqual(moodsFor(prev, { ...view([11, 10, 10]), seq: 2 }), [], 'drawing says nothing')
 	assert.deepEqual(moodsFor(prev, prev), [])
 	assert.ok(MOOD_MS > 1000)

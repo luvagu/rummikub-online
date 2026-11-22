@@ -24,6 +24,7 @@ import { Lobby } from './features/lobby/Lobby.jsx'
 import Game from './features/game/Game.jsx'
 import { unlockAudio } from './utils/notify.js'
 import { local, session } from './utils/store.js'
+import { cleanName } from './engine/names.js'
 
 // secondary screens load on first use
 const Rules = lazy(() => import('./features/rules/Rules.jsx'))
@@ -70,7 +71,7 @@ export default function App() {
 		[leaving, setLeaving] = useState(false)
 	const [saved, setSaved] = useState(() => loadSess(true))
 	const [name, setName] = useState(
-		() => session.get('rmkName') || local.get('rmkName') || '',
+		() => cleanName(session.get('rmkName') || local.get('rmkName') || ''), // an older, longer saved name is cut on load
 	)
 	const [code, setCode] = useState(() =>
 		isCode(hash0.current) ? hash0.current : '',
@@ -112,7 +113,7 @@ export default function App() {
 	}
 
 	const start = (mode, o = {}) => {
-		const nm = (o.name || name).trim()
+		const nm = cleanName(o.name || name)
 		if (!nm) {
 			setNameErr(true)
 			// no toast: the field's own message says it. Focus the field once the error has rendered, so aria-describedby

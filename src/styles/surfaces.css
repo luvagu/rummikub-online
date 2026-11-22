@@ -856,7 +856,7 @@
 		& .tdots {
 			display: flex;
 			flex-wrap: wrap;
-			gap: 6px;
+			gap: 4px;
 			padding-inline-start: 30px; /* lines up with the label text, past the icon */
 		}
 		& .tdots button {
@@ -866,6 +866,10 @@
 			border: 2px solid transparent;
 			&[aria-checked='true'] {
 				border-color: var(--amber);
+			}
+			@media (pointer: coarse) {
+				min-inline-size: var(--target); /* a fingertip, not the 20px swatch */
+				min-block-size: var(--target);
 			}
 		}
 	}
