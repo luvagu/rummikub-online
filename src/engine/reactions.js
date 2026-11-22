@@ -95,7 +95,8 @@ export function momentFor(prev, next) {
 }
 // The moods that move shows: [{id, k}], at most one per seat.
 //  - 3+ tiles in one go: the mover is "on fire"; a first meld earns a clap
-//  - someone is down to 3 tiles or fewer: everyone else gasps (or watches with popcorn if they are close too)
+//  - someone is down to 3 tiles or fewer: the next player, who has to answer it, gasps (or watches with popcorn if close too).
+//    One seat, not all of them: three gasping faces at once is noise, and it hid the avatars on a phone.
 export function moodsFor(prev, next) {
 	const m = momentFor(prev, next)
 	if (!m || m.drew) return []
@@ -103,10 +104,10 @@ export function moodsFor(prev, next) {
 	if (m.played >= 3) out.push({ id: m.id, k: 'fire' })
 	else if (m.first) out.push({ id: m.id, k: 'clap' })
 	const was = prev.players[m.seat].n
-	if (m.left <= 3 && was > 3 && m.left > 0)
-		next.players.forEach((p, i) => {
-			if (i !== m.seat) out.push({ id: p.id, k: p.n <= 4 ? 'popcorn' : 'gasp' })
-		})
+	if (m.left <= 3 && was > 3 && m.left > 0) {
+		const nxt = next.players[(m.seat + 1) % next.players.length]
+		if (nxt && nxt.id !== m.id) out.push({ id: nxt.id, k: nxt.n <= 4 ? 'popcorn' : 'gasp' })
+	}
 	return out
 }
 // The round-end burst: the winner is "trophy" (a blocked pool: "party"), each loser reacts to how many points they are stuck

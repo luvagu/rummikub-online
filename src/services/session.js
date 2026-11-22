@@ -1,4 +1,5 @@
 import { local, session } from '../utils/store.js'
+import { cleanName } from '../engine/names.js'
 
 // Remembers the current room so a refreshed/closed tab (or a restarted browser) can rejoin it.
 // sessionStorage = this tab; localStorage = survives closing the browser. Host/solo games also keep a snapshot.
@@ -20,7 +21,8 @@ export const clearSess = mode => {
 // Recently used player names (most recent first) so the name field can offer them again.
 export const loadNames = () => {
 	const v = local.getJSON('rmkNames', [])
-	return Array.isArray(v) ? v : []
+	// older saved names may be longer than today's limit: cut them (and drop duplicates / empties the cut leaves)
+	return Array.isArray(v) ? [...new Set(v.map(n => cleanName(n)).filter(Boolean))] : []
 }
 export const rememberName = n =>
 	local.setJSON(

@@ -16,6 +16,8 @@
 //
 // Not protected (documented in the README): the host is trusted, and anyone with the room code can still join an
 // empty seat, exactly as before.
+import { cleanName } from '../engine/names.js'
+
 const subtle = globalThis.crypto?.subtle
 const enc = new TextEncoder(),
 	dec = new TextDecoder()
@@ -165,7 +167,7 @@ export class HelloBook {
 		if (!tag || tag.gn !== d.gn || typeof tag.name !== 'string' || typeof tag.cid !== 'string') return null // not made by the key holder
 		const prev = this.gns.get(d.kid)
 		if (prev !== undefined && d.gn < prev) return null // an old hello being replayed
-		const name = tag.name.slice(0, 16)
+		const name = cleanName(tag.name)
 		this.cids.set(d.kid, tag.cid)
 		if (prev === d.gn) return { kid: d.kid, name, channel: null }
 		const key = await deriveKey(this.id.priv, d.pub, saltFor(this.sid, d.gn))

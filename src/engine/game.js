@@ -1,5 +1,6 @@
 // Rummikub rules engine. Runs only on the host; guests send moves and receive views.
 import { dealHold } from './deal.js'
+import { NAME_MAX, cleanName } from './names.js'
 export const DECK = []
 {
 	let id = 0
@@ -115,6 +116,7 @@ export class Game {
 		if (resumed) this.sanitize()
 	}
 	join(tok, name) {
+		name = cleanName(name) // the host decides: whatever the client sent, it is at most NAME_MAX
 		const s = this.s,
 			p = s.players.find(p => p.id === tok)
 		if (p) {
@@ -127,7 +129,7 @@ export class Game {
 		}
 		if ((s.phase !== 'lobby' && s.phase !== 'over') || s.players.length >= 4)
 			return false // new players may also join between rounds (while there are free seats)
-		s.players.push({ id: tok, name, rack: [], melded: false, on: true })
+		s.players.push({ id: tok, name: name || '?', rack: [], melded: false, on: true })
 		s.scores[tok] = 0
 		s.wins[tok] = 0
 		return true
@@ -375,7 +377,7 @@ export class Game {
 				while (s.players.some(x => x.id === 'bot' + n)) n++
 				const id = 'bot' + n
 				// the host names it (e.g. "Expert Bot" in its language); a second bot with the same name gets a number
-				const base = (typeof m.name === 'string' && m.name.trim().slice(0, 24)) || 'Bot'
+				const base = (typeof m.name === 'string' && [...m.name.trim()].slice(0, NAME_MAX + 4).join('')) || 'Bot' // room for "Intermediate Bot 2"
 				let name = base
 				for (let k = 2; s.players.some(x => x.name === name); k++) name = base + ' ' + k
 				s.players.push({
